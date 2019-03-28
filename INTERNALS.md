@@ -275,7 +275,7 @@ Orientation is used to properly display charts on sides (they are rotated)
 
 ### Colors
 
-For colors, palettes and gradients use `clojure2d.color` namespace
+For colors, palettes and gradients use [clojure2d.color](https://clojure2d.github.io/clojure2d/docs/codox/clojure2d.color.html) namespace
 
 ### Strokes
 
