@@ -59,14 +59,14 @@ During chart preparation additional parameters are injected to the configuration
 - `:id` - for categorical charts (vertical/horizontal) it's category id (more on this later)
 - `:chart-type` - chart name
 - `:extent` - calculated extent for each dimension
-- `:label` - position label
+- `:label` - label for given position (it's a hack for a while)
 
 #### Functions
 
-Each chart is built using three functions called in different steps of process. All are multimethods with chart name as a dispatch.
+Each chart is built using three functions called in different steps of the process. All are multimethods with chart name as a dispatch.
 
 * `prepare-data` - convert data into internal format. Accepts data and merged config, returns data
-* `data-extent` - calculate extents of domains. Accepts internal data and config, returns map of extents
+* `data-extent` - calculate extents of domains. Accepts internal data and config, returns map of extents (one for each axis)
 * `render-graph` - (name to be changed) actual render. Accepts data, config and rendering config (size and scales), returns BufferedImage.
 
 ## Lattice / layering
@@ -89,7 +89,7 @@ Data flow goes like that:
 * data preparation is called
 * extents are calculated
 * for every lattice row and column, extents are merged
-* based on extent types automatic scales are calculated (for each row and column separately)
+* automatic scales are calculated (for each row and column separately)
 
 Final map contains:
 
@@ -98,7 +98,7 @@ Final map contains:
 * `:rows` - number of rows
 * `:extents` - list of extents for every row and column
 * `:scales` - list of scale maps for every row and column
-* `:bottom`, `:left`, `:right`, `:top` - map of list of series which will be rendered at sides of given row/column (for example axes)
+* `:bottom`, `:left`, `:right`, `:top` - map of list of series which will be rendered at sides of given row/column (like axes or density, see logo)
 
 Such map can be manipulated by some helper functions. You can add another series to the sides, you can change scales.
 
@@ -108,8 +108,8 @@ Series is a vector (it's crucial) of chart definitions. There are some helpers f
 
 * `series` - to wrap list into the vector
 * `add-serie` - to add serie at given lattice position (default [0,0])
-* `add-series` - to concat to lists
-* `add-multi` - helper for layered chart creation (you can create different configurations from a lists)
+* `add-series` - to concat two lists
+* `add-multi` - helper for layered chart creation (you can create different configurations from lists)
 * `lattice` - to create faceted view (lattices can be layered over)
 
 ### Extents
@@ -131,11 +131,11 @@ Parameter defines fraction of range to be added to each side of extent.
 ;; => {:x [:numerical [0.91 14.5]], :y nil}
 ```
 
-Note: currently this works only for `numerical` values
+Note: this works only for `numerical` values currently 
 
 #### Example
 
-Extent lattice 2x3:
+Extent for lattice 2x3:
 
 ```
 {:x {0 [:numerical [-0.4 8.4]], 1 [:numerical [1.7 8.3]], 2 [:numerical [0.6499999999999999 8.35]]}
@@ -144,7 +144,7 @@ Extent lattice 2x3:
 
 ### Scales
 
-Scales concept is slightly based on a D3 scales package.
+Scales concept is based on a D3 scales package.
 
 There are three main types of scales used for chart generation:
 
@@ -205,7 +205,7 @@ Parameters are:
 
 #### Scale map
 
-Scale map is reacher set of information for given domain. It contains:
+Scale map is richer set of information for given domain. It contains:
 
 * `:domain` - as domain (without a type)
 * `:fmt` - formatting function
@@ -234,7 +234,7 @@ To add some subchart or axis for given column or row use `add-side` and `add-axe
 
 ## Stacking
 
-To display bar chart or set of violin plots stacking meta chart is used. Stacked chart definition follows general rule. It should containt: data and config. In this case data contains definition of inner chart.
+To display bar chart or set of violin plots stacking meta chart is used. Stacked chart definition follows general rule. It should contain: data and config. In this case data contains definition of inner chart.
 
 // TODO: describe more
 
