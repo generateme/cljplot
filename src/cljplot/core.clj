@@ -7,7 +7,8 @@
             [cljplot.render :as r]
             [cljplot.impl.strips :refer :all]
             [cljplot.impl.scatter :refer :all]
-            [cljplot.impl.line :refer :all]))
+            [cljplot.impl.line :refer :all]
+            [cljplot.impl.free :refer :all]))
 
 (defn save
   "Save `chart`."

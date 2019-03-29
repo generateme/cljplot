@@ -18,11 +18,13 @@
 (defn graph-canvas
   "Create canvas to draw a chart on"
   ([graph-conf] (graph-canvas graph-conf false))
-  ([{:keys [w h orientation rendering-hint] :or {orientation :top}} highest?]
+  ([{:keys [w h orientation rendering-hint oversize] :or {orientation :top oversize 100}} highest?]
    (let [[cw ch] (if (#{:left :right} orientation) [h w] [w h])
-         c (canvas (+ canvas-border cw) (+ canvas-border ch) (if rendering-hint
-                                                               rendering-hint
-                                                               (if highest? :highest :high)))]
+         canvas-shift (/ oversize 2)
+         canvas-shift- (- canvas-shift)
+         c (canvas (+ oversize cw) (+ oversize ch) (if rendering-hint
+                                                     rendering-hint
+                                                     (if highest? :highest :high)))]
      {:canvas c
       :anchor [canvas-shift- canvas-shift-]
       :shift [canvas-shift canvas-shift]

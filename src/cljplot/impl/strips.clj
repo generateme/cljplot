@@ -38,7 +38,7 @@
 ;;
 
 (def ^:private extents-map
-  {:min-max extent
+  {:min-max stats/extent
    :iqr stats/percentile-extent
    :adjacent stats/adjacent-values
    :stddev stats/stddev-extent
@@ -52,7 +52,7 @@
     (cond
       (and (keyword? ext) (contains? extents-map ext)) ((extents-map ext) d)
       (fn? ext) (ext d)
-      :else (extent d))))
+      :else (stats/extent d))))
 
 (defmethod data-extent :extent-stat [_ [x y] _]
   {:x [:numerical [x y]]})
@@ -75,7 +75,8 @@
   {:x [:numerical [(:Min data) (:Max data)]]})
 
 (defmethod render-graph :box [_ data {:keys [color size shape outliers?] :as conf} {:keys [w h x] :as chart-data}]
-  (let [dcolor (c/darken color)
+  (let [color (color nil conf)
+        dcolor (c/darken color)
         line-cl (if (> 127.5 (c/luma color)) :black :white)
         scale-x (partial (:scale x) 0 w)
         [median q1 q3 lav uav] (map scale-x (map data [:Median :Q1 :Q3 :LAV :UAV :LIF :UIF]))
@@ -115,7 +116,8 @@
 
 (defmethod render-graph :violin [_ [density stats] {:keys [color color-bar size-bar size scale] :as conf}
                                  {:keys [w h x y] :as chart-data}]
-  (let [scale-x (partial (:scale x) 0 w)
+  (let [color (color nil conf)
+        scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
         p1 (map (fn [[x y]] [(scale-x x) (scale-y (* y scale))]) density)
         p2 (map (fn [[x y]] [(scale-x x) (scale-y (- (* y scale)))]) density)
@@ -155,12 +157,12 @@
         p (conj (vec (conj p [(ffirst p) zero])) [(first (last p)) zero])
         col (color density conf)]
     (do-graph chart-data false
-              (set-stroke c size)
-              (if area?
-                (filled-with-stroke c col (c/darken col) path p true)
-                (do
-                  (set-color c col)
-                  (path c p false true))))))
+      (set-stroke c size)
+      (if area?
+        (filled-with-stroke c col (c/darken col) path p true)
+        (do
+          (set-color c col)
+          (path c p false true))))))
 
 
 ;;

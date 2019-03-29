@@ -5,6 +5,7 @@
             [fastmath.interpolation :as in]
             [fastmath.stats :as stats]
             [clojure2d.color :as c]
+            [clojure2d.core :as c2d]
             [cljplot.scale :as s]
             [fastmath.core :as m]
             [fastmath.random :as rnd]
@@ -12,7 +13,8 @@
             [java-time :as dt]
             [clojure.string :as str]
             [clojure2d.core :as c2d]
-            [java-time :as d]))
+            [java-time :as d]
+            [fastmath.vector :as v]))
 
 ;; data
 
@@ -548,6 +550,64 @@
       (show)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chapter 13
+
+;; figure 13.1
+
+(defn hypotrochoid
+  ([] (hypotrochoid (rnd/drand 0.25 0.75)))
+  ([r] (hypotrochoid r (rnd/drand (* 0.25 r) r)))
+  ([r d] (hypotrochoid r d 10))
+  ([r d cycles] (hypotrochoid r d cycles 30))
+  ([^double r ^double d cycles density]
+   (let [r- (- 1.0 r)]
+     (for [cycle (range 0 cycles (/ density))
+           :let [t (* m/TWO_PI cycle)
+                 f (/ (* r- t) r)]]
+       (v/vec2 (+ (* r- (m/cos t))
+                  (* d (m/cos f)))
+               (- (* r- (m/sin t))
+                  (* d (m/sin f))))))))
+
+(defn hypocycloid
+  ([x y] (hypocycloid x y x))
+  ([x y cycles] (hypocycloid x y cycles 30))
+  ([x y cycles density]
+   (let [rd (/ x y)]
+     (hypotrochoid rd rd cycles density))))
+
+(defn plot-h [p]
+  (fn [c]
+    (let [s (min (c2d/width c) (c2d/height c))
+          halfs (- (/ s 2.0) 2)]
+      (-> c
+          (c2d/set-color :black)
+          (c2d/set-stroke 0.5)
+          (c2d/translate (/ (c2d/width c) 2) (/ (c2d/height c) 2))
+          (c2d/path (map (fn [v] (v/mult v halfs)) p))))))
+
+(let [free (map #(let [nm (m/approx (/ % 10) 1)
+                       p (hypocycloid 10 %)]
+                   [nm (plot-h p)]) (range 11 31))]
+  
+  (-> (b/lattice :free free {} {:shape [5 4] :label str})
+      (b/preprocess-series)
+      (r/render-lattice {:width 800 :height 1000 :rendering-hint :highest})
+      (save "results/lattice/figure_13.1.jpg")
+      (show)))
+
+;; figure 13.2
+
+(let [free (repeatedly 42 #(vector nil (plot-h (hypotrochoid))))]
+  (rnd/set-seed! rnd/default-rng 20070706)
+  (-> (b/lattice :free free {} {:shape [7 6]})
+      (b/preprocess-series)
+      (r/render-lattice {:width 800 :height 1000 :rendering-hint :highest})
+      (save "results/lattice/figure_13.2.jpg")
+      (show)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Chapter 14
 
 ;; figure 14.1
@@ -618,4 +678,3 @@
 
 ;; figure 14.4
 
-(first hnanes)

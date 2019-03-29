@@ -71,12 +71,12 @@
 (def ^:private type-fn {:bars draw-rectangles
                         :lollipops draw-lollies})
 
-(defmethod render-graph :histogram [_ data {:keys [label padding-in padding-out type] :or {type :bars} :as conf}
+(defmethod render-graph :histogram [_ data {:keys [color label padding-in padding-out type] :or {type :bars} :as conf}
                                     {:keys [w h x y] :as chart-data}]
   (let [scale-x (partial (:scale x) 0 w)
-        scale-y (partial (:scale y) 0 h) 
-        bands (s/bands {:padding-out padding-out :padding-in padding-in} (count (:samples data)))
-        nconf (update conf :palette cycle)
+        scale-y (partial (:scale y) 0 h)
+        cnt (count (:samples data))
+        bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
         draw-fn (type-fn type)]
     (do-graph chart-data false
       (doseq [[x ys] (:bins data)

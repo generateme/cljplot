@@ -14,6 +14,8 @@
                                         :axis-right [[:ticks :size]]
                                         :rug [:color :size]
                                         :strip [:color :size]
+                                        :box [:color]
+                                        :violin [:color]
                                         :density-strip [:color]
                                         :scatter [:color :size [:stroke :size] :shape]
                                         :bubble [:color [:stroke :size] :shape]
