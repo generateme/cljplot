@@ -1,4 +1,6 @@
-![](results/examples/logo.jpg)
+<p align="center">
+  <img src="results/examples/logo.jpg" alt="logo"/>
+</p>
 
 # clojure2d.charts
 
