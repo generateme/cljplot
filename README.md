@@ -38,6 +38,7 @@ See `sketches` folder for examples
 
 ## Long term plan / wishlist
 
+* Enable other renderers (create dispatch layer)
 * Data DSL(?)
 * geo maps
 * elements of UpSet
