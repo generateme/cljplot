@@ -3,8 +3,11 @@
 # clojure2d.charts
 
 THIS IS WIP/POC
-
 A "no web-based" pure JVM Clojure library for 2d charts, inspired by D3, Vega and R (ggplot2/lattice/facet).
+
+## NOTE about API
+
+Please note that current way of creating charts is very low level. All of this nasty steps will be finally hidden from user perspective.
 
 ## Usage
 
