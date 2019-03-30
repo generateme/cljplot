@@ -3,8 +3,7 @@
             [fastmath.interpolation :as i]
             [fastmath.stats :as s]
             [java-time :as dt]
-            [clojure2d.color :as c]
-            [cljplot.common :refer :all])
+            [clojure2d.color :as c])
   (:import [clojure.lang IFn]))
 
 ;; continuous -> continuous
@@ -516,6 +515,15 @@
    (if-not (sequential? ticks)
      (ticks- scale (max 1 (long (or ticks 10))))
      {:ticks ticks})))
+
+(defn- coerce-format-fn
+  "Find formating funciton."
+  ([fmt] (coerce-format-fn nil fmt))
+  ([scale-type fmt]
+   (cond
+     (string? fmt) (partial (if (= scale-type :time) dt/format format) fmt)
+     (fn? fmt) fmt
+     :else str)))
 
 (defn scale-map
   "Create scale data from definition"

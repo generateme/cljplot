@@ -8,7 +8,8 @@
             [clojure.data.csv :as csv]
             [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [java-time :as dt]))
+            [java-time :as dt]
+            [cljplot.scale :as s]))
 
 (def ^:private ^:const ^int canvas-border 100)
 (def ^:private ^:const ^int canvas-shift (/ canvas-border 2))
@@ -50,26 +51,16 @@
 
 ;;
 
-(defn coerce-format-fn
-  "Find formating funciton."
-  ([fmt] (coerce-format-fn nil fmt))
-  ([scale-type fmt]
-   (cond
-     (string? fmt) (partial (if (= scale-type :time) dt/format format) fmt)
-     (fn? fmt) fmt
-     :else str)))
-
-;;
-
 (defn date-time?
   [t]
   (instance? java.time.temporal.Temporal t))
 
 (defn wrap-interpolator-for-dt
   "Wrap interpolator to work with date/time values."
-  [scale interpolator x y]
-  (if (= :time (:type scale))
-    (let [interp (interpolator (mapv scale x) y)]
+  [interpolator domain x y]
+  (if (date-time? (first x)) 
+    (let [scale (s/time-interval domain)
+          interp (interpolator (mapv scale x) y)]
       (fn [v]
         (interp (scale v))))
     (interpolator x y)))

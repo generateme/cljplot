@@ -10,11 +10,11 @@
 (defmethod render-graph :line [_ data {:keys [color stroke interpolation smooth? area? point] :as conf}
                                {:keys [w h x y] :as chart-data}]
   (let [raw-scale-x (:scale x)
-        scale-x (partial raw-scale-x 0 w)
+        scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
-        data (if (fn? interpolation)
+        data (if (fn? interpolation) 
                (let [sampled-values (m/sample (:inverse raw-scale-x) 0.0 1.0 (/ w 2) false)
-                     i (wrap-interpolator-for-dt raw-scale-x interpolation (map first data) (map second data))]
+                     i (wrap-interpolator-for-dt interpolation (:domain x) (map first data) (map second data))]
                  (map #(vector % (i %)) sampled-values))
                data)
         pfn (if (and smooth? (not area?)) path-bezier path)
@@ -25,9 +25,9 @@
         (set-color c color)
         (path c (conj (vec (conj p [0.0 0.0])) [w 0.0]) true false))
       (-> c
-          (set-color lcolor)
-          (set-stroke-custom stroke)
-          (pfn p))
+         (set-color lcolor)
+         (set-stroke-custom stroke)
+         (pfn p))
       (when-let [point-type (:type point)]
         (let [size-fn (:size point)]
           (doseq [[x y :as data] data
@@ -66,14 +66,6 @@
 
 ;;
 
-(defmethod render-graph :sarea [_ data {:keys [palette]} {:keys [w h] :as chart-data}]
-  (let [data (map-kv (fn [v]
-                       (in/linear-smile (mapv first v) (mapv second v))) data)
-        raw-scale-x (get-scale chart-data :x)
-        sampled-x (m/sample (:inverse raw-scale-x) 0.0 1.0 (/ w 2) false)]))
-
-;;
-
 (defmethod prepare-data :cdf [_ data conf]
   (let [data (extract-first data)
         domain (take 2 (stats/extent data))
@@ -83,3 +75,43 @@
 
 (defmethod data-extent :cdf [_ [with-domain data] _] (data-extent :function data with-domain))
 (defmethod render-graph :cdf [_ [with-domain data] _ graph-conf] (render-graph :function data with-domain graph-conf))
+
+;;
+
+(defn- sarea-map
+  [f vs]
+  (mapv (fn [[x ys]]
+          (let [l (last ys)]
+            [x (mapv (partial f l) ys)])) vs))
+
+(defn- sarea-normalized [vs] (sarea-map #(m/norm %2 0 %1) vs))
+(defn- sarea-stream [vs] (sarea-map #(let [hl (/ %1 2)] (m/norm %2 0 %1 (- hl) hl)) vs))
+
+(defmethod prepare-data :sarea [_ data {:keys [interpolation method]}]
+  (let [xs (->> (vals data)
+              (mapcat (partial map first))
+              (distinct)
+              (sort))
+        ks (mapv first data)
+        domain [(first xs) (last xs)]
+        interp (or interpolation in/linear-smile)
+        interpolators (apply juxt
+                             (constantly 0)
+                             (map (map-kv #(wrap-interpolator-for-dt interp domain (map first %) (map second %)) data) ks))
+        vs (mapv #(vector % (reductions + (interpolators %))) xs)
+        maxv (reduce max (map (comp last second) vs))]
+    (case method
+      :normalized [domain [0.0 1.0] (sarea-normalized vs)]
+      :stream [domain [(- (/ maxv 2)) (/ maxv 2)] (sarea-stream vs)]
+      [domain [0 maxv] vs])))
+
+(defmethod data-extent :sarea [_ [x y _] _]
+  {:x [(if (date-time? (first x)) :temporal :numerical) x]
+   :y [:numerical y]})
+
+(defmethod render-graph :sarea [_ data {:keys [palette]} {:keys [w h] :as chart-data}]
+  (let [a 1]
+    (do-graph chart-data false)))
+
+;;
+

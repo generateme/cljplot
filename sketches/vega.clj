@@ -586,11 +586,25 @@
 ;; https://vega.github.io/vega-lite/examples/layer_point_errorbar_stdev.html
 
 (-> (b/series [:grid nil {:y nil}]
-              [:stack-horizontal [:extent-stat barley-variety-yield {:extent-type :stddev :shape \O :size 5 :stroke {:size 1} :color :black}]])
-    (b/preprocess-series)
-    (b/update-scale :x :ticks 5)
-    (b/add-axes :bottom)
-    (b/add-axes :left)
-    (r/render-lattice {:width 400 :height 400})
-    (save "results/vega/point-errorbar-stddev.jpg")
-    (show))
+             [:stack-horizontal [:extent-stat barley-variety-yield {:extent-type :stddev :shape \O :size 5 :stroke {:size 1} :color :black}]])
+   (b/preprocess-series)
+   (b/update-scale :x :ticks 5)
+   (b/add-axes :bottom)
+   (b/add-axes :left)
+   (r/render-lattice {:width 400 :height 400})
+   (save "results/vega/point-errorbar-stddev.jpg")
+   (show))
+
+;;
+
+(first unemployment)
+
+
+(let [data (->> unemployment
+              (group-by :series)
+              (map-kv #(map (fn [{:keys [year month count]}]
+                              [(dt/local-date year month) count]) %)))]
+  (-> (b/series [:sarea data])
+     (b/preprocess-series)
+     (r/render-lattice {:width 400 :height 400})
+     (show)))

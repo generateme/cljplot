@@ -13,7 +13,6 @@
             [java-time :as dt]
             [clojure.string :as str]
             [clojure2d.core :as c2d]
-            [java-time :as d]
             [fastmath.vector :as v]))
 
 ;; data
@@ -577,14 +576,14 @@
      (hypotrochoid rd rd cycles density))))
 
 (defn plot-h [p]
-  (fn [c]
+  (fn [c _ _]
     (let [s (min (c2d/width c) (c2d/height c))
           halfs (- (/ s 2.0) 2)]
       (-> c
-          (c2d/set-color :black)
-          (c2d/set-stroke 0.5)
-          (c2d/translate (/ (c2d/width c) 2) (/ (c2d/height c) 2))
-          (c2d/path (map (fn [v] (v/mult v halfs)) p))))))
+         (c2d/set-color :black 200)
+         (c2d/set-stroke 0.5)
+         (c2d/translate (/ (c2d/width c) 2) (/ (c2d/height c) 2))
+         (c2d/path (map (fn [v] (v/mult v halfs)) p))))))
 
 (let [free (map #(let [nm (m/approx (/ % 10) 1)
                        p (hypocycloid 10 %)]
