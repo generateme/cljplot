@@ -135,6 +135,7 @@
                                             :smooth? false
                                             :margins {:x [0.05 0.05] :y [0.05 0.05]}
                                             :point {:type nil :size 6}}
+                                     :sarea {:palette (cycle (c/palette-presets :category20b))}
                                      :function {:domain [0 1]
                                                 :samples nil
                                                 :color blue

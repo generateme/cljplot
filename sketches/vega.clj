@@ -23,12 +23,12 @@
   (def population (read-json "data/population.json"))
 
   (def population-male-female (->> (filter #(= (:year %) 2000) population)
-                                   (group-by :age)
-                                   (map-kv (fn [v]
-                                             (let [m (group-by :sex v)]
-                                               [(reduce + (map :people (m 2)))
-                                                (reduce + (map :people (m 1)))])))
-                                   (into (sorted-map))))
+                                 (group-by :age)
+                                 (map-kv (fn [v]
+                                           (let [m (group-by :sex v)]
+                                             [(reduce + (map :people (m 2)))
+                                              (reduce + (map :people (m 1)))])))
+                                 (into (sorted-map))))
 
   (def seattle-weather (map (partial parse-line [(partial dt/local-date "yyyy/MM/dd")
                                                  read-string read-string read-string read-string keyword])
@@ -37,10 +37,10 @@
   (def barley (read-json "data/barley.json"))
 
   (def barley-variety-yield (->> barley
-                                 (group-by :variety)
-                                 (map-kv #(map :yield %))
-                                 (sort-by first)
-                                 (reverse)))
+                               (group-by :variety)
+                               (map-kv #(map :yield %))
+                               (sort-by first)
+                               (reverse)))
   
   (def cars (read-json "data/cars.json"))
 
@@ -51,8 +51,8 @@
                       (read-csv "data/disasters.csv")))
 
   (def dt-stocks-fmt (-> (java.time.format.DateTimeFormatterBuilder.)
-                         (.appendPattern "MMM d yyyy")
-                         (.toFormatter (java.util.Locale/ENGLISH))))
+                        (.appendPattern "MMM d yyyy")
+                        (.toFormatter (java.util.Locale/ENGLISH))))
 
   (def stocks (map (partial parse-line [keyword (partial dt/local-date dt-stocks-fmt) read-string])
                    (read-csv "data/stocks.csv")))
@@ -63,6 +63,12 @@
                               (read-csv "data/co2-concentration.csv")))
 
   (def unemployment (read-json "data/unemployment-across-industries.json"))
+
+  (def unemployment-area (->> unemployment
+                            (group-by :series)
+                            (map-kv #(map (fn [{:keys [year month count]}]
+                                            [(dt/local-date year month) count]) %))
+                            (sort-by first (comp - compare))))
   
   (def blue (last (:rdylbu-9 c/palette-presets))))
 
@@ -595,16 +601,31 @@
    (save "results/vega/point-errorbar-stddev.jpg")
    (show))
 
-;;
+;; https://vega.github.io/vega-lite/examples/stacked_area.html
 
-(first unemployment)
+(-> (b/series [:grid] [:sarea unemployment-area])
+   (b/preprocess-series)
+   (b/update-scale :y :fmt int)
+   (b/add-axes :bottom)
+   (b/add-axes :left)
+   (r/render-lattice {:width 600 :height 400})
+   (save "results/vega/stacked-area.jpg")
+   (show))
 
+;; https://vega.github.io/vega-lite/examples/stacked_area_normalize.html
 
-(let [data (->> unemployment
-              (group-by :series)
-              (map-kv #(map (fn [{:keys [year month count]}]
-                              [(dt/local-date year month) count]) %)))]
-  (-> (b/series [:sarea data])
-     (b/preprocess-series)
-     (r/render-lattice {:width 400 :height 400})
-     (show)))
+(-> (b/series [:grid] [:sarea unemployment-area {:method :normalized}])
+   (b/preprocess-series)
+   (b/add-axes :bottom)
+   (r/render-lattice {:width 600 :height 400})
+   (save "results/vega/stacked-area-normalize.jpg")
+   (show))
+
+;; https://vega.github.io/vega-lite/examples/stacked_area_stream.html
+
+(-> (b/series [:grid] [:sarea unemployment-area {:method :stream}])
+   (b/preprocess-series)
+   (b/add-axes :bottom)
+   (r/render-lattice {:width 600 :height 400})
+   (save "results/vega/stacked-area-stream.jpg")
+   (show))

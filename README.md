@@ -28,7 +28,7 @@ See `sketches` folder for examples
     - point clouds (log and linear rendering) (`+`)
     - contours (`-`), flow fields (`+`)
     - categorical x categorical plots (scatter plot matrix  (`+`)
-    - stacked area/stream (`+`)
+    - ~~stacked area/stream (`+`)~~
     - parallel / hive (`+`/`-`)
     - radial charts, like pie (`+`), sunburst (`-`), radial tree (`-`)
     - arc(?) (`+`)

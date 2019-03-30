@@ -7,6 +7,8 @@
             [fastmath.stats :as stats]
             [fastmath.random :as r]))
 
+;; TODO: move interpolation to the prepare-data phase (like in sarea)
+
 (defmethod render-graph :line [_ data {:keys [color stroke interpolation smooth? area? point] :as conf}
                                {:keys [w h x y] :as chart-data}]
   (let [raw-scale-x (:scale x)
@@ -88,30 +90,40 @@
 (defn- sarea-stream [vs] (sarea-map #(let [hl (/ %1 2)] (m/norm %2 0 %1 (- hl) hl)) vs))
 
 (defmethod prepare-data :sarea [_ data {:keys [interpolation method]}]
-  (let [xs (->> (vals data)
+  (let [xs (->> (map second data)
               (mapcat (partial map first))
               (distinct)
               (sort))
         ks (mapv first data)
         domain [(first xs) (last xs)]
         interp (or interpolation in/linear-smile)
+        data-as-map (if (map? data) data (into {} data))
         interpolators (apply juxt
                              (constantly 0)
-                             (map (map-kv #(wrap-interpolator-for-dt interp domain (map first %) (map second %)) data) ks))
+                             (map (map-kv #(wrap-interpolator-for-dt interp domain (map first %) (map second %)) data-as-map) ks))
         vs (mapv #(vector % (reductions + (interpolators %))) xs)
-        maxv (reduce max (map (comp last second) vs))]
+        maxv (reduce max (mapv (comp last second) vs))]
     (case method
-      :normalized [domain [0.0 1.0] (sarea-normalized vs)]
-      :stream [domain [(- (/ maxv 2)) (/ maxv 2)] (sarea-stream vs)]
-      [domain [0 maxv] vs])))
+      :normalized [domain [0.0 1.0] ks (sarea-normalized vs)]
+      :stream [domain [(- (/ maxv 2)) (/ maxv 2)] ks (sarea-stream vs)]
+      [domain [0 maxv] ks vs])))
 
-(defmethod data-extent :sarea [_ [x y _] _]
+(defmethod data-extent :sarea [_ [x y] _]
   {:x [(if (date-time? (first x)) :temporal :numerical) x]
    :y [:numerical y]})
 
-(defmethod render-graph :sarea [_ data {:keys [palette]} {:keys [w h] :as chart-data}]
-  (let [a 1]
-    (do-graph chart-data false)))
+(defmethod render-graph :sarea [_ [_ _ ks vs] {:keys [palette]} {:keys [w h x y] :as chart-data}]
+  (let [scale-x (partial (:scale x) 0 w)
+        scale-y (partial (:scale y) 0 h)
+        xs (mapv scale-x (map first vs)) 
+        ys (mapv second vs)
+        ys (map #(mapv (fn [x y] [x (scale-y (nth y %))]) xs ys) (range (inc (count ks))))
+        ps (map (fn [[p1 p2]] (concat p1 (reverse p2))) (partition 2 1 ys))]
+    (do-graph chart-data false
+      (set-color c :black)
+      (doseq [[col p] (map vector palette ps)]
+        (set-color c col)
+        (path c p true false)))))
 
 ;;
 
