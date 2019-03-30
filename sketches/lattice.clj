@@ -26,9 +26,9 @@
 
   (def chem97 (read-json "data/chem97.json"))
   (def score-gcsescore (->> chem97
-                            (group-by :score)
-                            (map-kv #(map :gcsescore %))
-                            (into (sorted-map))))
+                          (group-by :score)
+                          (map-kv #(map :gcsescore %))
+                          (into (sorted-map))))
 
   (def oats (read-json "data/oats.json"))
   (def barley (read-json "data/barley.json"))
@@ -52,6 +52,15 @@
                      :visit visit
                      :data (map first (read-json nm))}))
 
+  ;; VADeaths
+  (def vadeaths {:keys ["Rural Male" "Rural Female" "Urban Male" "Urban Female"]
+                 :vals {"50-54" [11.7 8.7 15.4 8.4]
+                        "55-59" [18.1 11.7 24.3 13.6]
+                        "60-64" [26.9 20.3 37.0 19.3]
+                        "65-69" [41.0 30.9 54.6 35.1]
+                        "70-74" [66.0 54.3 71.1 50.0]}})
+  
+  
   (def hnanes (read-json "data/nhanes.json"))
   
   (def blue (c/set-alpha (last (:rdylbu-9 c/palette-presets)) 200))
