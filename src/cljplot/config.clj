@@ -59,7 +59,8 @@
 (def ^:private stroke-common {:color nil :size 1.0 :cap :butt})
 
 (def ^:private configuration (merge axes-config
-                                    {:histogram {:color blue
+                                    {:label {:color dblue}
+                                     :histogram {:color blue
                                                  :palette (cycle (c/palette-presets :category20))
                                                  :stroke stroke-common
                                                  :percents? true

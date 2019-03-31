@@ -268,11 +268,22 @@
       (set-font-attributes 10)
       (text label (/ w 2) 10 :center))))
 
+;;
+
+(defn label-size
+  ([s] (label-size s {}))
+  ([s {:keys [font font-size]}]
+   (with-canvas [c (canvas 1 1)]
+     (when font (set-font c font))
+     (when font-size (set-font-attributes c font-size))
+     (let [[x y _ h] (text-bounding-box c s)]
+       {:size (m/ceil h)
+        :pos [x (m/floor (- y))]}))))
 
 ;;
 
 (defn read-json [f] (with-open [reader (io/reader f)]
-(doall (json/read-json reader true))))
+                      (doall (json/read-json reader true))))
 
 
 (defn read-csv [f] (rest (with-open [reader (io/reader f)]
