@@ -153,21 +153,19 @@
    :temporal [:time]
    :categorical [:bands]})
 
-(defn- add-scale
-  ([series x-or-y] (add-scale series x-or-y nil))
-  ([series x-or-y scale-def] (add-scale series x-or-y scale-def nil))
-  ([series x-or-y scale-def conf]
+(defn- auto-scale
+  ([series x-or-y]
    (assoc-in series [:scales x-or-y] (->> (get-in series [:extents x-or-y])
-                                        (map-kv (fn [[t domain]]
-                                                  (s/scale-map (or scale-def
-                                                                   (get default-scale-defs t [:linear]))
-                                                               (merge {:domain domain} conf))))))))
+                                          (map-kv (fn [[t domain conf]]
+                                                    (let [t (get default-scale-defs t [:linear])]
+                                                      (s/scale-map (if conf (conj t conf) t)
+                                                                   {:domain domain}))))))))
 
 (defn- auto-scales
   [series]
   (-> series
-     (add-scale :x)
-     (add-scale :y)))
+      (auto-scale :x)
+      (auto-scale :y)))
 
 (defn preprocess-series
   [series]
@@ -190,9 +188,14 @@
   [series & axes]
   (reduce #(update-scales %1 %2 :domain (second (find-min-max (-> %1 :extents %2 vals)))) series  axes))
 
+(defn- find-size
+  [side-nseries]
+  (let [s (remove nil? (map (comp :auto-size second) side-nseries))]
+    (if (seq s) (reduce max s) nil)))
+
 (defn- update-side
   [series side pos size side-nseries]
-  (let [s (update (get series side {pos []}) pos conj {:size size :series side-nseries})]
+  (let [s (update (get series side {pos []}) pos conj {:size (or (find-size side-nseries) size) :series side-nseries})]
     (assoc series side s)))
 
 (def ^:private position->scale-id {:bottom :x :top :x :left :y :right :y})
@@ -211,6 +214,13 @@
   ([series side side-series] (add-side series side 50 side-series))
   ([series side size side-series] (add-side series side 0 size side-series))
   ([series side pos size side-series]
-   (update-side series side pos size (preprocess-steps side-series))) )
+   (update-side series side pos size (preprocess-steps side-series))))
+
+(defn add-label
+  ([series side label] (add-label series side label {}))
+  ([series side label conf]
+   (let [conf (merge-configuration :label conf)
+         data (prepare-data :label label conf)]
+     (assoc-in series [:labels side] data))))
 
 ;;;;;;;;;;;;;;;;;

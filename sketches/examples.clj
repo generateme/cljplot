@@ -17,6 +17,8 @@
 
 ;; logo
 
+(rnd/set-seed! rnd/default-rng 2)
+
 (def logo (p/to-pixels (c2d/with-oriented-canvas-> :bottom-left+ (c2d/canvas 200 100)
                          (c2d/set-font "Raleway Thin")
                          (c2d/set-background :black)
@@ -29,7 +31,7 @@
       pairs (->> (repeatedly #(v/vec2 (rnd/irand 200) (rnd/irand 100)))
                  (filter #(pos? (c/luma (apply p/get-color logo %))))
                  (map #(v/add % (v/generate-vec2 rnd/grand)))
-                 (take 3000))]
+                 (take 2500))]
   (-> (b/series [:grid]
                 [:scatter pairs {:size (fn [_ _] (* 10 (m/pow (rnd/drand 0.1 1.0) 3)))
                                  :color (fn [[x _] conf]
@@ -40,6 +42,7 @@
       (b/add-side :right 25 (b/series [:density (map second pairs) side-conf]))
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "cljplot charting library")
       (r/render-lattice {:width 600 :height 300})
       (save "results/examples/logo.jpg")
       (show)))
@@ -68,7 +71,16 @@
       (b/add-axes :left)
       (b/add-axes :right)
       (b/add-axes :top)
-      (r/render-lattice {:width 800 :height 400 :padding-in 0.0})
+
+      (b/add-side :left (b/series [:label "violin"]))
+      (b/add-side :right (b/series [:label "violin"]))
+
+      (b/add-side :top (b/series [:label "extent"]))
+      (b/add-side :bottom (b/series [:label "extent"]))
+
+      (b/add-label :top "Stacked 1d/2d charts" {:color (c/darken :steelblue) :font-size 20})
+      
+      (r/render-lattice {:width 800 :height 500 :padding-in 0.0})
       (save "results/examples/strips.jpg")
       (show)))
 

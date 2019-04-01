@@ -305,11 +305,12 @@
                                ex (extend-domains (data-extent t dd cc) (:margins cc))]
                            [k dd (assoc cc :extents ex)])) data) c]))
 
-(defmethod data-extent :stack [_ [h? t data c] _]
+(defmethod data-extent :stack [_ [h? t data c] {:keys [padding-out padding-in]}]
   (let [extents (map (comp :extents last) data)
-        bands [:categorical (map first data)]
+        bands [:categorical (map first data) {:padding-out padding-out :padding-in padding-in}]
         x (find-min-max (map :x extents))
         y (find-min-max (map :y extents))]
+    (println bands)
     (assoc (if h? {:x x :y bands} {:x bands :y x}) :inner y)))
 
 (defmethod render-graph :stack [_ [h? t data c] conf {:keys [w h x y] :as chart-data}]

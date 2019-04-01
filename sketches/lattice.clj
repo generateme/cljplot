@@ -79,10 +79,11 @@
 (-> (b/lattice :histogram score-gcsescore {:bins 10 :padding-out 0.0} {:grid true :label (partial str "Score: ")})
     (b/preprocess-series)
     (b/update-scales :x :ticks 5)
+    (b/update-scales :y :fmt #(str (int (* 100 %)) "%"))
     (b/add-axes :bottom)
     (b/add-axes :left)
-    ;; (b/add-axes :right)
-    ;; (b/add-axes :top)
+    (b/add-label :bottom "gcsescore")
+    (b/add-label :left "Percent of Total")
     (r/render-lattice {:width 800 :height 600})
     (save "results/lattice/figure_1.1.jpg")
     (show))
@@ -95,6 +96,8 @@
     (b/update-scales :y :ticks 5)
     (b/add-axes :bottom)
     (b/add-axes :left)
+    (b/add-label :bottom "gcsescore")
+    (b/add-label :left "Density")
     (r/render-lattice {:width 800 :height 600})
     (save "results/lattice/figure_1.2.jpg")
     (show))
@@ -107,6 +110,8 @@
     (b/preprocess-series)
     (b/add-axes :bottom)
     (b/add-axes :left)
+    (b/add-label :bottom "gcsescore")
+    (b/add-label :left "Density")
     (r/render-lattice {:width 800 :height 400})
     (save "results/lattice/figure_1.3.jpg")
     (show))
@@ -120,19 +125,21 @@
 ;; figure 2.1
 
 (let [data (->> oats
-              (group-by (juxt :Block :Variety))
-              (map-kv (partial map (juxt :nitro :yield)))
-              (sort-by first))]
+                (group-by (juxt :Block :Variety))
+                (map-kv (partial map (juxt :nitro :yield)))
+                (sort-by first))]
   (-> (b/lattice :line data {:point {:type \o}} {:grid true :label str :shape [nil 3]})
-     (b/preprocess-series)
-     (b/tie-domains :y)
-     (b/update-scales :y :fmt int)
-     (b/update-scales :x :ticks 5)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 600 :height 1000 :padding-in 0.1 :padding-out 0.05})
-     (save "results/lattice/figure_2.1.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/tie-domains :y)
+      (b/update-scales :y :fmt int)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "yield")
+      (b/add-label :left "nitro")      
+      (r/render-lattice {:width 600 :height 1000 :padding-in 0.1 :padding-out 0.05})
+      (save "results/lattice/figure_2.1.jpg")
+      (show)))
 
 ;; figure 2.2
 
@@ -147,6 +154,8 @@
       (b/update-scales :x :ticks 5)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "yield")
+      (b/add-label :left "nitro")      
       (r/render-lattice {:width 600 :height 300})
       (save "results/lattice/figure_2.2.jpg")
       (show)))
@@ -154,141 +163,158 @@
 ;; figure 2.3
 
 (let [data (->> oats
-              (group-by (juxt :Block :Variety))
-              (map-kv (partial map (juxt :nitro :yield)))
-              (sort-by first))]
+                (group-by (juxt :Block :Variety))
+                (map-kv (partial map (juxt :nitro :yield)))
+                (sort-by first))]
   (-> (b/lattice :line data {:point {:type \o}} {:grid true :label (partial str/join \space) :shape [nil 3]})
-     (b/preprocess-series)
-     (b/tie-domains :y)
-     (b/update-scales :y :fmt int)
-     (b/update-scales :x :ticks 2)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 200 :height 1000 :padding-in 0.1})
-     (save "results/lattice/figure_2.3.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/tie-domains :y)
+      (b/update-scales :y :fmt int)
+      (b/update-scales :x :ticks 2)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "yield")
+      (b/add-label :left "nitro")
+      (r/render-lattice {:width 200 :height 1000 :padding-in 0.1})
+      (save "results/lattice/figure_2.3.jpg")
+      (show)))
 
 
 ;; figure 2.4
 
 (let [data (->> oats
-              (group-by (juxt :Block :Variety))
-              (map-kv (partial map (juxt :nitro :yield)))
-              (sort-by first))]
+                (group-by (juxt :Block :Variety))
+                (map-kv (partial map (juxt :nitro :yield)))
+                (sort-by first))]
   (-> (b/lattice :line data {:point {:type \o}} {:grid true :label (partial str/join \space) :shape [nil 6]})
-     (b/preprocess-series)
-     (b/tie-domains :y)
-     (b/update-scales :y :fmt int)
-     (b/update-scales :x :ticks 3)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 600 :height 800 :padding-in 0.1 :padding-out 0.05})
-     (save "results/lattice/figure_2.4.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/tie-domains :y)
+      (b/update-scales :y :fmt int)
+      (b/update-scales :x :ticks 3)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "yield")
+      (b/add-label :left "nitro")
+      (r/render-lattice {:width 600 :height 800 :padding-in 0.1 :padding-out 0.05})
+      (save "results/lattice/figure_2.4.jpg")
+      (show)))
 
 ;; figure 2.5 - no grouping
 
 ;; figure 2.6
 
 (let [data (->> barley
-              (group-by :year) ;; group by year
-              (map-kv (fn [year]
-                        (let [sites (group-by :site year)] ;; for each year group by site (it will be block)
-                          (map-kv (fn [site]
-                                    (map-kv (partial map :yield) (group-by :variety site))) sites))))) ;; group by variety and list yield
+                (group-by :year) ;; group by year
+                (map-kv (fn [year]
+                          (let [sites (group-by :site year)] ;; for each year group by site (it will be block)
+                            (map-kv (fn [site]
+                                      (map-kv (partial map :yield) (group-by :variety site))) sites))))) ;; group by variety and list yield
       
       get-year (fn [year conf] (map-kv #(vector :strip % conf) (get data year)))] ;; manually select year
   (-> (b/lattice :stack-horizontal (get-year 1931 {:shape \x :size 6 :color blue}) {} {:shape [6 1] :grid true}) ;; first layer, with grid
-     (b/add-series (b/lattice :stack-horizontal (get-year 1932 {:shape \o :size 6 :color blue}) {} {:shape [6 1] :label str})) ;; last layer with label
-     (b/preprocess-series)
-     (b/update-scales :x :domain [10 70])
-     (b/update-scales :x :ticks 5)
-     (b/update-scales :x :fmt int)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 300 :height 800 :padding-in 0.1})
-     (save "results/lattice/figure_2.6.jpg")
-     (show)))
+      (b/add-series (b/lattice :stack-horizontal (get-year 1932 {:shape \o :size 6 :color blue}) {} {:shape [6 1] :label str})) ;; last layer with label
+      (b/preprocess-series)
+      (b/update-scales :x :domain [10 70])
+      (b/update-scales :x :ticks 5)
+      (b/update-scales :x :fmt int)
+      (b/add-axes :bottom)
+      (b/add-axes :top)
+      (b/add-axes :left)
+      (b/add-label :bottom "yield")
+      (r/render-lattice {:width 300 :height 800 :padding-in 0.1})
+      (save "results/lattice/figure_2.6.jpg")
+      (show)))
 
 ;; figure 2.7
 
 (let [data (->> oats
-              (group-by :Variety)
-              (map-kv (fn [variety]
-                        (let [blocks (group-by :Block variety)]
-                          (map-kv (fn [block] (map (juxt :nitro :yield) block)) blocks)))))
+                (group-by :Variety)
+                (map-kv (fn [variety]
+                          (let [blocks (group-by :Block variety)]
+                            (map-kv (fn [block] (map (juxt :nitro :yield) block)) blocks)))))
       grids-labels (b/lattice :grid (second (first data)) {} {:label str :shape [1 6]})]
   (-> grids-labels
-     (b/add-series (mapcat (fn [[k shape]] (b/lattice :line (data k) {:point {:type shape}} {:shape [1 6]})) (map vector (keys data) [\o \+ \v])))
-     (b/preprocess-series)
-     (b/update-scales :y :domain [50 180])
-     (b/update-scales :x :ticks 4)
-     (b/add-axes :bottom)
-     (b/add-axes :left) 
-     (r/render-lattice {:width 800 :height 300 :padding-in 0.1})
-     (save "results/lattice/figure_2.7.jpg")
-     (show)))
+      (b/add-series (mapcat (fn [[k shape]] (b/lattice :line (data k) {:point {:type shape}} {:shape [1 6]})) (map vector (keys data) [\o \+ \v])))
+      (b/preprocess-series)
+      (b/update-scales :y :domain [50 180])
+      (b/update-scales :x :ticks 4)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Nitrogen concentration (cwt/acre)")
+      (b/add-label :left "Yield (bushels/acre)")
+      (b/add-label :top "Yield of three varieties of oats" {:font-size 20 :font-style :bold :color blue})
+      (r/render-lattice {:width 800 :height 300 :padding-in 0.1})
+      (save "results/lattice/figure_2.7.jpg")
+      (show)))
 
 ;; figure 2.8
 
 (let [data (->> titanic
-              (group-by (juxt :Sex :Age))
-              (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
+                (group-by (juxt :Sex :Age))
+                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4]})
-     (b/preprocess-series)
-     (b/tie-domains :x)
-     (b/update-scales :x :fmt int)
-     (b/update-scales :x :ticks 5)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 800 :height 300})
-     (save "results/lattice/figure_2.8.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/tie-domains :x)
+      (b/update-scales :x :fmt int)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Freq")
+      (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue}) 
+      (r/render-lattice {:width 800 :height 300})
+      (save "results/lattice/figure_2.8.jpg")
+      (show)))
 
 ;; figure 2.9
 
 (let [data (->> titanic
-              (group-by (juxt :Sex :Age))
-              (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
+                (group-by (juxt :Sex :Age))
+                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4]})
-     (b/preprocess-series)
-     (b/update-scales :x :fmt int)
-     (b/update-scales :x :ticks 5)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 800 :height 300})
-     (save "results/lattice/figure_2.9.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/update-scales :x :fmt int)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Freq")
+      (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue})       
+      (r/render-lattice {:width 800 :height 300})
+      (save "results/lattice/figure_2.9.jpg")
+      (show)))
 
 ;; figure 2.10
 
 (let [data (->> titanic
-              (group-by (juxt :Sex :Age))
-              (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
+                (group-by (juxt :Sex :Age))
+                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4] :grid {:y nil}})
-     (b/preprocess-series)
-     (b/update-scales :x :fmt int)
-     (b/update-scales :x :ticks 5)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 800 :height 300})
-     (save "results/lattice/figure_2.10.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/update-scales :x :fmt int)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Freq")
+      (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue})       
+      (r/render-lattice {:width 800 :height 300})
+      (save "results/lattice/figure_2.10.jpg")
+      (show)))
 
 ;; figure 2.11
 
 (let [data (->> titanic
-              (group-by (juxt :Sex :Age))
-              (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v)) {:stroke? false}])))]
+                (group-by (juxt :Sex :Age))
+                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v)) {:stroke? false}])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4] :grid {:y nil}})
-     (b/preprocess-series)
-     (b/update-scales :x :fmt int)
-     (b/update-scales :x :ticks 5)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 800 :height 300})
-     (save "results/lattice/figure_2.10.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/update-scales :x :fmt int)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Freq")
+      (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue})       
+      (r/render-lattice {:width 800 :height 300})
+      (save "results/lattice/figure_2.10.jpg")
+      (show)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Chapter 3
@@ -297,13 +323,15 @@
 
 (let [data (map :eruptions faithful)]
   (-> (b/series [:density data])
-     (b/preprocess-series)
-     (b/add-side :bottom 15 (b/series [:strip data {:distort 0.2}]))
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 600 :height 300})
-     (save "results/lattice/figure_3.1.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/add-side :bottom 15 (b/series [:strip data {:distort 0.2}]))
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "eruptions")
+      (b/add-label :left "Density")
+      (r/render-lattice {:width 600 :height 300})
+      (save "results/lattice/figure_3.1.jpg")
+      (show)))
 
 ;; figure 3.2
 
@@ -313,6 +341,8 @@
       (b/add-side :bottom 15 (b/series [:rug data {:distort 0.2}]))
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "eruptions")
+      (b/add-label :left "Density")
       (r/render-lattice {:width 600 :height 200})
       (save "results/lattice/figure_3.2.jpg")
       (show)))
@@ -325,6 +355,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "eruptions")
+      (b/add-label :left "Density")
       (r/render-lattice {:width 600 :height 200})
       (save "results/lattice/figure_3.2v2.jpg")
       (show)))
@@ -335,17 +367,19 @@
 (first gvhd10);; => {:FSC.H 548, :SSC.H 536, :FL1.H 1, :FL2.H 20.0472, :FL3.H 1, :FL2.A 8, :FL4.H 2.0923, :Days "-6"}
 
 (let [data (->> gvhd10
-              (group-by :Days)
-              (map-kv (fn [vs] (map #(m/log (:FSC.H %)) vs))))]
+                (group-by :Days)
+                (map-kv (fn [vs] (map #(m/log (:FSC.H %)) vs))))]
   (-> (b/lattice :density data {} {:label str :shape [4 2]})
-     (b/preprocess-series)
-     (b/tie-domains :x :y)
-     (b/update-scales :y :ticks 4)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:width 600 :height 500})
-     (save "results/lattice/figure_3.3.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/tie-domains :x :y)
+      (b/update-scales :y :ticks 4)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "log(FSC.H)")
+      (b/add-label :left "Density")      
+      (r/render-lattice {:width 600 :height 500})
+      (save "results/lattice/figure_3.3.jpg")
+      (show)))
 
 ;; figure 3.4
 
@@ -360,6 +394,8 @@
       (b/update-scales :y :ticks 4)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "log Forward Scatter")
+      (b/add-label :left "Density")
       (r/render-lattice {:width 800 :height 500})
       (save "results/lattice/figure_3.4.jpg")
       (show)))
@@ -367,85 +403,95 @@
 ;; figure 3.5
 
 (let [data (->> chem97
-              (group-by :score)
-              (map-kv (fn [v] (map :gcsescore v)))
-              (sort-by first))]
+                (group-by :score)
+                (map-kv (fn [v] (map :gcsescore v)))
+                (sort-by first))]
   (-> (b/lattice :qqplot data {:shape \o} {:label str})
-     (b/preprocess-series)
-     (b/tie-domains :y)
-     (b/update-scales :y :ticks 5)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:height 400})
-     (save "results/lattice/figure_3.5.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/tie-domains :y)
+      (b/update-scales :y :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "qnorm")
+      (b/add-label :left "gcsescore")
+      (r/render-lattice {:height 400})
+      (save "results/lattice/figure_3.5.jpg")
+      (show)))
 
 ;; figure 3.6
 
 (let [data (->> chem97
-              (group-by :score)
-              (map-kv #(map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))))
+                (group-by :score)
+                (map-kv #(map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
   (-> (mapcat (fn [[k shape]] (b/lattice :qqplot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
-     (b/add-series labels)
-     (b/preprocess-series)
-     (b/tie-domains :x)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:height 400 :width 500})
-     (save "results/lattice/figure_3.6.jpg")
-     (show)))
+      (b/add-series labels)
+      (b/preprocess-series)
+      (b/tie-domains :x)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Standard Normal Quantiles")
+      (b/add-label :left "Average GCSE Score")
+      (r/render-lattice {:height 400 :width 500})
+      (save "results/lattice/figure_3.6.jpg")
+      (show)))
 
 ;; figure 3.7
 
 (let [data (->> chem97
-              (group-by :score)
-              (map-kv #(map-kv (fn [v] (map (fn [rec] (m/pow (:gcsescore rec) 2.34)) v)) (group-by :gender %))))
+                (group-by :score)
+                (map-kv #(map-kv (fn [v] (map (fn [rec] (m/pow (:gcsescore rec) 2.34)) v)) (group-by :gender %))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
   (-> (mapcat (fn [[k shape]] (b/lattice :qqplot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
-     (b/add-series labels)
-     (b/preprocess-series)
-     (b/tie-domains :x)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:height 400 :width 600})
-     (save "results/lattice/figure_3.7.jpg")
-     (show)))
+      (b/add-series labels)
+      (b/preprocess-series)
+      (b/tie-domains :x)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Standard Normal Quantiles")
+      (b/add-label :left "Transformed GCSE Score")
+      (r/render-lattice {:height 400 :width 600})
+      (save "results/lattice/figure_3.7.jpg")
+      (show)))
 
 ;; figure 3.8
 
 (let [data (->> chem97
-              (group-by :gender)
-              (map-kv #(sort-by first (map-kv (fn [v] (filter pos? (map :gcsescore  v))) (group-by :score %)))))
+                (group-by :gender)
+                (map-kv #(sort-by first (map-kv (fn [v] (filter pos? (map :gcsescore  v))) (group-by :score %)))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
   (-> (mapcat (fn [[k col]] (b/lattice :cdf (data k) {:color col})) (map vector (keys data) (c/palette-presets :category10)))
-     (b/add-series labels)
-     (b/preprocess-series)
-     (b/tie-domains :x)
-     (b/update-scales :x :ticks 5)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:height 400 :width 600})
-     (save "results/lattice/figure_3.8.jpg")
-     (show)))
+      (b/add-series labels)
+      (b/preprocess-series)
+      (b/tie-domains :x)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Average GCSE Score")
+      (b/add-label :left "Empirical CDF")      
+      (r/render-lattice {:height 400 :width 600})
+      (save "results/lattice/figure_3.8.jpg")
+      (show)))
 
 ;; figure 3.9
 
 (let [uniform (rnd/distribution :uniform-real)
       data (->> chem97
-              (group-by :gender)
-              (map-kv #(sort-by first (map-kv (fn [v] [uniform (filter pos? (map :gcsescore v))]) (group-by :score %)))))
+                (group-by :gender)
+                (map-kv #(sort-by first (map-kv (fn [v] [uniform (filter pos? (map :gcsescore v))]) (group-by :score %)))))
       labels (b/lattice :empty (second (first data)) {} {:label str :shape [1 6]})]
   (-> (mapcat (fn [[k col]] (b/lattice :ppplot (data k) {:size 2 :color col} {:shape [1 6]})) (map vector (keys data) (c/palette-presets :category10)))
-     (b/add-series labels)
-     (b/preprocess-series)
-     (b/tie-domains :x)
-     (b/update-scales :x :ticks [0.4 0.8])
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (r/render-lattice {:height 400 :width 600})
-     (save "results/lattice/figure_3.9.jpg")
-     (show)))
+      (b/add-series labels)
+      (b/preprocess-series)
+      (b/tie-domains :x)
+      (b/update-scales :x :ticks [0.4 0.8])
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Standard Normal Quantiles")
+      (b/add-label :left "Average GCSE Score")      
+      (r/render-lattice {:height 400 :width 600})
+      (save "results/lattice/figure_3.9.jpg")
+      (show)))
 
 ;; figure 3.10
 
@@ -465,6 +511,8 @@
       (b/update-scales :x :ticks 5)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "M")
+      (b/add-label :left "F")
       (r/render-lattice {:height 400 :width 600})
       (save "results/lattice/figure_3.10.jpg")
       (show)))
@@ -479,6 +527,7 @@
       (b/tie-domains :x)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Average GCSE Score")
       (r/render-lattice {:height 400 :width 800})
       (save "results/lattice/figure_3.11.jpg")
       (show)))
@@ -494,13 +543,12 @@
       (b/tie-domains :x)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :left "Transformed GCSE Score")
       (r/render-lattice {:height 400 :width 800})
       (save "results/lattice/figure_3.12.jpg")
       (show)))
 
 ;; figure 3.13
-
-(first gvhd10)
 
 (let [data (->> gvhd10
                 (group-by :Days)
@@ -510,6 +558,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "log(Forward Scatter)")
+      (b/add-label :left "Days Past Transplant")
       (r/render-lattice {:height 400 :width 600})
       (save "results/lattice/figure_3.13.jpg")
       (show)))
@@ -520,10 +570,12 @@
                 (group-by :Days)
                 (map-kv (partial map (comp #(m/log %) :FSC.H)))
                 (sort-by (comp read-string first)))]
-  (-> (b/series [:stack-horizontal [:violin data]])
+  (-> (b/series [:stack-horizontal [:violin data {:scale 1.1}]])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "log(Forward Scatter)")
+      (b/add-label :left "Days Past Transplant")
       (r/render-lattice {:height 400 :width 600})
       (save "results/lattice/figure_3.14.jpg")
       (show)))
@@ -539,6 +591,7 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "depth")
       (r/render-lattice {:height 400 :width 600})
       (save "results/lattice/figure_3.15.jpg")
       (show)))
@@ -553,6 +606,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Magnitude (Richter)")
+      (b/add-label :left "Depth (km)")
       (r/render-lattice {:height 400 :width 600})
       (save "results/lattice/figure_3.16.jpg")
       (show)))
@@ -600,6 +655,8 @@
   
   (-> (b/lattice :free free {} {:shape [5 4] :label str})
       (b/preprocess-series)
+      (b/add-label :bottom "q")
+      (b/add-label :left "p")
       (r/render-lattice {:width 800 :height 1000 :rendering-hint :highest})
       (save "results/lattice/figure_13.1.jpg")
       (show)))
@@ -637,6 +694,8 @@
                                    (b/update-scales :y :domain domain)
                                    (b/add-axes :bottom)
                                    (b/add-axes :left)
+                                   (b/add-label :bottom "Time")
+                                   (b/add-label :left "x")
                                    (r/render-lattice {:height 300 :width 600})))
                   (if (neg? curr-mouse) last-mouse curr-mouse)))
       window (c2d/show-window {:canvas (c2d/canvas 600 300)
@@ -663,6 +722,7 @@
       (b/update-scale :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Time (Days)")
       (r/render-lattice {:height 400 :width 600 :padding-in 0.2})
       (save "results/lattice/figure_14.2.jpg")
       (show)))
@@ -675,11 +735,12 @@
                                 (map-kv (partial mapcat :data) (group-by :visit v))
                                 {:margins {:x [0.1 0.0]} :color (fn [_ {:keys [id]}]
                                                                   (if (odd? id) blue lblue)) :scale 4 :area? true}])))]
-  (-> (b/lattice :stack-horizontal data {} {:label str})
+  (-> (b/lattice :stack-horizontal data {:padding-out 0.7} {:label str})
       (b/preprocess-series)
       (b/update-scales :x :ticks 3)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "FSC-H")
       (r/render-lattice {:height 400 :width 600})
       (save "results/lattice/figure_14.3.jpg")
       (show)))

@@ -87,6 +87,8 @@
       (b/update-scale :x :fmt name)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "a")
+      (b/add-label :left "b")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/bar.jpg")
       (show)))
@@ -102,6 +104,8 @@
       (b/update-scale :y :fmt int)
       (b/add-axes :left)
       (b/add-axes :bottom)
+      (b/add-label :bottom "IMDB_Rating (binned)")
+      (b/add-label :left "Count of Records")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/histogram.jpg")
       (show)))
@@ -122,6 +126,8 @@
       (b/update-scale :x :fmt "%,.0f")
       (b/add-axes :left)
       (b/add-axes :bottom)
+      (b/add-label :bottom "population")
+      (b/add-label :left "age")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/bar-aggregate.jpg")
       (show)))
@@ -134,6 +140,8 @@
     (b/update-scale :y :fmt "%,.0f")
     (b/add-axes :left)
     (b/add-axes :bottom)
+    (b/add-label :top "age")
+    (b/add-label :left "population")
     (r/render-lattice {:width 800 :height 400})
     (save "results/vega/bar-grouped.jpg")
     (show))
@@ -142,26 +150,28 @@
 
 (let [selector (juxt :sun :snow :rain :fog :drizzle)
       data (->> seattle-weather
-              (map #(vector (dt/format "MM" (first %)) (last %)))
-              (frequencies)
-              (group-by ffirst)
-              (map-kv (fn [v]
-                        (let [mm (into {} (map (fn [[[_ w] cnt]] [w cnt]) v))]
-                          (map #(or % 0) (selector mm)))))
-              (into (sorted-map)))]
+                (map #(vector (dt/format "MM" (first %)) (last %)))
+                (frequencies)
+                (group-by ffirst)
+                (map-kv (fn [v]
+                          (let [mm (into {} (map (fn [[[_ w] cnt]] [w cnt]) v))]
+                            (map #(or % 0) (selector mm)))))
+                (into (sorted-map)))]
   
   (-> (b/series
-      [:grid nil {:x nil}]
-      [:stack-vertical [:sbar data {:palette ["#e7ba52" "#9467bd" "#1f77b4" "#c7c7c7" "#aec7e8"]}]])
-     (b/preprocess-series)
-     (b/update-scale :x :scale [:bands {:padding-in 0.0 :padding-out 0.2}])
-     (b/update-scale :y :ticks 10)
-     (b/update-scale :y :fmt "%,.0f")
-     (b/add-axes :left)
-     (b/add-axes :bottom)
-     (r/render-lattice {:width 400 :height 300}) 
-     (save "results/vega/stacked-bar-weather.jpg")
-     (show)))
+       [:grid nil {:x nil}]
+       [:stack-vertical [:sbar data {:palette ["#e7ba52" "#9467bd" "#1f77b4" "#c7c7c7" "#aec7e8"]}]])
+      (b/preprocess-series)
+      (b/update-scale :x :scale [:bands {:padding-in 0.0 :padding-out 0.2}])
+      (b/update-scale :y :ticks 10)
+      (b/update-scale :y :fmt "%,.0f")
+      (b/add-axes :left)
+      (b/add-axes :bottom)
+      (b/add-label :bottom "Month of the year")
+      (b/add-label :left "Count of Records")
+      (r/render-lattice {:width 400 :height 300}) 
+      (save "results/vega/stacked-bar-weather.jpg")
+      (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_bar_h.html
 
@@ -182,6 +192,8 @@
       (b/update-scale :x :ticks 5)
       (b/add-axes :left)
       (b/add-axes :bottom)
+      (b/add-label :left "variety")
+      (b/add-label :bottom "Sum of yield")
       (r/render-lattice {:width 400 :height 300})
       (save "results/vega/stacked-bar-h.jpg")
       (show)))
@@ -190,39 +202,45 @@
 
 (let [data (map-kv (fn [[x y]] [y x]) population-male-female)]
   (-> (b/series [:stack-vertical [:sbar data {:method :normalized :palette ["#659CCA" "#EA98D2"] :stroke? false}]])
-     (b/preprocess-series)
-     (b/add-axes :left)
-     (b/add-axes :bottom)
-     (r/render-lattice {:width 600 :height 300})     
-     (save "results/vega/stacked-bar-normalize.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/add-axes :left)
+      (b/add-axes :bottom)
+      (b/add-label :left "population")
+      (b/add-label :bottom "age")      
+      (r/render-lattice {:width 600 :height 300})     
+      (save "results/vega/stacked-bar-normalize.jpg")
+      (show)))
 
 ;; https://vega.github.io/vega-lite/examples/bar_gantt.html
 
 (let [data (sorted-map-by (comp - compare) :A [1 3] :B [3 8] :C [8 10])]
   (-> (b/series
-      [:grid]
-      [:stack-horizontal [:rbar data {:padding 0.05}]])
-     (b/preprocess-series)
-     (b/update-scale :y :fmt name)
-     (b/add-axes :left)
-     (b/add-axes :bottom)
-     (r/render-lattice {:width 400 :height 200 :border 20})
-     (save "results/vega/bar-gantt.jpg")
-     (show)))
+       [:grid]
+       [:stack-horizontal [:rbar data {:padding 0.05}]])
+      (b/preprocess-series)
+      (b/update-scale :y :fmt name)
+      (b/add-axes :left)
+      (b/add-axes :bottom)
+      (b/add-label :bottom "start, end")
+      (b/add-label :left "task")
+      (r/render-lattice {:width 400 :height 200 :border 20})
+      (save "results/vega/bar-gantt.jpg")
+      (show)))
 
 ;; https://vega.github.io/vega-lite/examples/bar_color_disabled_scale.html
 
 (let [data [[:red 28] [:green 55] [:blue 43]]
       colors (map first data)]
   (-> (b/series [:stack-vertical [:bar data {:color (fn [_ {:keys [id]}] id)}]])
-     (b/preprocess-series)
-     (b/update-scale :x :fmt name)
-     (b/add-axes :left)
-     (b/add-axes :bottom)
-     (r/render-lattice {:width 200 :height 400})
-     (save "results/vega/bar-color.jpg")
-     (show)))
+      (b/preprocess-series)
+      (b/update-scale :x :fmt name)
+      (b/add-axes :left)
+      (b/add-axes :bottom)
+      (b/add-label :bottom "color")
+      (b/add-label :left "b")
+      (r/render-lattice {:width 200 :height 400})
+      (save "results/vega/bar-color.jpg")
+      (show)))
 
 ;; https://vega.github.io/vega-lite/examples/bar_layered_transparent.html
 
@@ -234,6 +252,8 @@
       (b/update-scale :y :fmt int)
       (b/add-axes :left)
       (b/add-axes :bottom)
+      (b/add-label :left "population")
+      (b/add-label :bottom "age")      
       (r/render-lattice {:width 600 :height 300})
       (save "results/vega/stacked-bar-layer.jpg")
       (show)))
@@ -254,6 +274,8 @@
       (b/update-scale :y :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Horsepower")
+      (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/point2d.jpg")
       (show)))
@@ -265,7 +287,8 @@
   (-> (b/series [:grid nil {:y nil}] [:rug data {:size 2}])
       (b/preprocess-series)
       (b/add-axes :bottom)
-      (r/render-lattice {:width 400 :height 70})
+      (b/add-side :bottom (b/series [:label "precipitation"]))
+      (r/render-lattice {:width 400 :height 90})
       (save "results/vega/tick-dot.jpg")
       (show)))
 
@@ -279,9 +302,11 @@
   
   (-> (b/series [:grid] [:stack-horizontal [:rug data {:size 1 :color (c/color blue 250)}]])
       (b/preprocess-series)
-      (b/update-scale :x :tick 3)
+      (b/update-scale :x :ticks 3)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Horsepower")
+      (b/add-label :left "Cylinders")
       (r/render-lattice {:width 300 :height 200})
       (save "results/vega/tick-strip.jpg")
       (show)))
@@ -298,6 +323,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Horsepower")
+      (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/color-with-shape.jpg")
       (show)))
@@ -309,6 +336,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "IMDB_Rating (binned)")
+      (b/add-label :left "Rotten_Tomatoes_Rating (binned)")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/circle-binned.jpg")
       (show)))
@@ -320,6 +349,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Horsepower")
+      (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/point-bubble.jpg")
       (show)))
@@ -338,6 +369,8 @@
       (b/add-side :right 10 (b/series [:strip nils-y strip-conf]))
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "IMDB_Rating")
+      (b/add-label :left "Rotten_Tomatoes_Rating")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/nulls.jpg")
       (show)))
@@ -349,6 +382,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Horsepower")
+      (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/circles.jpg")
       (show)))
@@ -364,6 +399,8 @@
       (b/update-scale :x :scale [:log])
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "income")
+      (b/add-label :left "health")
       (r/render-lattice {:width 500 :height 300})
       (save "results/vega/circle-bubble-hi.jpg")
       (show)))
@@ -387,6 +424,7 @@
       (b/update-scale :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "year")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/circle-natural-disasters.jpg")
       (show)))
@@ -403,6 +441,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Horsepower")
+      (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/text-scatterplot-colored.jpg")
       (show)))
@@ -419,6 +459,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date")
+      (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/line.jpg")
       (show)))
@@ -440,6 +482,8 @@
       (b/update-scale :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date (year)")
+      (b/add-label :left "Mean of price")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/line-overlay.jpg")
       (show)))
@@ -454,6 +498,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date")
+      (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/line-color.jpg")
       (show)))
@@ -466,6 +512,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date")
+      (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/line-step.jpg")
       (show)))
@@ -478,6 +526,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date")
+      (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/line-spline.jpg")
       (show)))
@@ -490,6 +540,8 @@
       (b/update-scale :x :ticks 4)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "miles")
+      (b/add-label :left "gas")
       (r/render-lattice {:width 400 :height 400 :border 20})
       (save "results/vega/connected-scatterplot.jpg")
       (show)))
@@ -505,6 +557,8 @@
       (b/update-scale :x :ticks 4)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date")
+      (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/trail-color.jpg")
       (show)))
@@ -528,6 +582,8 @@
       (b/update-scale :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "Year into Decade")
+      (b/add-label :left "CO2 concentration in ppm")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/layer-line-co2-concentration.jpg")
       (show)))
@@ -544,6 +600,8 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date (year-month)")
+      (b/add-label :left "count")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/area.jpg")
       (show)))
@@ -556,9 +614,74 @@
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "date")
+      (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/area-overlay.jpg")
       (show)))
+
+;; https://vega.github.io/vega-lite/examples/stacked_area.html
+
+(-> (b/series [:grid] [:sarea unemployment-area])
+    (b/preprocess-series)
+    (b/update-scale :y :fmt int)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "date (year-month)")
+    (b/add-label :left "Sum of count")
+    (r/render-lattice {:width 600 :height 400})
+    (save "results/vega/stacked-area.jpg")
+    (show))
+
+;; https://vega.github.io/vega-lite/examples/stacked_area_normalize.html
+
+(-> (b/series [:grid] [:sarea unemployment-area {:method :normalized}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-label :bottom "date (year-month)")
+    (r/render-lattice {:width 600 :height 400})
+    (save "results/vega/stacked-area-normalize.jpg")
+    (show))
+
+;; https://vega.github.io/vega-lite/examples/stacked_area_stream.html
+
+(-> (b/series [:grid] [:sarea unemployment-area {:method :stream}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-label :bottom "date (year-month)")
+    (r/render-lattice {:width 600 :height 400})
+    (save "results/vega/stacked-area-stream.jpg")
+    (show))
+
+;; https://vega.github.io/vega-lite/examples/layer_point_errorbar_ci.html
+
+(-> (b/series [:grid nil {:y nil}]
+              [:stack-horizontal [:extent-stat barley-variety-yield {:extent-type :bci :shape \O :size 5 :stroke {:size 1} :color :black}]])
+    (b/preprocess-series)
+    (b/update-scale :x :ticks 5)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "Barley Yield")
+    (b/add-label :left "variety")
+    (r/render-lattice {:width 400 :height 400})
+    (save "results/vega/point-errorbar-ci.jpg")
+    (show))
+
+
+;; https://vega.github.io/vega-lite/examples/layer_point_errorbar_stdev.html
+
+(-> (b/series [:grid nil {:y nil}]
+              [:stack-horizontal [:extent-stat barley-variety-yield {:extent-type :stddev :shape \O :size 5 :stroke {:size 1} :color :black}]])
+    (b/preprocess-series)
+    (b/update-scale :x :ticks 5)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "Barley Yield")
+    (b/add-label :left "variety")
+    (r/render-lattice {:width 400 :height 400})
+    (save "results/vega/point-errorbar-stddev.jpg")
+    (show))
+
 
 ;; https://vega.github.io/vega-lite/examples/boxplot_2D_vertical.html
 ;; https://vega.github.io/vega-lite/examples/boxplot_minmax_2D_vertical.html
@@ -572,60 +695,8 @@
       (b/update-scale :y :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-label :bottom "age")
+      (b/add-label :left "population")
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/box-plot.jpg")
       (show)))
-
-;; https://vega.github.io/vega-lite/examples/layer_point_errorbar_ci.html
-
-(-> (b/series [:grid nil {:y nil}]
-              [:stack-horizontal [:extent-stat barley-variety-yield {:extent-type :bci :shape \O :size 5 :stroke {:size 1} :color :black}]])
-    (b/preprocess-series)
-    (b/update-scale :x :ticks 5)
-    (b/add-axes :bottom)
-    (b/add-axes :left)
-    (r/render-lattice {:width 400 :height 400})
-    (save "results/vega/point-errorbar-ci.jpg")
-    (show))
-
-
-;; https://vega.github.io/vega-lite/examples/layer_point_errorbar_stdev.html
-
-(-> (b/series [:grid nil {:y nil}]
-             [:stack-horizontal [:extent-stat barley-variety-yield {:extent-type :stddev :shape \O :size 5 :stroke {:size 1} :color :black}]])
-   (b/preprocess-series)
-   (b/update-scale :x :ticks 5)
-   (b/add-axes :bottom)
-   (b/add-axes :left)
-   (r/render-lattice {:width 400 :height 400})
-   (save "results/vega/point-errorbar-stddev.jpg")
-   (show))
-
-;; https://vega.github.io/vega-lite/examples/stacked_area.html
-
-(-> (b/series [:grid] [:sarea unemployment-area])
-   (b/preprocess-series)
-   (b/update-scale :y :fmt int)
-   (b/add-axes :bottom)
-   (b/add-axes :left)
-   (r/render-lattice {:width 600 :height 400})
-   (save "results/vega/stacked-area.jpg")
-   (show))
-
-;; https://vega.github.io/vega-lite/examples/stacked_area_normalize.html
-
-(-> (b/series [:grid] [:sarea unemployment-area {:method :normalized}])
-   (b/preprocess-series)
-   (b/add-axes :bottom)
-   (r/render-lattice {:width 600 :height 400})
-   (save "results/vega/stacked-area-normalize.jpg")
-   (show))
-
-;; https://vega.github.io/vega-lite/examples/stacked_area_stream.html
-
-(-> (b/series [:grid] [:sarea unemployment-area {:method :stream}])
-   (b/preprocess-series)
-   (b/add-axes :bottom)
-   (r/render-lattice {:width 600 :height 400})
-   (save "results/vega/stacked-area-stream.jpg")
-   (show))
