@@ -747,3 +747,18 @@
 
 ;; figure 14.4
 
+(let [data (->> hnanes
+                (filter #(and (:TIBC %) (:Hemoglobin %)))
+                (group-by :Sex)
+                (map-kv (fn [v] (map (juxt :TIBC :Hemoglobin) v))))]
+  (-> (b/lattice :heatmap data {:alpha-factor 0.1 :size 10} {:label str})
+      (b/preprocess-series)
+      (b/update-scales :x :ticks 5)
+      (b/update-scales :x :fmt int)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "TIBC")
+      (b/add-label :left "Hemoglobin")
+      (r/render-lattice {:height 300 :width 600})
+      (save "results/lattice/figure_14.4.jpg")
+      (show)))

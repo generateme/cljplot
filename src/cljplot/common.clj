@@ -93,7 +93,8 @@
 
 (defn extent
   [data]
-  (let [v (first data)]
+  (let [data (remove nil? data)
+        v (first data)]
     (cond
       (date-time? v) [:temporal [(reduce dt/min data) (reduce dt/max data)]]
       (number? v) [:numerical (take 2 (stats/extent data))])))

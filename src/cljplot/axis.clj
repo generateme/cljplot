@@ -90,7 +90,8 @@
        :fixed? true
        :anchor (-> (transform c 0 0) 
                    (v/fmap m/floor)
-                   (v/sub))})))
+                   (v/sub)
+                   (v/sub [0 1]))})))
 
 (defn- find-max-tick-size
   "Find maximum tick size."
@@ -112,7 +113,9 @@
 (defn- xy-axes
   [position scale-info config {:keys [w]}]
   (let [a (draw-axis w scale-info config)]
-    (if (= :x position) a (update-in a [:anchor 1] + w))))
+    (if (= :x position)
+      (update a :anchor v/sub (v/vec2 0.0 1.0))
+      (update-in a [:anchor 1] + w))))
 
 (defn axis-size
   [scale position config]

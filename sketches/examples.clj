@@ -13,6 +13,7 @@
             [clojure.string :as str]
             [clojure2d.core :as c2d]
             [clojure2d.pixels :as p]
+            [fastmath.complex :as cx]
             [fastmath.vector :as v]))
 
 ;; logo
@@ -85,4 +86,35 @@
       (show)))
 
 ;;
+
+(let [data (repeatedly 600000 #(vector (rnd/grand) (rnd/grand)))]
+  (-> (b/series [:cloud data {:kernel :gaussian :logarithmic? false :gradient (c/gradient-presets :tornyai)}]
+                [:grid])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (r/render-lattice {:width 800 :height 555})
+      (save "results/examples/point-cloud.jpg")
+      (show)))
+
+(let [data (repeatedly 10000 #(rnd/randval [(rnd/grand) (rnd/grand)]
+                                           [(rnd/grand -10 1) (rnd/grand -10 1)]))]
+  (-> (b/series [:grid] [:heatmap data {:grid :flat-hex :alpha-factor 0 :size 20 :gradient (c/gradient-presets :prl-2)}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (r/render-lattice {:width 600 :height 600})
+      (save "results/examples/heatmap.jpg")
+      (show)))
+
+;;
+
+(-> (b/series [:complex #(cx/div (cx/log %) (cx/sin %)) {:x [-6 6] :y [-6 6] :colorspace :HCL}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "log(z)/sin(z)")
+    (r/render-lattice {:width 600 :height 600})
+    (save "results/examples/complex.jpg")
+    (show)) 
 

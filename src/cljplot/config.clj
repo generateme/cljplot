@@ -63,6 +63,10 @@
                                              :font-size 12
                                              :font-style :bold
                                              :margin 8}
+                                     :heatmap {:grid :pointy-hex
+                                               :alpha-factor 0.0
+                                               :size 20
+                                               :gradient (comp (c/gradient-presets :k2) #(- 1.0 %))}
                                      :histogram {:color blue
                                                  :palette (cycle (c/palette-presets :category20))
                                                  :stroke stroke-common

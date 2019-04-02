@@ -34,7 +34,6 @@
     (render-graph :bubble hd (assoc-in conf [:extent :z] z-extent) chart-data)))
 
 
-
 ;;
 
 (defmethod prepare-data :ppplot [_ [d1 d2] {:keys [points] :or {points 100}}]

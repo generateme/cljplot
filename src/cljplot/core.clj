@@ -8,6 +8,9 @@
             [cljplot.impl.strips :refer :all]
             [cljplot.impl.scatter :refer :all]
             [cljplot.impl.line :refer :all]
+            [cljplot.impl.heatmap :refer :all]
+            [cljplot.impl.label :refer :all]
+            [cljplot.impl.math :refer :all]
             [cljplot.impl.free :refer :all]))
 
 (defn save
