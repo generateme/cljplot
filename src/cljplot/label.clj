@@ -31,6 +31,6 @@
          (translate pos))
       (text c s 0 0 :center))))
 
-(comment show (:canvas (let [conf (conf/merge-configuration :label {:font-size 40})
-                             {:keys [size] :as data} (prepare-data :label "To jest test." conf)]
-                         (render-graph :label data conf {:w 600 :h size :orientation :bottom}))))
+(show (:canvas (let [conf (conf/merge-configuration :label {:font-size 40})
+                     {:keys [size] :as data} (prepare-data :label "To jest test." conf)]
+                 (render-graph :label data conf {:w 600 :h size :orientation :bottom}))))
