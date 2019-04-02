@@ -24,15 +24,16 @@ See `sketches` folder for examples
 ## Short term plan
 
 * More chart types (`+` - easier; `-` - harder):
-    - heatmaps (various grids) (`+`)
-    - point clouds (log and linear rendering) (`+`)
+    - ~~heatmaps (various grids)~~ (`+`)
+    - ~~point clouds (log and linear rendering)~~ (`+`)
     - contours (`-`), flow fields (`+`)
     - categorical x categorical plots (scatter plot matrix  (`+`)
-    - ~~stacked area/stream (`+`)~~
+    - ~~stacked area/stream~~
     - parallel / hive (`+`/`-`)
     - radial charts, like pie (`+`), sunburst (`-`), radial tree (`-`)
     - arc(?) (`+`)
-* Labels / legends
+    - markers: line, text, etc...
+* ~~Labels~~ / legends
 * Higher level API
     - single function for each chart type (easier)
     - faceting/lattice (harder)
@@ -52,16 +53,16 @@ See `sketches` folder for examples
 
 ## Known issues
 
-* grid, axes sometimes don't match (1-2px shift). This is due to rounding errors and axes rotations
-* still no labels, no legends
+* ~~grid, axes sometimes don't match (1-2px shift). This is due to rounding errors and axes rotations~~
+* still ~~no labels~~, no legends
 * overlapping ticks (add some heuristics to use smaller fonts and smaller number of ticks)
-* chart configuration need to be reviewed, still not consistent
+* chart configuration needs to be reviewed, still not consistent
 * no higher level functions/macros
 * no DSL for data manipulation, and no plan to make it (task for others!)
 * deep nesting is really nasty to configure and for data preparation :/ (lattice of stacked horizontally stacked bars...)
 * merging nesting extents is not working correctly (in lattice)
 * true is, there are some labels for lattice, quick and dirty
-* do not layer over histograms...
+* do not layer over histograms (bins mismatch)...
 * still something is wrong with time scale
 
 ## Why?

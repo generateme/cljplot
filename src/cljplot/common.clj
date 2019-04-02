@@ -84,15 +84,17 @@
                   (count)
                   (dec)
                   (zero?)) "Types of series should have the same type: continuous or categorical")
-      (let [t (ffirst s)]
-        [t (if (#{:numerical :temporal} t)
-             (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [min max])]
-               (reduce (fn [[ca cb] [a b]] [(fmin ca a) (fmax cb b)]) (map second s)))
-             (distinct (mapcat identity (map second s))))]))))
+      (let [[t _ sconf] (first s)
+            res [t (if (#{:numerical :temporal} t)
+                     (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [min max])]
+                       (reduce (fn [[ca cb] [a b]] [(fmin ca a) (fmax cb b)]) (map second s)))
+                     (distinct (mapcat identity (map second s))))]]
+        (if sconf (conj res sconf) res)))))
 
 (defn extent
   [data]
-  (let [v (first data)]
+  (let [data (remove nil? data)
+        v (first data)]
     (cond
       (date-time? v) [:temporal [(reduce dt/min data) (reduce dt/max data)]]
       (number? v) [:numerical (take 2 (stats/extent data))])))
@@ -264,7 +266,7 @@
         sx (/ (- w ww) 2)]
     (with-canvas-> (canvas w 12)
       (set-stroke 0.5)
-      (filled-with-stroke (c/color :white 100) (c/color :black 100) rect sx 1 ww 10)
+      (filled-with-stroke (c/color :white 150) (c/color :black 100) rect sx 1 ww 10)
       (set-font-attributes 10)
       (text label (/ w 2) 10 :center))))
 
@@ -272,12 +274,13 @@
 
 (defn label-size
   ([s] (label-size s {}))
-  ([s {:keys [font font-size]}]
+  ([s {:keys [font font-size margin] :or {margin 8}}]
    (with-canvas [c (canvas 1 1)]
      (when font (set-font c font))
      (when font-size (set-font-attributes c font-size))
      (let [[x y _ h] (text-bounding-box c s)]
-       {:size (m/ceil h)
+       {:shift-y (/ margin 2)
+        :auto-size (+ margin (m/ceil h))
         :pos [x (m/floor (- y))]}))))
 
 ;;
