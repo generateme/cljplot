@@ -14,6 +14,7 @@
             [clojure2d.core :as c2d]
             [clojure2d.pixels :as p]
             [fastmath.complex :as cx]
+            [fastmath.fields :as f]
             [fastmath.vector :as v]))
 
 ;; logo
@@ -109,12 +110,45 @@
 
 ;;
 
-(-> (b/series [:complex #(cx/div (cx/log %) (cx/sin %)) {:x [-6 6] :y [-6 6] :colorspace :HCL}])
-    (b/preprocess-series)
-    (b/add-axes :bottom)
-    (b/add-axes :left)
-    (b/add-label :bottom "log(z)/sin(z)")
-    (r/render-lattice {:width 600 :height 600})
-    (save "results/examples/complex.jpg")
-    (show)) 
+(-> (b/series [:complex #(cx/div (cx/log %) (cx/sin %)) {:x [-6 6] :y [-6 6] :colorspace :HSI :wrap-method :log2}])
+   (b/preprocess-series)
+   (b/add-axes :bottom)
+   (b/add-axes :left)
+   (b/add-label :bottom "log(z)/sin(z)")
+   (r/render-lattice {:width 600 :height 600})
+   (save "results/examples/complex.jpg")
+   (show)) 
 
+(-> (b/series [:scalar #(apply rnd/vnoise %)  {:x [-6 6] :y [-6 6]}])
+   (b/preprocess-series)
+   (b/add-axes :bottom)
+   (b/add-axes :left)
+   (b/add-label :bottom "value noise")
+   (r/render-lattice {:width 600 :height 600})
+   (save "results/examples/vnoise.jpg")
+   (show)) 
+
+(let [field (f/combine {:type :operation, :name :comp, :var1 {:type :operation, :name :comp, :var1 {:type :variation, :name :secant, :amount 1.0, :config {}}, :var2 {:type :variation, :name :diamond, :amount 1.0, :config {}}, :amount 1.0}, :var2 {:type :variation, :name :power, :amount 1.0, :config {}}, :amount 1.0})]
+  (-> (b/series [:grid] [:field field  {:jitter 1.0 :x [-4 4] :y [-4 4] :wrap? false}])
+     (b/preprocess-series)
+     (b/add-axes :bottom)
+     (b/add-axes :left)
+     (b/add-label :bottom "vector field")
+     (r/render-lattice {:width 600 :height 600})
+     (save "results/examples/field.jpg")
+     (show))) 
+
+;;
+
+(let [field (f/field :hyperbolic)
+      sfield (f/heading field)]
+  (-> (b/series [:grid]
+               [:scalar sfield {:wrap-method :sin}]
+               [:vector field {:grid :shifted-square :scale 1.5}])
+     (b/preprocess-series)
+     (b/add-axes :bottom)
+     (b/add-axes :left)
+     (b/add-label :bottom "hyperbolic")
+     (r/render-lattice {:width 600 :height 600})
+     (save "results/examples/vector-field.jpg")
+     (show)))
