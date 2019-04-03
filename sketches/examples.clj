@@ -143,12 +143,42 @@
 (let [field (f/field :hyperbolic)
       sfield (f/heading field)]
   (-> (b/series [:grid]
-               [:scalar sfield {:wrap-method :sin}]
-               [:vector field {:grid :shifted-square :scale 1.5}])
-     (b/preprocess-series)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (b/add-label :bottom "hyperbolic")
-     (r/render-lattice {:width 600 :height 600})
-     (save "results/examples/vector-field.jpg")
-     (show)))
+                [:scalar sfield {:wrap-method :sin}]
+                [:vector field {:grid :shifted-square :scale 1.5}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "hyperbolic")
+      (r/render-lattice {:width 600 :height 600})
+      (save "results/examples/vector-field.jpg")
+      (show)))
+
+
+(let [field (f/field :exp)]
+  (-> (b/series [:grid]
+                [:trace field {:x [-7 7] :y [-7 7]}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "exponential")
+      (r/render-lattice {:width 600 :height 600})
+      (save "results/examples/field-trace.jpg")
+      (show)))
+
+
+#_(let [grid (m/seq->double-double-array (partition 600 (map (comp int c/luma) (-> (b/series [:scalar #(apply rnd/vnoise %)  {:x [-6 6] :y [-6 6]}])
+                                                                                   (b/preprocess-series)
+                                                                                   (r/render-lattice {:width 600 :height 600})
+                                                                                   (p/to-pixels)))))
+        algo (marchingsquares.Algorithm.)
+        c (c2d/canvas 600 600)]
+    (c2d/with-canvas [c c]
+      (c2d/set-color c :black 50)
+      (doseq [p (.buildContours algo grid (double-array [123]))]
+        (c2d/set-color c :black 50)
+        (.fill (.graphics c) p)
+        (c2d/set-color c :black)
+        (.draw (.graphics c) p)))
+    (show c)) 
+
+

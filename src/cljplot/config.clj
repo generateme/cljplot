@@ -81,6 +81,12 @@
                                               :size 20
                                               :grid :square
                                               :scale 0.8}
+                                     :trace {:color (c/set-alpha dblue 30)
+                                             :step 0.01
+                                             :length 200
+                                             :points 10000
+                                             :generator :r2
+                                             :jitter 0.1}
                                      :histogram {:color blue
                                                  :palette (cycle (c/palette-presets :category20))
                                                  :stroke stroke-common

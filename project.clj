@@ -10,4 +10,6 @@
                  [org.clojure/data.csv "0.1.4"]
                  [org.clojure/data.json "0.2.6"]]
   :repl-options {:timeout 120000}
+  :java-source-paths ["src"]
+  :javac-options ["-target" "1.8" "-source" "1.8"]
   :target-path "target/%s")

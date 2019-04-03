@@ -13,9 +13,11 @@
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
 
+(def ^:private ^:const pi-r [m/-PI m/PI])
+
 (defmethod data-extent :complex [_ _ {:keys [x y]}]
-  {:x [:numerical (or x [m/-PI m/PI])]
-   :y [:numerical (or y [m/-PI m/PI])]})
+  {:x [:numerical (or x pi-r)]
+   :y [:numerical (or y pi-r)]})
 
 (defmacro ^:private permutation->color
   [p a b c]
@@ -32,6 +34,7 @@
   ^double [method ^double v]
   (case method
     :log2 (m/frac (m/log2 (inc v)))
+    :log10 (m/frac (m/log10 (inc v)))
     :sin (m/norm (m/sin v) -1.0 1.0 0.0 1.0)
     :exp (- 1.0 (m/exp (- v)))
     (m/frac v)))
@@ -83,13 +86,11 @@
 ;; field
 
 (defmethod prepare-data :field [_ f {:keys [x y points generator jitter wrap?]}]
-  (let [[x1 x2] x
-        [y1 y2] y
+  (let [[x1 x2] (or x pi-r)
+        [y1 y2] (or y pi-r)
         f (if wrap? (comp (f/field :sinusoidal ) f) f)]
     (mapv (fn [[xx yy]] (f (v/vec2 (m/norm xx 0.0 1.0 x1 x2)
                                   (m/norm yy 0.0 1.0 y1 y2)))) (take points (r/jittered-sequence-generator generator 2 jitter)))))
-
-(defmethod data-extent :field [_ d _] (common-extent d))
 
 (defmethod render-graph :field [_ data {:keys [color] :as conf} {:keys [^int w ^int h x y] :as chart-data}]
   (let [scale-x (:scale x)
@@ -124,12 +125,37 @@
                     v (f (v/vec2 x y))
                     len (* scale size (wrap :exp (v/mag v)))]] 
         (-> c
-           (push-matrix)
-           (translate xx yy)
-           (ellipse 0 0 3 3 false)
-           (rotate (v/heading v))
-           (line 0 0 len 0))
+            (push-matrix)
+            (translate xx yy)
+            (ellipse 0 0 3 3 false)
+            (rotate (v/heading v))
+            (line 0 0 len 0))
         (when (> len 2.0)
           (line c len 0 (- len 2.0) -2.0)
           (line c len 0 (- len 2.0) 2.0))
         (pop-matrix c)))))
+
+;;
+
+(defmethod prepare-data :trace [_ f {:keys [x y points generator jitter]}]
+  (let [[x1 x2] (or x pi-r)
+        [y1 y2] (or y pi-r)]
+    [f (mapv (fn [[xx yy]] (v/vec2 (m/norm xx 0.0 1.0 x1 x2)
+                                  (m/norm yy 0.0 1.0 y1 y2))) (take points (r/jittered-sequence-generator generator 2 jitter)))]))
+
+(defmethod data-extent :trace [_ data c] (data-extent :complex data c))
+
+(defmethod render-graph :trace [_ [f coords] {:keys [^double step color ^double length]} {:keys [^int w ^int h x y] :as chart-data}]
+  (let [scale-x (:scale x)
+        scale-y (:scale y)]
+
+    (do-graph (assoc chart-data :oversize 0) true
+      (set-color c color)
+      
+      (doseq [v coords
+              :let [p (take length
+                            (iterate (fn [v]
+                                       (let [nv (f v)]
+                                         (v/add v (v/mult nv (* (wrap :exp (v/mag nv)) step))))) v))]]
+        (doseq [[x y] p]
+          (point c (* w ^double (scale-x x)) (* h ^double (scale-y y))))))))
