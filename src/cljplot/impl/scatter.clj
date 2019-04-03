@@ -57,7 +57,7 @@
 
 (defonce ^:private bw-gradient (c/gradient [:black :white]))
 
-(defmethod render-graph :contour [_ data {:keys [palette kernel kernel-params logarithmic? blur-kernel-size contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
+(defmethod render-graph :density-2d [_ data {:keys [palette kernel kernel-params logarithmic? blur-kernel-size contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
   (let [palette (c/resample contours palette)
         scale-x (:scale x)
         scale-y (:scale y)
@@ -75,10 +75,10 @@
                (m/seq->double-array))
           target (double-array (alength g))]
 
-      (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* blur-kernel-size (max w h)) blur-kernel-size))
+      (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* 0.1 blur-kernel-size (max w h)) blur-kernel-size))
 
       (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
-            steps (s/splice-range contours (.-min algo) (.-max algo))]
+            steps (rest (s/splice-range (inc contours) (.-min algo) (.-max algo)))]
         (do-graph chart-data true
           (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
                   :let [col (nth palette id)]]

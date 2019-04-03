@@ -170,9 +170,9 @@
 (let [data (map (juxt :waiting :eruptions) faithful)]
   (-> (b/series [:grid nil {:position [0 0]}]
                [:grid nil {:position [1 0]}])
-     (b/add-serie [:contour data {:blur-kernel-size 50 :contours 20}] 0 0)
+     (b/add-serie [:density-2d data {:blur-kernel-size 50 :contours 20}] 0 0)
      (b/add-serie [:scatter data {:label "Kernel size 50, contours 20"}] 0 0)
-     (b/add-serie [:contour data {:blur-kernel-size 10}] 1 0)
+     (b/add-serie [:density-2d data {:blur-kernel-size 10}] 1 0)
      (b/add-serie [:scatter data {:label "Kernel size 10, contours 10"}] 1 0)
      (b/preprocess-series)
      (b/add-axes :bottom)

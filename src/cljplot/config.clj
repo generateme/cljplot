@@ -64,13 +64,13 @@
                                              :font-size 12
                                              :font-style :bold
                                              :margin 8}
-                                     :contour {:palette (c/palette-presets :gnbu-9)
-                                               :kernel :gaussian
-                                               :kernel-params nil
-                                               :logarithmic? true
-                                               :blur-kernel-size 0.1
-                                               :contours 10
-                                               :fill? true}
+                                     :density-2d {:palette (c/palette-presets :gnbu-9)
+                                                  :kernel :gaussian
+                                                  :kernel-params nil
+                                                  :logarithmic? true
+                                                  :blur-kernel-size 0.1
+                                                  :contours 10
+                                                  :fill? true}
                                      :heatmap {:grid :pointy-hex
                                                :alpha-factor 0.0
                                                :size 20
