@@ -5,7 +5,11 @@
             [fastmath.stats :as stats]
             [fastmath.vector :as v]
             [fastmath.random :as r]
-            [fastmath.core :as m]))
+            [fastmath.core :as m]
+            [clojure2d.pixels :as p]
+            [clojure2d.color :as c])
+  (:import [clojure2d.java.filter Blur]
+           [marchingsquares Algorithm]))
 
 
 (defmethod render-graph :scatter [_ data {:keys [color stroke size shape] :as conf}
@@ -48,3 +52,42 @@
 
 (defmethod prepare-data :qqplot [_ data conf] (prepare-data :ppplot [(r/distribution :normal) data] conf))
 (defmethod render-graph :qqplot [_ data conf graph-conf] (render-graph :scatter data conf graph-conf))
+
+;;
+
+(defonce ^:private bw-gradient (c/gradient [:black :white]))
+
+(defmethod render-graph :contour [_ data {:keys [palette kernel kernel-params logarithmic? blur-kernel-size contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
+  (let [palette (c/resample contours palette)
+        scale-x (:scale x)
+        scale-y (:scale y)
+        g (if kernel
+            (if kernel-params
+              (p/gradient-renderer w h kernel kernel-params)
+              (p/gradient-renderer w h kernel))
+            (p/gradient-renderer w h))]
+
+    (doseq [[x y] data]
+      (p/add-pixel g (* w ^double (scale-x x)) (* h ^double (scale-y y))))
+
+    (let [g (->> (p/to-pixels g {:logarithmic? logarithmic? :gradient bw-gradient})
+               (map c/luma)
+               (m/seq->double-array))
+          target (double-array (alength g))]
+
+      (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* blur-kernel-size (max w h)) blur-kernel-size))
+
+      (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
+            steps (s/splice-range contours (.-min algo) (.-max algo))]
+        (do-graph chart-data true
+          (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
+                  :let [col (nth palette id)]]
+            (if fill?
+              (do
+                (set-color c col)
+                (.fill (.graphics c) p)
+                (set-color c (c/darken col))
+                (.draw (.graphics c) p))
+              (do
+                (set-color c :black 200)
+                (.draw (.graphics c) p)))))))))

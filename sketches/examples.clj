@@ -156,29 +156,29 @@
 
 (let [field (f/field :exp)]
   (-> (b/series [:grid]
-                [:trace field {:x [-7 7] :y [-7 7]}])
-      (b/preprocess-series)
-      (b/add-axes :bottom)
-      (b/add-axes :left)
-      (b/add-label :bottom "exponential")
-      (r/render-lattice {:width 600 :height 600})
-      (save "results/examples/field-trace.jpg")
-      (show)))
+               [:trace field {:x [-7 7] :y [-7 7]}])
+     (b/preprocess-series)
+     (b/add-axes :bottom)
+     (b/add-axes :left)
+     (b/add-label :bottom "exponential")
+     (r/render-lattice {:width 600 :height 600})
+     (save "results/examples/field-trace.jpg")
+     (show)))
 
+(def faithful (read-json "data/faithful.json"))
 
-#_(let [grid (m/seq->double-double-array (partition 600 (map (comp int c/luma) (-> (b/series [:scalar #(apply rnd/vnoise %)  {:x [-6 6] :y [-6 6]}])
-                                                                                   (b/preprocess-series)
-                                                                                   (r/render-lattice {:width 600 :height 600})
-                                                                                   (p/to-pixels)))))
-        algo (marchingsquares.Algorithm.)
-        c (c2d/canvas 600 600)]
-    (c2d/with-canvas [c c]
-      (c2d/set-color c :black 50)
-      (doseq [p (.buildContours algo grid (double-array [123]))]
-        (c2d/set-color c :black 50)
-        (.fill (.graphics c) p)
-        (c2d/set-color c :black)
-        (.draw (.graphics c) p)))
-    (show c)) 
-
-
+(let [data (map (juxt :waiting :eruptions) faithful)]
+  (-> (b/series [:grid nil {:position [0 0]}]
+               [:grid nil {:position [1 0]}])
+     (b/add-serie [:contour data {:blur-kernel-size 50 :contours 20}] 0 0)
+     (b/add-serie [:scatter data {:label "Kernel size 50, contours 20"}] 0 0)
+     (b/add-serie [:contour data {:blur-kernel-size 10}] 1 0)
+     (b/add-serie [:scatter data {:label "Kernel size 10, contours 10"}] 1 0)
+     (b/preprocess-series)
+     (b/add-axes :bottom)
+     (b/add-axes :left)
+     (b/add-label :bottom "Waiting time (minutes)" {:font "Liberation Mono"})
+     (b/add-label :left "Eruption time (minutes)" {:font "Liberation Mono"})
+     (r/render-lattice {:width 900 :height 500})
+     (save "results/examples/contour.jpg")
+     (show)))

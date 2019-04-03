@@ -14,7 +14,9 @@
 
 (defmethod render-graph :cloud [_ data {:keys [kernel kernel-params] :as conf} {:keys [x y ^int w ^int h] :as chart-data}]
   (let [grad (if kernel
-               (apply p/gradient-renderer w h kernel kernel-params)
+               (if kernel-params
+                 (p/gradient-renderer w h kernel kernel-params)
+                 (p/gradient-renderer w h kernel))
                (p/gradient-renderer w h))
         scale-x (:scale x)
         scale-y (:scale y)]

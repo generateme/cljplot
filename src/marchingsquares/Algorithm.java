@@ -18,11 +18,33 @@ public class Algorithm
 {
    private static final ExecutorService ES = Executors.newCachedThreadPool();
    double[] isovalues;
+    public double min,max;
+    final double[][] data;
+    
+    public Algorithm(final double[][] data) throws IllegalArgumentException {
+        super();
+        double min = data[0][0];
+        double max = min;
+        int rowCount = data.length;
+        int colCount = data[0].length;
+        double here;
+        for (int i = 0; i < rowCount; i++) {
+            for (int j = 0; j < colCount; j++) {
+                here = data[i][j];
+                min = Math.min(min, here);
+                max = Math.max(max, here);
+            }
+        }
+        
+        if (min == max) {
+            throw new IllegalArgumentException("All values are equal. Cannot build contours for a constant field");
+        }
 
-
-   public Algorithm() {
-      super();
-   }
+        this.min = min;
+        this.max = max;
+        this.data = pad(data, min - 1.0);
+                
+    }
 
    private static Grid contour(double[][] data, double isovalue) {
       final int rowCount = data.length;
@@ -55,7 +77,7 @@ public class Algorithm
                // resolve the ambiguity by using the average data value for the
                // center of the cell to choose between different connections of
                // the interpolated points.
-               double center = (tl + tr + br + bl) / 4;
+               double center = (tl + tr + br + bl) / 4.0;
                if (ndx == 5 && center < isovalue) {
                   flipped = true;
                } else if (ndx == 10 && center < isovalue) {
@@ -180,46 +202,18 @@ public class Algorithm
       return result;
    }
 
-   public GeneralPath[] buildContours(final double[][] data, final double[] levels)
+   public GeneralPath[] buildContours(final double[] levels)
    throws InterruptedException, ExecutionException {
       isovalues = levels;
-      long t = -System.currentTimeMillis();
-      // find min, max, and guard
-      double min = data[0][0];
-      double max = min;
-      int rowCount = data.length;
-      int colCount = data[0].length;
-      double here;
-      for (int i = 0; i < rowCount; i++) {
-         for (int j = 0; j < colCount; j++) {
-            here = data[i][j];
-            min = Math.min(min, here);
-            max = Math.max(max, here);
-         }
-      }
 
-      GeneralPath[] result = null;
-      if (min == max) {
-         final String m = "All values are equal. Cannot build contours for a constant field";
-         System.err.println(": " + m + ". Throw IAE");
-         throw new IllegalArgumentException(m);
-      } else {
-         // IMPORTANT: pad data to ensure resulting linear strings are closed
-         final double guard = min - 1;
-         double padded[][] = pad(data, guard);
-
-         result = doConcurrent(padded);
-      }
-      t += System.currentTimeMillis();
-      System.out.println("*** Built " + levels.length + " contours in " + t + " ms.");
-      return result;
+      return doConcurrent();
    }
 
-   private GeneralPath[] doConcurrent(final double[][] data)
+   private GeneralPath[] doConcurrent()
    throws InterruptedException, ExecutionException {
       final Collection<Callable<Result>> workers = new ArrayList<>();
       for (int i = 0; i < isovalues.length; i++) {
-         workers.add(new Task(i, data, isovalues[i]));
+         workers.add(new Task(i, isovalues[i]));
       }
 
       final List<Future<Result>> jobs = ES.invokeAll(workers);
@@ -259,14 +253,12 @@ public class Algorithm
    private final class Task implements Callable<Result>
    {
       private final int ndx;
-      private final double[][] data;
       private final double level;
 
 
-      Task(final int ndx, final double[][] data, final double level) {
+      Task(final int ndx, final double level) {
          super();
          this.ndx = ndx;
-         this.data = data;
          this.level = level;
       }
 

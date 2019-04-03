@@ -24,7 +24,7 @@
   (invoke [_ v] (forward v))
   (invoke [_ s e v] (m/mlerp s e ((:value info) (forward v)))))
 
-(defn- splice-range 
+(defn splice-range 
   "Splice range to get `cnt` number of points."
   ([cnt start end] (map #(m/norm % 0.0 (dec cnt) start end) (range cnt)))
   ([cnt] (splice-range cnt 0.0 1.0)))
