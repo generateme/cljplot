@@ -10,8 +10,4 @@
                  [org.clojure/data.csv "0.1.4"]
                  [org.clojure/data.json "0.2.6"]]
   :repl-options {:timeout 120000}
-  :target-path "target/%s"
-  :profiles {:dev {:plugins [[refactor-nrepl "2.4.0"]
-                             [cider/cider-nrepl "0.21.2-SNAPSHOT"]]
-                   :dependencies [[vvvvalvalval/scope-capture "0.3.2"]
-                                  [criterium "0.4.4"]]}})
+  :target-path "target/%s")
