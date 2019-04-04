@@ -169,16 +169,49 @@
 
 (let [data (map (juxt :waiting :eruptions) faithful)]
   (-> (b/series [:grid nil {:position [0 0]}]
-               [:grid nil {:position [1 0]}])
-     (b/add-serie [:density-2d data {:blur-kernel-size 50 :contours 20}] 0 0)
-     (b/add-serie [:scatter data {:label "Kernel size 50, contours 20"}] 0 0)
-     (b/add-serie [:density-2d data {:blur-kernel-size 10}] 1 0)
-     (b/add-serie [:scatter data {:label "Kernel size 10, contours 10"}] 1 0)
-     (b/preprocess-series)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (b/add-label :bottom "Waiting time (minutes)" {:font "Liberation Mono"})
-     (b/add-label :left "Eruption time (minutes)" {:font "Liberation Mono"})
-     (r/render-lattice {:width 900 :height 500})
-     (save "results/examples/contour.jpg")
-     (show)))
+                [:grid nil {:position [1 0]}])
+      (b/add-serie [:density-2d data {:blur-kernel-size 50 :contours 20}] 0 0)
+      (b/add-serie [:scatter data {:label "Kernel size 50, contours 20"}] 0 0)
+      (b/add-serie [:density-2d data {:blur-kernel-size 10}] 1 0)
+      (b/add-serie [:scatter data {:label "Kernel size 10, contours 10"}] 1 0)
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Waiting time (minutes)" {:font "Liberation Mono"})
+      (b/add-label :left "Eruption time (minutes)" {:font "Liberation Mono"})
+      (r/render-lattice {:width 900 :height 500})
+      (save "results/examples/contour.jpg")
+      (show)))
+
+;; lag
+
+(def mc (take 10000 (iterate #(+ (* 0.95 %) (rnd/grand) (rnd/randval 0.01 10 0)) 0.0)))
+
+(let [data mc]
+  (-> (b/series [:grid] [:lag data {:lag 7 :color (c/color :black 30)}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "y(t)")
+      (b/add-label :left "y(t+1)")
+      (r/render-lattice {:width 600 :height 600})
+      (save "results/examples/lag.jpg")
+      (show)))
+
+
+(def ep (repeatedly 10000 rnd/grand))
+(def ma2 (take 500 (map (fn [e1 e2 e3] (+ (- e1) (* 0.8 e2) (* -0.9 e3))) (drop 2 ep) (drop 1 ep) ep)))
+
+(let [data ma2]
+  (-> (b/series [:grid] [:acf data {:lags 50}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "lag")
+      (b/add-label :left "correlation")
+      (r/render-lattice {:width 600 :height 400})
+      (save "results/examples/acf.jpg")
+      (show)))
+
+;;
+

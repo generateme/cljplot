@@ -57,37 +57,37 @@
 
 (defonce ^:private bw-gradient (c/gradient [:black :white]))
 
-#_(defmethod render-graph :density-2d [_ data {:keys [palette kernel kernel-params logarithmic? blur-kernel-size contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
-    (let [palette (c/resample contours palette)
-          scale-x (:scale x)
-          scale-y (:scale y)
-          g (if kernel
-              (if kernel-params
-                (p/gradient-renderer w h kernel kernel-params)
-                (p/gradient-renderer w h kernel))
-              (p/gradient-renderer w h))]
+(defmethod render-graph :density-2d [_ data {:keys [palette kernel kernel-params logarithmic? blur-kernel-size contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
+  (let [palette (c/resample contours palette)
+        scale-x (:scale x)
+        scale-y (:scale y)
+        g (if kernel
+            (if kernel-params
+              (p/gradient-renderer w h kernel kernel-params)
+              (p/gradient-renderer w h kernel))
+            (p/gradient-renderer w h))]
 
-      (doseq [[x y] data]
-        (p/add-pixel g (* w ^double (scale-x x)) (* h ^double (scale-y y))))
+    (doseq [[x y] data]
+      (p/add-pixel g (* w ^double (scale-x x)) (* h ^double (scale-y y))))
 
-      (let [g (->> (p/to-pixels g {:logarithmic? logarithmic? :gradient bw-gradient})
-                   (map c/luma)
-                   (m/seq->double-array))
-            target (double-array (alength g))]
+    (let [g (->> (p/to-pixels g {:logarithmic? logarithmic? :gradient bw-gradient})
+                 (map c/luma)
+                 (m/seq->double-array))
+          target (double-array (alength g))]
 
-        (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* 0.1 blur-kernel-size (max w h)) blur-kernel-size))
+      (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* 0.1 blur-kernel-size (max w h)) blur-kernel-size))
 
-        (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
-              steps (rest (s/splice-range (inc contours) (.-min algo) (.-max algo)))]
-          (do-graph chart-data true
-                    (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
-                            :let [col (nth palette id)]]
-                      (if fill?
-                        (do
-                          (set-color c col)
-                          (.fill (.graphics c) p)
-                          (set-color c (c/darken col))
-                          (.draw (.graphics c) p))
-                        (do
-                          (set-color c :black 200)
-                          (.draw (.graphics c) p)))))))))
+      (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
+            steps (rest (s/splice-range (inc contours) (.-min algo) (.-max algo)))]
+        (do-graph chart-data true
+          (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
+                  :let [col (nth palette id)]]
+            (if fill?
+              (do
+                (set-color c col)
+                (.fill (.graphics c) p)
+                (set-color c (c/darken col))
+                (.draw (.graphics c) p))
+              (do
+                (set-color c :black 200)
+                (.draw (.graphics c) p)))))))))

@@ -82,13 +82,8 @@
               :let [sx (scale-x x)
                     sy (scale-y y)
                     {:keys [canvas anchor]} (render-graph t d conf {:w w :h h :x sx :y sy})]]
-        
-        (place-image c canvas anchor start-x start-y)
-        (-> c
-            (push-matrix)
-            (translate anchor)
-            (image canvas start-x start-y)
-            (pop-matrix))
+
+        (place-image c canvas (v/add anchor [0 1]) start-x start-y)
         
         (when-let [label (:label conf)]
           (let [lc (render-label label w)]

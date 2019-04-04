@@ -209,7 +209,9 @@
                                      :stack {:padding-in 0.0
                                              :padding-out 0.0}}))
 
-(def aliases {:area :line
+(def aliases {:lag :scatter
+              :acf :scatter
+              :area :line
               :cdf :function
               :ppplot :scatter
               :qqplot :ppplot

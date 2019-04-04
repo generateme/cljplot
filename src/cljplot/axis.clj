@@ -156,7 +156,7 @@
           (set-color c color)
           (set-stroke-custom c stroke)
           (doseq [t ticks-y
-                  :let [ypos (m/floor (scale-y 0 h t))]]
+                  :let [ypos (inc (m/floor (scale-y 0 h t)))]]
             (line c 0 ypos w ypos)))))))
 
 
@@ -231,6 +231,6 @@
       {:canvas c
        :anchor [25 25]})))
 
-(require '[cljplot.core :as cc])
+;;(require '[cljplot.core :as cc])
 
-(cc/show (:canvas (legend "Blah" [[:line "asdf" {:shape \A :color :blue}] [:line "This is test of longer line" {:color :maroon}] [:line 333 {:color :gray}]])))
+;;(cc/show (:canvas (legend "Blah" [[:line "asdf" {:shape \A :color :blue}] [:line "This is test of longer line" {:color :maroon}] [:line 333 {:color :gray}]])))

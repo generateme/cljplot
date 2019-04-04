@@ -11,7 +11,8 @@
             [cljplot.impl.heatmap :refer :all]
             [cljplot.impl.label :refer :all]
             [cljplot.impl.math :refer :all]
-            [cljplot.impl.free :refer :all]))
+            [cljplot.impl.free :refer :all]
+            [cljplot.impl.time-series :refer :all]))
 
 (defn save
   "Save `chart`."
