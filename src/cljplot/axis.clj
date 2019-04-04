@@ -143,19 +143,94 @@
         scale-y (:scale y)
         ticks-y (:ticks y)]
     (do-graph chart-data false
-              (when-let [x (:x config)]
-                (let [{:keys [color stroke]} x]
-                  (set-color c color)
-                  (set-stroke-custom c stroke)
-                  (doseq [t ticks-x
-                          :let [xpos (m/floor (scale-x 0 w t))]]
-                    (line c xpos 0 xpos h))))
+      (when-let [x (:x config)]
+        (let [{:keys [color stroke]} x]
+          (set-color c color)
+          (set-stroke-custom c stroke)
+          (doseq [t ticks-x
+                  :let [xpos (m/floor (scale-x 0 w t))]]
+            (line c xpos 0 xpos h))))
 
-              (when-let [y (:y config)]
-                (let [{:keys [color stroke]} y]
-                  (set-color c color)
-                  (set-stroke-custom c stroke)
-                  (doseq [t ticks-y
-                          :let [ypos (m/floor (scale-y 0 h t))]]
-                    (line c 0 ypos w ypos)))))))
+      (when-let [y (:y config)]
+        (let [{:keys [color stroke]} y]
+          (set-color c color)
+          (set-stroke-custom c stroke)
+          (doseq [t ticks-y
+                  :let [ypos (m/floor (scale-y 0 h t))]]
+            (line c 0 ypos w ypos)))))))
 
+
+;; legends
+
+(def ^:private ^:const ^int legend-gap 5)
+(def ^:private ^:const ^int legend-gap3 (* 3 legend-gap))
+(def ^:private ^:const ^int mark-size 40)
+
+(defn- legend-shape-mark
+  [canvas h {:keys [shape color]}]
+  (let [h2 (/ h 2)]
+    (println shape)
+    (draw-shape canvas (/ mark-size 2) h2 shape color nil 6)))
+
+(defn- legend-line-mark
+  [canvas h {:keys [stroke color shape] :as conf}]
+  (let [h2 (/ h 2)]
+    (set-color canvas color)
+    (line canvas 0 h2 mark-size h2)
+    (when shape (legend-shape-mark canvas h conf))))
+
+(defn- legend-rect-mark
+  [canvas h {:keys [stroke color] :as conf}]
+  (set-color canvas color)
+  (rect canvas 0 0 mark-size h))
+
+
+(defn legend
+  [name data]
+  (let [txts (map second data)
+        txts (if name (conj txts name) txts)
+        [mw mh] (with-canvas [c (canvas 1 1)]
+                  (set-font-attributes c 12 :normal)
+                  (map #(m/ceil %) (reduce (fn [[w h] t] 
+                                             (let [[_ _ cw ch] (text-bounding-box c t)]
+                                               [(max w cw) (max h ch)])) [0 0] txts)))
+        
+        h (+ legend-gap legend-gap (* (count txts) (inc mh)))
+        w (+ legend-gap3 mw mark-size)
+        c (canvas (+ 50 w) (+ 50 h) :highest)]
+
+    (with-canvas [c c]
+      (translate c (+ 25 legend-gap) (+ 25 legend-gap))
+
+      (when name
+        (let [[sx sy] (map #(m/ceil %) (text-bounding-box c name))]
+          (-> c
+              (set-color :black)
+              (push-matrix)
+              (translate sx (- sy))
+              (set-font-attributes 12 :bold)
+              (text name 0 0)
+              (pop-matrix)
+              (translate 0 (+ legend-gap legend-gap mh)))))
+
+      (set-font-attributes c 12 :normal)
+      (doseq [[type title conf] data
+              :let [[sx sy bw bh] (map #(m/ceil %) (text-bounding-box c title))]]
+
+        (case type
+          :line (legend-line-mark c bh conf)
+          :rect (legend-rect-mark c bh conf))
+
+        (-> c
+            (push-matrix)
+            (translate (+ legend-gap mark-size sx) (- sy))
+            (set-color :black)
+            (text title 0 0)
+            (pop-matrix)
+            (translate 0 (inc mh))))
+      {:canvas c
+       :anchor [25 25]})))
+
+(require '[cljplot.core :as cc])
+
+(cc/show (:canvas (legend "Blah" [[:line "asdf" {:shape \A :color :blue}] [:line "This is test of longer line" {:color :maroon}] [:line 333 {:color :gray}]])))
