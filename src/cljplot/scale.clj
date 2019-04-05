@@ -4,14 +4,19 @@
             [fastmath.stats :as s]
             [java-time :as dt]
             [clojure2d.color :as c])
-  (:import [clojure.lang IFn]))
+  (:import [clojure.lang IFn]
+           [java.time LocalDateTime]))
+
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
 
 ;; continuous -> continuous
 
 (defrecord ContinuousRange [start end type forward inverse info]
   IFn
   (invoke [_ v] (forward v))
-  (invoke [_ s e v] (m/mlerp s e (forward v))))
+  (invoke [_ s e v] (m/mlerp ^double s ^double e ^double (forward v))))
 
 (defrecord DiscreteRange [start end cnt type forward inverse info]
   IFn
@@ -22,11 +27,11 @@
   IFn
   (invoke [_] range)
   (invoke [_ v] (forward v))
-  (invoke [_ s e v] (m/mlerp s e ((:value info) (forward v)))))
+  (invoke [_ s e v] (m/mlerp ^double s ^double e ^double ((:value info) (forward v)))))
 
 (defn splice-range 
   "Splice range to get `cnt` number of points."
-  ([cnt start end] (map #(m/norm % 0.0 (dec cnt) start end) (range cnt)))
+  ([^double cnt ^double start ^double end] (map #(m/norm % 0.0 (dec cnt) start end) (range cnt)))
   ([cnt] (splice-range cnt 0.0 1.0)))
 
 (defn- interpolated-range
@@ -40,7 +45,7 @@
   ([] (->ContinuousRange 0.0 1.0 :linear identity identity nil))
   ([xs] (if-not (sequential? xs)
           (linear [0.0 xs])
-          (condp == (count xs)
+          (condp #(== ^int %1 ^int %2) (count xs)
             0 (linear)
             1 (linear [0.0 (first xs)])
             2 (let [[start end] xs]
@@ -61,18 +66,18 @@
 
 (defn- log-forward
   "Logarithmic scale to [0,1]."
-  [start end]
+  ^double [^double start ^double end]
   (let [v (/ (m/ln (/ end start)))]
-    (fn [x] (* (m/ln (/ x start)) v))))
+    (fn [^double x] (* (m/ln (/ x start)) v))))
 
 (defn- log-inverse
   "[0,1] to logarithmic scale"
-  [start end]
+  ^double [^double start ^double end]
   (if (neg? start)
-    (fn [t]
+    (fn [^double t]
       (* (- (m/pow (- end) t))
          (m/pow (- start) (- 1.0 t))))
-    (fn [t]
+    (fn [^double t]
       (* (m/pow end t)
          (m/pow start (- 1.0 t))))))
 
@@ -86,32 +91,32 @@
   "Add 1 to the values"
   ([] (log1p 10.0 [1.0 10.0]))
   ([domain] (log1p 10.0 domain))
-  ([base [start end]]
+  ([base [^double start ^double end]]
    (let [start (inc start)
          end (inc end)]
-     (->ContinuousRange start end :log (comp (log-forward start end) inc) (comp dec (log-inverse start end)) {:base base}))))
+     (->ContinuousRange start end :log (comp (log-forward start end) #(inc ^double %)) (comp #(dec ^double %) (log-inverse start end)) {:base base}))))
 
 ;;
 
 (defn- spow
   "Symmetric power (keeps sign)."
-  [x p]
+  ^double [^double x ^double p]
   (if (neg? x) (- (m/pow (- x) p)) (m/pow x p)))
 
 (defn- pow-forward
   "Power scale to [0-1]"
-  [start end exponent]
+  ^double [^double start ^double end ^double exponent]
   (let [a (spow start exponent)
         v (/ (- (spow end exponent) a))]
     (fn [x] (* (- (spow x exponent) a) v))))
 
 (defn- pow-inverse
   "Power scale inverse"
-  [start end exponent]
+  ^double [^double start ^double end ^double exponent]
   (let [a (spow start exponent)
         v (- (spow end exponent) a)
         re (/ 1.0 exponent)]
-    (fn [t] (spow (+ a (* v t)) re))))
+    (fn [^double t] (spow (+ a (* v t)) re))))
 
 (defn pow
   "Power scale"
@@ -133,21 +138,21 @@
   "Calculate time duration in milliseconds.nanoseconds."
   ^double [start end]
   (let [dur (dt/duration (ld->ldt start) (ld->ldt end))
-        seconds (dt/value (dt/property dur :seconds))
-        nanos (/ (dt/value (dt/property dur :nanos)) 1000000.0)]
-    (double (+ nanos (* 1000 seconds)))))
+        seconds (double (dt/value (dt/property dur :seconds)))
+        nanos (/ (double (dt/value (dt/property dur :nanos))) 1000000.0)]
+    (+ nanos (* 1000.0 seconds))))
 
 (defn- time-forward
   "Create function which returns offset from starting date for given temporal value."
-  [start total]
+  [start ^double total]
   (fn [tm]
     (/ (time-diff-millis start tm)
        total)))
 
 (defn- time-inverse
   "Create function which returns date-time for given offset from start."
-  [start total]
-  (fn [t]
+  [start ^double total]
+  (fn [^double t]
     (->> t
          (* total)
          (m/round)
@@ -185,14 +190,14 @@
     {:years {:property :year :duration duration-year :stepfn dt/years :round (truncate-ym dt/years :first-day-of-year)}
      :months {:property :month-of-year :duration duration-month :stepfn dt/months :round (truncate-ym dt/months :first-day-of-month)}
      :days {:property :day-of-month :duration duration-day :stepfn dt/days :round #(dt/truncate-to (dt/plus % d1) :days)}
-     :hours {:property :hour-of-day :duration duration-hour :stepfn dt/hours :round #(-> (dt/plus % h1)
+     :hours {:property :hour-of-day :duration duration-hour :stepfn dt/hours :round #(-> ^LocalDateTime (dt/plus % h1)
                                                                                          (.withNano 0)
                                                                                          (.withMinute 0)
                                                                                          (.withSecond 0))}
-     :minutes {:property :minute-of-hour :duration duration-minute :stepfn dt/minutes :round #(-> (dt/plus % m1)
+     :minutes {:property :minute-of-hour :duration duration-minute :stepfn dt/minutes :round #(-> ^LocalDateTime (dt/plus % m1)
                                                                                                   (.withNano 0)
                                                                                                   (.withSecond 0))}
-     :seconds {:property :second-of-minute :duration duration-second :stepfn dt/seconds :round #(-> (dt/plus % s1)
+     :seconds {:property :second-of-minute :duration duration-second :stepfn dt/seconds :round #(-> ^LocalDateTime (dt/plus % s1)
                                                                                                     (.withNano 0))}
      :millis {:property :millis-of-second :duration 1 :stepfn dt/millis :round #(dt/plus % ml1)}}))
 
@@ -200,8 +205,8 @@
   "Compare given properties"
   [start end k]
   (let [prop (:property (dt-data k))]
-    (== (dt/value (dt/property start prop))
-        (dt/value (dt/property end prop)))))
+    (== (double (dt/value (dt/property start prop)))
+        (double (dt/value (dt/property end prop))))))
 
 (defn- format-dt
   "Infer format"
@@ -226,10 +231,10 @@
 
 (defn- calc-dt-ticks
   "Calculate ticks"
-  [start end step k]
+  [start end ^double step k]
   (let [start (ld->ldt start)
         end (ld->ldt end)
-        {:keys [duration stepfn round]} (dt-data k)
+        {:keys [^double duration stepfn round]} (dt-data k)
         step (stepfn (m/ceil (/ step duration)))
         steps (loop [s (round start)
                      v [s]]
@@ -277,7 +282,7 @@
   ""
   ([xs] (quantile 10 xs))
   ([steps-no xs] (quantile steps-no :legacy xs))
-  ([steps-no estimation-strategy xs]
+  ([^long steps-no estimation-strategy xs]
    (let [xs (m/seq->double-array xs)
          [mn mx] (s/extent xs)
          steps (map #(s/quantile xs % estimation-strategy)
@@ -287,13 +292,13 @@
 (defn- threshold-from-steps
   [steps]
   (if-not (sequential? steps)
-    (threshold-from-steps (splice-range (inc steps)))
+    (threshold-from-steps (splice-range (inc ^long steps)))
     (let [[mn mx] (s/extent steps)]
       (->DiscreteRange mn mx (dec (count steps)) :threshold (interval-steps-before (rest steps)) nil {:steps steps}))))
 
 (defn threshold
   ""
-  ([steps-no [start end]] (threshold-from-steps (splice-range (inc steps-no) start end)))
+  ([^long steps-no [start end]] (threshold-from-steps (splice-range (inc steps-no) start end)))
   ([steps] (threshold-from-steps steps)))
 
 ;; ordinal
@@ -342,6 +347,7 @@
    (let [[bands-no bands] (if (sequential? bands)
                             [(count bands) bands]
                             [bands (range bands)])
+         bands-no (int bands-no)
          padding-in (m/constrain ^double padding-in 0.0 1.0)
          align (m/constrain ^double align 0.0 1.0)
          step (/ (+ (* bands-no (- 1.0 padding-in))
@@ -349,13 +355,13 @@
                     (* (dec bands-no) padding-in)))
          nstart (* step padding-out)
          size (* step (- 1.0 padding-in))
-         lst (for [i (range bands-no)
+         lst (for [^long i (range bands-no)
                    :let [lstart (+ nstart (* i step))
                          lend (+ lstart size)
                          [lstart lend] (if (neg? step) [lend lstart] [lstart lend])]]
                {:start lstart
                 :end lend
-                :point (m/mlerp lstart lend align)})]
+                :point (m/lerp lstart lend align)})]
      (->OrdinalRange bands lst :bands
                      (zipmap bands lst)
                      (bands-inverse-fn bands lst) {:bandwidth (m/abs size)
@@ -414,7 +420,7 @@
   (if (and (== start stop) (pos? count))
     [start]
     (let [reverse? (< stop start)
-          [start stop] (if reverse? [stop start] [start stop])
+          [^double start ^double stop] (if reverse? [stop start] [start stop])
           step (tick-increment start stop count)
           res (cond
                 (or (zero? step)
@@ -436,8 +442,8 @@
 
 (defn- logp 
   ""
-  [base]
-  (condp == base
+  [^double base]
+  (condp #(== ^double %1 ^double %2) base
     m/E (fn [x] (m/log x))
     2 (fn [x] (m/log2 x))
     10 (fn [x] (m/log10 x))
@@ -446,39 +452,24 @@
 (defn- powp
   ""
   [base]
-  (condp == base
+  (condp #(== ^double %1 ^double %2) base
     m/E (fn [x] (m/exp x))
     (fn [x] (m/pow base x))))
 
 (defmethod ticks- :log [s & [c]]
-  (let [c (or c 10)
+  (let [^double c (or c 10.0)
         base (:base (:info s))
         logs (logp base)
         pows (powp base)
-        start (logs (:start s))
-        end (logs (:end s))
+        ^double start (logs (:start s))
+        ^double end (logs (:end s))
         lst (map (comp m/approx pows) (ticks-linear start end (min (- end start) c)))]
-    {:ticks (map #(+ 0.0 %) (if (seq lst)
-                              lst
-                              [(m/approx (pows start))]))}))
+    {:ticks (map #(+ 0.0 ^double %) (if (seq lst)
+                                      lst
+                                      [(m/approx (pows start))]))}))
 
 (defmethod ticks- :bands [s & _] {:ticks (:domain s)})
-(defmethod ticks- :time [s & [c]] (ticks-dt (:start s) (:end s) (or c 10)))
-
-(comment defn ticks-log
-         ""
-         [start stop count base logs pows]
-         (let [reverse? (< start stop)
-               [u v] (if reverse? [stop start] [start stop])
-               i (logs u)
-               j (logs v)
-               n (or count 10)]
-           (if (and (zero? (m/frac base))
-                    (< n (- j i)))
-             (let [i (dec (m/round i))
-                   j (inc (m/round j))]
-               (if (pos? u)
-                 (for [ii (range i j)]))))))
+(defmethod ticks- :time [s & [c]] (ticks-dt (:start s) (:end s) (or c 10.0)))
 
 
 ;; scale/ticks factory

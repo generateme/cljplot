@@ -8,6 +8,10 @@
             [cljplot.build :as b]
             [fastmath.core :as m]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
 ;;
 
 (defn series
@@ -37,22 +41,23 @@
 
 (defn- find-most-squared-shape
   "Let's find best squared shape for given number of data"
-  [v]
+  [^long v]
   (let [s (m/sqrt v)
         r (range 1 (inc v))
-        [_ x y] (first (sort-by first < (for [x r y r
-                                              :let [d1 (- (* x y) v)
-                                                    d (+ d1 d1 (+ (m/sq (- s x))
-                                                                  (m/sq (- s y))))]
-                                              :when (>= d1 0.0)]
-                                          [d x y])))]
+        [_ ^long x ^long y] (first (sort-by first clojure.core/< (for [^long x r ^long y r
+                                                                       :let [d1 (- (* x y) v)
+                                                                             d (+ d1 d1 (+ (m/sq (- s x))
+                                                                                           (m/sq (- s y))))]
+                                                                       :when (>= d1 0.0)]
+                                                                   [d x y])))]
     (if (< x y) [x y] [y x])))
 
 (def ^:private find-most-squared-shape+ (memoize find-most-squared-shape))
 
 (defn- ensure-rows-cols
-  [shape total]
-  (let [[rows cols] (map #(when (and % (pos? %)) %) shape)]
+  [shape ^long total]
+  (let [total (double total)
+        [^long rows ^long cols] (map #(when (and % (pos? ^long %)) %) shape)]
     (cond
       (and rows cols) [rows cols]
       rows [rows (int (m/ceil (/ total rows)))]
@@ -87,7 +92,7 @@
   Additionally find number of rows and cols. Default position is [0,0]."
   [srs]
   (let [gsrs (group-by (comp :position last) (map add-default-position srs))
-        [cols rows] (map #(inc (apply max (mapv % (keys gsrs)))) [first second])]
+        [cols rows] (map #(inc ^long (apply clojure.core/max (mapv % (keys gsrs)))) [first second])]
     {:series gsrs
      :cols cols
      :rows rows}))
@@ -122,8 +127,8 @@
 
 (defn- select-row-col-ids
   "Select keys for given row (1) or column (0)."
-  [k id m]
-  (filter #(= id (% k)) (keys m)))
+  [k ^long id m]
+  (filter #(== id ^long (% k)) (keys m)))
 
 (defn- merge-extents-by-ids
   "Merge extents by column/row"
@@ -191,7 +196,7 @@
 (defn- find-size
   [side-nseries]
   (let [s (remove nil? (map (comp :auto-size second) side-nseries))]
-    (if (seq s) (reduce max s) nil)))
+    (if (seq s) (reduce #(max ^double %1 ^double %2) s) nil)))
 
 (defn- update-side
   [series side pos size side-nseries]

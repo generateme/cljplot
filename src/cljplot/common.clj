@@ -11,6 +11,10 @@
             [java-time :as dt]
             [cljplot.scale :as s]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
 (def ^:private ^:const ^int canvas-border 100)
 (def ^:private ^:const ^int canvas-shift (/ canvas-border 2))
 (def ^:private ^:const ^int canvas-shift- (- canvas-shift))
@@ -19,8 +23,8 @@
 (defn graph-canvas
   "Create canvas to draw a chart on"
   ([graph-conf] (graph-canvas graph-conf false))
-  ([{:keys [w h orientation rendering-hint oversize] :or {orientation :top oversize 100}} highest?]
-   (let [[cw ch] (if (#{:left :right} orientation) [h w] [w h])
+  ([{:keys [w h orientation rendering-hint ^double oversize] :or {orientation :top oversize 100}} highest?]
+   (let [[^int cw ^int ch] (if (#{:left :right} orientation) [h w] [w h])
          canvas-shift (/ oversize 2)
          canvas-shift- (- canvas-shift)
          c (canvas (+ oversize cw) (+ oversize ch) (if rendering-hint
@@ -86,7 +90,8 @@
                   (zero?)) "Types of series should have the same type: continuous or categorical")
       (let [[t _ sconf] (first s)
             res [t (if (#{:numerical :temporal} t)
-                     (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [min max])]
+                     (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [#(min ^double %1 ^double %2)
+                                                                            #(max ^double %1 ^double %2)])]
                        (reduce (fn [[ca cb] [a b]] [(fmin ca a) (fmax cb b)]) (map second s)))
                      (distinct (mapcat identity (map second s))))]]
         (if sconf (conj res sconf) res)))))
@@ -102,9 +107,9 @@
 ;;
 
 (defn bands->positions-size
-  [bands size]
+  [bands ^double size]
   (into {} (mapv (fn [id]
-                   (let [{:keys [start end]} (bands id)
+                   (let [{:keys [^double start ^double end]} (bands id)
                          ss (m/floor (* size (- end start)))
                          st (m/floor (* size start))]
                      [id [st ss]])) (:domain bands))))
@@ -124,7 +129,7 @@
 
 
 (defn extend-domain-numerical
-  [[start end] [l r]]
+  [[^double start ^double end] [^double l ^double r]]
   (let [diff (- end start)]
     [(- start (* diff l))
      (+ end (* diff r))]))
@@ -188,12 +193,12 @@
   [vx scale-x scale-y gtype cells]
   (let [iscale-x (:inverse scale-x)
         iscale-y (:inverse scale-y)
-        g (grid/grid gtype (/ cells))
+        g (grid/grid gtype (/ (double cells)))
         cnts (reduce (fn [m [x y cnt]]
                        (let [cnt (or cnt 1)
                              cell (grid/coords->mid g (v/vec2 (scale-x x) (scale-y y)))]
                          (if (contains? m cell)
-                           (update m cell + cnt)
+                           (update m cell #(+ ^double %1 ^double %2) cnt)
                            (assoc m cell cnt)))) {} vx)]
     (map (fn [[[x y] cnt]]
            (v/vec3 (iscale-x x) (iscale-y y) cnt)) cnts)))
@@ -203,7 +208,9 @@
 (defn- triangle-shape 
   ""
   [canv x y hsize size angle stroke?]
-  (let [size3 (/ size 3.0)
+  (let [size (double size)
+        hsize (double hsize)
+        size3 (/ size 3.0)
         size6 (+ size3 size3)]
     (-> canv
         (push-matrix)
@@ -220,7 +227,10 @@
   (-> canv
       (set-stroke-custom stroke)
       (set-color color))
-  (let [hsize (/ size 2.0)]
+  (let [size (double size)
+        x (double x)
+        y (double y)
+        hsize (/ size 2.0)]
     (case type
       \* (-> canv
              (set-font-attributes (* 2 size))
@@ -261,7 +271,7 @@
 
 (defn render-label
   ""
-  [label w]
+  [label ^long w]
   (let [ww (int (* 0.95 w))
         sx (/ (- w ww) 2)]
     (with-canvas-> (canvas w 12)
@@ -274,11 +284,11 @@
 
 (defn label-size
   ([s] (label-size s {}))
-  ([s {:keys [font font-size margin] :or {margin 8}}]
+  ([s {:keys [font font-size ^double margin] :or {margin 8}}]
    (with-canvas [c (canvas 1 1)]
      (when font (set-font c font))
      (when font-size (set-font-attributes c font-size))
-     (let [[x y _ h] (text-bounding-box c s)]
+     (let [[x ^double y _ h] (text-bounding-box c s)]
        {:shift-y (/ margin 2)
         :auto-size (+ margin (m/ceil h))
         :pos [x (m/floor (- y))]}))))
@@ -290,4 +300,4 @@
 
 
 (defn read-csv [f] (rest (with-open [reader (io/reader f)]
-(doall (csv/read-csv reader)))))
+                           (doall (csv/read-csv reader)))))

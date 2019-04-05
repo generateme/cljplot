@@ -211,6 +211,7 @@
 
 (def aliases {:lag :scatter
               :acf :scatter
+              :pacf :scatter
               :area :line
               :cdf :function
               :ppplot :scatter

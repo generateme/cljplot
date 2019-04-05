@@ -187,28 +187,51 @@
 
 (def mc (take 10000 (iterate #(+ (* 0.95 %) (rnd/grand) (rnd/randval 0.01 10 0)) 0.0)))
 
-(let [data mc]
-  (-> (b/series [:grid] [:lag data {:lag 7 :color (c/color :black 30)}])
-      (b/preprocess-series)
-      (b/add-axes :bottom)
-      (b/add-axes :left)
-      (b/add-label :bottom "y(t)")
-      (b/add-label :left "y(t+1)")
-      (r/render-lattice {:width 600 :height 600})
-      (save "results/examples/lag.jpg")
-      (show)))
+(-> (b/series [:grid] [:lag mc {:lag 7 :color (c/color :black 30)}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "y(t)")
+    (b/add-label :left "y(t+7)")
+    (r/render-lattice {:width 600 :height 600})
+    (save "results/examples/lag.jpg")
+    (show))
 
+;; ACF/PACF
+
+;; http://people.math.sfu.ca/~lockhart/richard/804/06_1/lectures/IdentExamples/web.pdf
 
 (def ep (repeatedly 10000 rnd/grand))
+(def ar1 (drop 9500 (reductions (fn [c r]
+                                  (+ r (* -0.99 c))) (first ep) (rest ep))))
+(def ar2 (drop 9500 (map first (reductions (fn [[c1 c2] r]
+                                             [(+ r c1 (* -0.99 c2)) c1]) [(first ep) (second ep)] (drop 2 ep)))))
+(def ar3 (drop 9500 (map first (reductions (fn [[c1 c2 c3] r]
+                                             [(+ r (* 0.8 c1) (/ c2 -3.0) (* 0.4672897196261683 c3)) c1 c2]) [(first ep) (second ep) (nth ep 2)] (drop 3 ep)))))
 (def ma2 (take 500 (map (fn [e1 e2 e3] (+ (- e1) (* 0.8 e2) (* -0.9 e3))) (drop 2 ep) (drop 1 ep) ep)))
+(def sunspots (map :x (read-json "data/sunspot_year.json")))
+
+;; (/ 0.8 1.712)
+;; => 0.4672897196261683
 
 (let [data ma2]
-  (-> (b/series [:grid] [:acf data {:lags 50}])
+  (-> (b/series [:grid] [:line (map-indexed vector data)])
       (b/preprocess-series)
+      (b/update-scales :x :fmt int)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (r/render-lattice {:width 600 :height 200})
+      (save "results/examples/ma2.jpg")
+      (show))
+
+  (-> (b/series [:grid nil {:position [0 1]}] [:acf data {:lags 50 :position [0 1] :label "ACF MA(2)"}]
+                [:grid nil {:position [0 0]}] [:pacf data {:lags 50 :position [0 0] :label "PACF MA(2)"}])
+      (b/preprocess-series)
+      (b/update-scales :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
       (b/add-label :bottom "lag")
-      (b/add-label :left "correlation")
+      (b/add-label :left "autocorrelation")
       (r/render-lattice {:width 600 :height 400})
       (save "results/examples/acf.jpg")
       (show)))
