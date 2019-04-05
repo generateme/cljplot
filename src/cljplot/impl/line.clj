@@ -7,10 +7,15 @@
             [fastmath.stats :as stats]
             [fastmath.random :as r]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
+
 ;; TODO: move interpolation to the prepare-data phase (like in sarea)
 
 (defmethod render-graph :line [_ data {:keys [color stroke interpolation smooth? area? point] :as conf}
-                               {:keys [w h x y] :as chart-data}]
+                               {:keys [^int w h x y] :as chart-data}]
   (let [raw-scale-x (:scale x)
         scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
@@ -27,9 +32,9 @@
         (set-color c color)
         (path c (conj (vec (conj p [0.0 0.0])) [w 0.0]) true false))
       (-> c
-         (set-color lcolor)
-         (set-stroke-custom stroke)
-         (pfn p))
+          (set-color lcolor)
+          (set-stroke-custom stroke)
+          (pfn p))
       (when-let [point-type (:type point)]
         (let [size-fn (:size point)]
           (doseq [[x y :as data] data
@@ -87,13 +92,13 @@
             [x (mapv (partial f l) ys)])) vs))
 
 (defn- sarea-normalized [vs] (sarea-map #(m/norm %2 0 %1) vs))
-(defn- sarea-stream [vs] (sarea-map #(let [hl (/ %1 2)] (m/norm %2 0 %1 (- hl) hl)) vs))
+(defn- sarea-stream [vs] (sarea-map #(let [hl (/ ^int %1 2)] (m/norm %2 0 %1 (- hl) hl)) vs))
 
 (defmethod prepare-data :sarea [_ data {:keys [interpolation method]}]
   (let [xs (->> (map second data)
-              (mapcat (partial map first))
-              (distinct)
-              (sort))
+                (mapcat (partial map first))
+                (distinct)
+                (sort))
         ks (mapv first data)
         domain [(first xs) (last xs)]
         interp (or interpolation in/linear-smile)
@@ -101,8 +106,8 @@
         interpolators (apply juxt
                              (constantly 0)
                              (map (map-kv #(wrap-interpolator-for-dt interp domain (map first %) (map second %)) data-as-map) ks))
-        vs (mapv #(vector % (reductions + (interpolators %))) xs)
-        maxv (reduce max (mapv (comp last second) vs))]
+        vs (mapv #(vector % (reductions fast+ (interpolators %))) xs)
+        ^double maxv (reduce fast-max (mapv (comp last second) vs))]
     (case method
       :normalized [domain [0.0 1.0] ks (sarea-normalized vs)]
       :stream [domain [(- (/ maxv 2)) (/ maxv 2)] ks (sarea-stream vs)]

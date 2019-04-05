@@ -10,17 +10,21 @@
             [fastmath.vector :as v]
             [fastmath.random :as r]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
 (defn- axis-canvas
   "Return axis canvas
 
   Axis canvas is much bigger than axis itself."
-  [axis-length]
+  [^long axis-length]
   (let [size (+ axis-length 200)]
     (canvas size size :high)))
 
 (defn- axis-line
   "Draw line according to config. Canvas should be aligned to mid position."
-  [canvas length {:keys [color stroke angle]}]
+  [canvas ^long length {:keys [color stroke angle]}]
   (-> canvas
       (rotate (m/radians angle))
       (translate (- (/ length 2)) 0)
@@ -41,10 +45,10 @@
   [canvas txt shift-x shift-y-rel text-angle text-align angle]
   (-> canvas
       (push-matrix)
-      (rotate (m/radians (- text-angle angle))))
-  (let [[_ yoff _ th] (text-bounding-box canvas txt)]
+      (rotate (m/radians (- ^double text-angle ^double angle))))
+  (let [[_ ^double yoff _ ^double th] (text-bounding-box canvas txt)]
     (-> canvas
-        (translate shift-x (+ (* th shift-y-rel) yoff th))
+        (translate shift-x (int (+ (* th ^double shift-y-rel) yoff th)))
         (text txt 0 0 text-align)
         (pop-matrix))))
 
@@ -56,7 +60,7 @@
 
 (defn- draw-ticks
   "Draw ticks"
-  [canvas length {:keys [scale ticks fmt]} angle {:keys [size type color stroke anchor font-size font
+  [canvas length {:keys [scale ticks fmt]} angle {:keys [size type color stroke ^double anchor font-size font
                                                          text-angle text-align shift-x shift-y-rel]}]
   (set-stroke-custom canvas stroke) ;; set ticks stroke
   (set-axis-font canvas font font-size) ;; set fonts
@@ -65,20 +69,20 @@
                 sz (m/floor (size t))         ;; calc size
                 ty (* -1.0 anchor sz)]]
     (-> canvas
-       (set-color color)
-       (push-matrix)
-       (translate pos 0)
-       (translate 0 ty)
-       (draw-tick type (* anchor sz)) ;; draw tick
-       (draw-text (fmt t) shift-x shift-y-rel text-angle text-align angle)
-       (pop-matrix)))
+        (set-color color)
+        (push-matrix)
+        (translate pos 0)
+        (translate 0 ty)
+        (draw-tick type (* anchor sz)) ;; draw tick
+        (draw-text (fmt t) shift-x shift-y-rel text-angle text-align angle)
+        (pop-matrix)))
   canvas)
 
 (defn- draw-axis
   "Draw axis and ticks"
   [length scale-info config]
   (let [canvas (axis-canvas length) ;; create canvas
-        mid (/ (width canvas) 2)] ;; calc mid point
+        mid (/ ^int (width canvas) 2)] ;; calc mid point
     (with-canvas [c canvas]
       (-> c
           (translate mid mid) ;; go to mid
@@ -97,17 +101,17 @@
   "Find maximum tick size."
   [{:keys [ticks]} config]
   (let [size-fn (get-in config [:ticks :size])]
-    (max 0 (inc (get-in config [:line :stroke :size]))
-         (reduce max (map #(size-fn % config) ticks)))))
+    (max 0.0 (inc ^double (get-in config [:line :stroke :size]))
+         ^double (reduce #(max ^double %1 ^double %2) (map #(size-fn % config) ticks)))))
 
 (defn- find-text-bounding-box
   "Find biggest bounding box from ticks"
   [{:keys [ticks fmt]} config]
   (with-canvas [c (canvas 1 1)]
     (set-axis-font c (get-in config [:ticks :font]) (get-in config [:ticks :font-size]))
-    (reduce (fn [[w h] t] 
+    (reduce (fn [[^double w ^double h] t] 
               (let [s (fmt t)
-                    [_ _ cw ch] (text-bounding-box c s)]
+                    [_ _ ^double cw ^double ch] (text-bounding-box c s)]
                 [(max w cw) (max h ch)])) [0 0] ticks)))
 
 (defn- xy-axes
@@ -115,12 +119,12 @@
   (let [a (draw-axis w scale-info config)]
     (if (= :x position)
       (update a :anchor v/sub (v/vec2 0.0 1.0))
-      (update-in a [:anchor 1] + w))))
+      (update-in a [:anchor 1] clojure.core/+ w))))
 
 (defn axis-size
   [scale position config]
-  (let [[bw bh] (find-text-bounding-box scale config)
-        l (find-max-tick-size scale config)]
+  (let [[^double bw ^double bh] (find-text-bounding-box scale config)
+        ^double l (find-max-tick-size scale config)]
     (m/ceil (if (= :x position)
               (+ bh 5 l)
               (+ bw 10 l)))))
@@ -167,13 +171,12 @@
 (def ^:private ^:const ^int mark-size 40)
 
 (defn- legend-shape-mark
-  [canvas h {:keys [shape color]}]
+  [canvas ^long h {:keys [shape color]}]
   (let [h2 (/ h 2)]
-    (println shape)
     (draw-shape canvas (/ mark-size 2) h2 shape color nil 6)))
 
 (defn- legend-line-mark
-  [canvas h {:keys [stroke color shape] :as conf}]
+  [canvas ^long h {:keys [stroke color shape] :as conf}]
   (let [h2 (/ h 2)]
     (set-color canvas color)
     (line canvas 0 h2 mark-size h2)
@@ -189,11 +192,11 @@
   [name data]
   (let [txts (map second data)
         txts (if name (conj txts name) txts)
-        [mw mh] (with-canvas [c (canvas 1 1)]
-                  (set-font-attributes c 12 :normal)
-                  (map #(m/ceil %) (reduce (fn [[w h] t] 
-                                             (let [[_ _ cw ch] (text-bounding-box c t)]
-                                               [(max w cw) (max h ch)])) [0 0] txts)))
+        [^double mw ^double mh] (with-canvas [c (canvas 1 1)]
+                                  (set-font-attributes c 12 :normal)
+                                  (map #(m/ceil %) (reduce (fn [[^double w ^double h] t] 
+                                                             (let [[_ _ ^double cw ^double ch] (text-bounding-box c t)]
+                                                               [(max w cw) (max h ch)])) [0 0] txts)))
         
         h (+ legend-gap legend-gap (* (count txts) (inc mh)))
         w (+ legend-gap3 mw mark-size)
@@ -203,7 +206,7 @@
       (translate c (+ 25 legend-gap) (+ 25 legend-gap))
 
       (when name
-        (let [[sx sy] (map #(m/ceil %) (text-bounding-box c name))]
+        (let [[^double sx ^double sy] (map #(m/ceil %) (text-bounding-box c name))]
           (-> c
               (set-color :black)
               (push-matrix)
@@ -215,7 +218,7 @@
 
       (set-font-attributes c 12 :normal)
       (doseq [[type title conf] data
-              :let [[sx sy bw bh] (map #(m/ceil %) (text-bounding-box c title))]]
+              :let [[^double sx ^double sy bw bh] (map #(m/ceil %) (text-bounding-box c title))]]
 
         (case type
           :line (legend-line-mark c bh conf)

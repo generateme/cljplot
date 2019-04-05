@@ -7,6 +7,11 @@
             [fastmath.random :as rnd]
             [fastmath.interpolation :as in]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
+
 (defmethod prepare-data :lag [_ data {:keys [lag]}] (map vector data (drop (or lag 1) data)))
 (defmethod render-graph :lag [_ data conf chart-data] (render-graph :scatter data conf chart-data))
 
@@ -20,7 +25,7 @@
 
 (defn acf
   "Calculate acf for given number of lags"
-  [data lags]
+  [data ^long lags]
   (let [vdata (ensure-vec data)]
     (mapv (fn [lag]
             (let [v2 (subvec vdata lag)
@@ -29,13 +34,12 @@
 
 ;; http://feldman.faculty.pstat.ucsb.edu/174-03/lectures/l13
 (defn pacf
-  [data lags]
+  [data ^long lags]
   (let [acf (acf data lags)
-        phis (reductions (fn [curr id]
-                           (let [phi (/ (- (acf id) (reduce + (map-indexed #(* (acf (dec (- id %1))) %2) curr)))
-                                        (- 1.0 (reduce + (map-indexed #(* (acf (inc %1)) %2) curr))))]
-                             (println phi)
-                             (conj (mapv #(- %1 (* phi %2)) curr (reverse curr)) phi))) [(acf 1)] (range 2 (inc lags)))]
+        phis (reductions (fn [curr ^long id]
+                           (let [phi (/ (- ^double (acf id) ^double (reduce fast+ (map-indexed #(* ^double (acf (dec (- id ^int %1))) ^double %2) curr)))
+                                        (- 1.0 ^double (reduce fast+ (map-indexed #(* ^double (acf (inc ^int %1)) ^double %2) curr))))]
+                             (conj (mapv #(- ^double %1 (* phi ^double %2)) curr (reverse curr)) phi))) [(acf 1)] (range 2 (inc lags)))]
     (vec (conj (map last phis) 0.0))))
 
 (defn- p-acf-data
@@ -46,10 +50,10 @@
         acf-fn (if (= method :acf) acf pacf)
         acf (map-indexed vector (acf-fn vdata lags))
         rsqrt (/ 1.0 (m/sqrt cnt))
-        ci (* rsqrt (rnd/icdf gaussian (* 0.5 (inc 0.95))))]
+        ci (* rsqrt ^double (rnd/icdf gaussian (* 0.5 (inc 0.95))))]
     (if (= method :acf)
-      [acf rsqrt ci (map #(* ci (m/sqrt (dec (* 2.0 %))))
-                         (reductions (fn [acc s] (+ acc (* s s))) (map second acf)))]
+      [acf rsqrt ci (map #(* ci (m/sqrt (dec (* 2.0 ^double %))))
+                         (reductions (fn [^double acc ^double s] (+ acc (* s s))) (map second acf)))]
       [(rest acf) rsqrt ci])))
 
 #_(last (p-acf-data :acf ma2 10))
@@ -89,24 +93,23 @@
 
 (defmethod data-extent :acf [_ data _]
   (let [e (common-extent (first data))
-        [_ [mn mx]] (:y e)]
+        [_ [^double mn mx]] (:y e)]
     (assoc-in e [:y 1] [(min 0.0 mn) mx])))
 
 ;; pars: ci
-(defmethod render-graph :acf [_ [data rsqrt ci0 cis] conf {:keys [w h x y] :as chart-data}]
-  (println (take 5 cis))
+(defmethod render-graph :acf [_ [data ^double rsqrt ^double ci0 cis] conf {:keys [^int w ^int h x y] :as chart-data}]
   (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
         zero (scale-y 0.0)
         w- (dec w)
-        ci- (scale-y (- ci0))
-        ci (scale-y ci0)]
+        ^double ci- (scale-y (- ci0))
+        ^double ci (scale-y ci0)]
     (do-graph (assoc chart-data :oversize 0) false
 
       (set-color c :grey 80)
       (if cis
         (let [p1 (map-indexed #(vector (scale-x %1) (scale-y %2)) cis)
-              p2 (reverse (map-indexed #(vector (scale-x %1) (scale-y (- %2))) cis))]
+              p2 (reverse (map-indexed #(vector (scale-x %1) (scale-y (- ^double %2))) cis))]
           (path c (concat p2 p1) true false))
         (-> c
             (rect 0 ci- w (- ci ci-))

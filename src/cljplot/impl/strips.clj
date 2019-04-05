@@ -8,16 +8,21 @@
             [clojure2d.color :as c]
             [fastmath.core :as m]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
+
 (defn- pack-into-seq [data]
   (if (sequential? (first data)) data (map vector data)))
 
 
 (defmethod prepare-data :rug [_ data _] (pack-into-seq data))
-(defmethod render-graph :rug [_ data {:keys [color size cap distort scale] :as conf} {:keys [w h x] :as chart-data}]
+(defmethod render-graph :rug [_ data {:keys [color size cap distort ^double scale] :as conf} {:keys [w ^int h x] :as chart-data}]
   (let [scale-x (:scale x)]
     (do-graph chart-data false
-      (doseq [[v :as all] data
-              :let [x (scale-x 0 w (+ (r/grand distort) v))]]
+      (doseq [[^double v :as all] data
+              :let [x (scale-x 0 w (+ ^double (r/grand distort) v))]]
         (-> c
             (set-color (color all conf))
             (set-stroke (size all conf) cap) 
@@ -27,11 +32,11 @@
 
 
 (defmethod prepare-data :strip [_ data _] (pack-into-seq data))
-(defmethod render-graph :strip [_ data {:keys [color size shape distort scale] :as conf} {:keys [w h x] :as chart-data}]
+(defmethod render-graph :strip [_ data {:keys [color size shape ^double distort ^double scale] :as conf} {:keys [w ^int h x] :as chart-data}]
   (let [scale-x (:scale x)]
     (do-graph chart-data (#{\o \O} shape)
-      (doseq [[v :as all] data
-              :let [x (scale-x 0 w (+ (r/grand distort) v))
+      (doseq [[^double v :as all] data
+              :let [x (scale-x 0 w (+ ^double (r/grand distort) v))
                     y (r/grand (/ h 2) (* h scale distort))]]
         (draw-shape c x y shape (color all conf) nil (size all conf))))))
 
@@ -54,11 +59,10 @@
       (fn? ext) (ext d)
       :else (stats/extent d))))
 
-(defmethod data-extent :extent-stat [_ [x y] _]
-  {:x [:numerical [x y]]})
+(defmethod data-extent :extent-stat [_ [x y] _]  {:x [:numerical [x y]]})
 
 (defmethod render-graph :extent-stat [_ [min-val max-val stat-val] {:keys [color size shape stroke] :as conf}
-                                      {:keys [w h x] :as chart-data}]
+                                      {:keys [w ^int h x] :as chart-data}]
   (let [scale-x (:scale x)
         h2 (* 0.5 h)]
     (do-graph chart-data (#{\o \O} shape)
@@ -74,14 +78,14 @@
 (defmethod data-extent :box [_ data _]
   {:x [:numerical [(:Min data) (:Max data)]]})
 
-(defmethod render-graph :box [_ data {:keys [color size shape outliers?] :as conf} {:keys [w h x] :as chart-data}]
+(defmethod render-graph :box [_ data {:keys [color ^double size shape outliers?] :as conf} {:keys [^int w ^int h x] :as chart-data}]
   (let [color (color nil conf)
         dcolor (c/darken color)
-        line-cl (if (> 127.5 (c/luma color)) :black :white)
+        line-cl (if (> 127.5 ^double (c/luma color)) :black :white)
         scale-x (partial (:scale x) 0 w)
-        [median q1 q3 lav uav] (map scale-x (map data [:Median :Q1 :Q3 :LAV :UAV :LIF :UIF]))
+        [median ^double q1 ^double q3 lav uav] (map scale-x (map data [:Median :Q1 :Q3 :LAV :UAV :LIF :UIF]))
         h2 (* 0.5 h)
-        [hl hh hlm hhm] (map #(+ h2 (* % h2)) [-0.5 0.5 -0.25 0.25])]
+        [^double hl ^double hh ^double hlm ^double hhm] (map #(+ h2 (* ^double % h2)) [-0.5 0.5 -0.25 0.25])]
 
     (do-graph chart-data (and outliers? (#{\o \O} shape))
       (-> c
@@ -96,7 +100,7 @@
           (line median (inc hl) median (dec hh)))
       (when outliers?
         (doseq [o (map scale-x (:Outliers data))]
-          (draw-shape c o (+ h2 (r/grand)) shape (c/color color 200) nil (max 3 (* 0.7 size (- hhm hlm)))))))))
+          (draw-shape c o (+ h2 (r/grand)) shape (c/color color 200) nil (max 3.0 (* 0.7 size (- hhm hlm)))))))))
 
 ;;
 
@@ -110,19 +114,19 @@
     [density stats]))
 
 (defmethod data-extent :violin [_ [density stats] _]
-  (let [[_ ymx] (stats/extent (map second density))]
+  (let [[_ ^double ymx] (stats/extent (map second density))]
     {:x [:numerical [(:Min stats) (:Max stats)]]
      :y [:numerical [(- ymx) ymx]]}))
 
-(defmethod render-graph :violin [_ [density stats] {:keys [color color-bar size-bar size scale] :as conf}
+(defmethod render-graph :violin [_ [density stats] {:keys [color color-bar ^double size-bar size ^double scale] :as conf}
                                  {:keys [w h x y] :as chart-data}]
   (let [color (color nil conf)
         scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
-        p1 (map (fn [[x y]] [(scale-x x) (scale-y (* y scale))]) density)
-        p2 (map (fn [[x y]] [(scale-x x) (scale-y (- (* y scale)))]) density)
-        zero (scale-y 0.0)
-        [median q1 q3 lav uav] (map scale-x (map stats [:Median :Q1 :Q3 :LAV :UAV]))]
+        p1 (map (fn [[^double x ^double y]] [(scale-x x) (scale-y (* y scale))]) density)
+        p2 (map (fn [[^double x ^double y]] [(scale-x x) (scale-y (- (* y scale)))]) density)
+        ^double zero (scale-y 0.0)
+        [median ^double q1 ^double q3 lav uav] (map scale-x (map stats [:Median :Q1 :Q3 :LAV :UAV]))]
     (do-graph chart-data false
       (-> (set-stroke c size)
           (filled-with-stroke color (c/darken color) path (concat p1 (reverse p2)) true)
@@ -144,16 +148,16 @@
     [density all]))
 
 (defmethod data-extent :density-strip [_ [density [xmn xmx]] _]
-  (let [[_ ymx] (stats/extent (map second density))]
+  (let [[_ ^double ymx] (stats/extent (map second density))]
     {:x [:numerical [xmn xmx]]
      :y [:numerical [(- ymx) ymx]]}))
 
-(defmethod render-graph :density-strip [_ [density] {:keys [area? color size scale] :as conf}
+(defmethod render-graph :density-strip [_ [density] {:keys [area? color size ^double scale] :as conf}
                                         {:keys [w h x y] :as chart-data}]
   (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
         zero (scale-y 0.0)
-        p (map (fn [[x y]] [(scale-x x) (scale-y (* y scale))]) density)
+        p (map (fn [[^double x ^double y]] [(scale-x x) (scale-y (* y scale))]) density)
         p (conj (vec (conj p [(ffirst p) zero])) [(first (last p)) zero])
         col (color density conf)]
     (do-graph chart-data false
@@ -209,37 +213,37 @@
    :y [:numerical [0.0 1.0]]})
 
 (defmethod render-graph :bar [_ data {:keys [palette color stroke stroke? padding-in padding-out] :as conf}
-                              {:keys [w h x] :as chart-data}]
+                              {:keys [w ^int h x] :as chart-data}]
   (let [cnt (count data)
         bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
         scale-x (partial (:scale x) 0 w)
-        zero (scale-x 0)
+        ^double zero (scale-x 0)
         pal (if (seq palette) (cycle palette) (repeat color))
         col? (and color (= cnt 1))]
     (do-graph chart-data false
       (set-stroke-custom c stroke)
-      (doseq [[id v] (map-indexed vector data)
-              :let [{:keys [start end]} (bands (- cnt id 1))
+      (doseq [[^long id ^double v] (map-indexed vector data)
+              :let [{:keys [^double start ^double end]} (bands (- cnt id 1))
                     st (* start h)
                     hh (* (- end start) h)
                     col (if col? (color v conf) (nth pal id))
-                    sv (scale-x v)
+                    ^double sv (scale-x v)
                     [x w] (if (neg? v) [sv (- zero sv)] [zero (- sv zero)])]]
         (if stroke?
           (-> c
-             (set-stroke-custom stroke)
-             (filled-with-stroke col (c/darken col) rect x st w hh))
+              (set-stroke-custom stroke)
+              (filled-with-stroke col (c/darken col) rect x st w hh))
           (-> c
-             (set-color col) 
-             (rect x st w hh)))))))
+              (set-color col) 
+              (rect x st w hh)))))))
 
 (defmethod data-extent :rbar [_ data _]
   {:x [:numerical data]
    :y [:numerical [0.0 1.0]]})
 
 (defmethod render-graph :rbar [_ data {:keys [color stroke stroke? padding] :as conf}
-                               {:keys [w h x] :as chart-data}]
-  (let [{:keys [start end]} ((s/bands {:padding-out padding} 1) 0)
+                               {:keys [w ^int h x] :as chart-data}]
+  (let [{:keys [^double start ^double end]} ((s/bands {:padding-out padding} 1) 0)
         st (* start h)
         hh (* (- end start) h)
         scale-x (partial (:scale x) 0 w)]
@@ -247,25 +251,25 @@
       (set-stroke-custom c stroke)
       (let [[x y] data
             col (color data conf)
-            sv (scale-x x)
-            ww (- (scale-x y) sv)]
+            ^double sv (scale-x x)
+            ww (- ^double (scale-x y) sv)]
         (if stroke?
           (-> c
-             (set-stroke-custom stroke)
-             (filled-with-stroke col (c/darken col) rect sv st ww hh))
+              (set-stroke-custom stroke)
+              (filled-with-stroke col (c/darken col) rect sv st ww hh))
           (-> c
-             (set-color col) 
-             (rect sv st ww hh)))))))
+              (set-color col) 
+              (rect sv st ww hh)))))))
 
 
 (defmethod prepare-data :sbar [_ data {:keys [method]}]
   (let [data (if (sequential? data) data [data])]
     (case method
-      :layered {:sum (reduce max data)
+      :layered {:sum (reduce fast-max data)
                 :data data}
       :normalized {:sum 1.0
-                   :data (mapv #(/ % (reduce + data)) data)} 
-      {:sum (reduce + data)
+                   :data (mapv #(/ ^double % ^double (reduce fast+ data)) data)} 
+      {:sum (reduce fast+ data)
        :data data})))
 
 (defmethod data-extent :sbar [_ {:keys [sum]} _]
@@ -273,8 +277,8 @@
    :y [:numerical [0.0 1.0]]})
 
 (defmethod render-graph :sbar [_ {:keys [sum data]} {:keys [method palette stroke stroke? padding] :as conf}
-                               {:keys [w h x] :as chart-data}]
-  (let [{:keys [start end]} ((s/bands {:padding-out padding} 1) 0)
+                               {:keys [w ^int h x] :as chart-data}]
+  (let [{:keys [^double start ^double end]} ((s/bands {:padding-out padding} 1) 0)
         scale-x (partial (:scale x) 0 w)
         zero (scale-x 0)
         pal (cycle palette)
@@ -285,14 +289,14 @@
       (translate c zero 0)
       (doseq [[id v] (map-indexed vector data)
               :let [col (nth pal id)
-                    sv (scale-x v)]]
+                    ^double sv (scale-x v)]]
         (if stroke?
           (-> c
-             (set-stroke-custom stroke)
-             (filled-with-stroke col (c/darken col) rect 0 st (dec sv) hh))
+              (set-stroke-custom stroke)
+              (filled-with-stroke col (c/darken col) rect 0 st (dec sv) hh))
           (-> c
-             (set-color col) 
-             (rect 0 st sv hh)))
+              (set-color col) 
+              (rect 0 st sv hh)))
         (when-not (= method :layered) (translate c sv 0))))))
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -310,7 +314,6 @@
         bands [:categorical (map first data) {:padding-out padding-out :padding-in padding-in}]
         x (find-min-max (map :x extents))
         y (find-min-max (map :y extents))]
-    (println bands)
     (assoc (if h? {:x x :y bands} {:x bands :y x}) :inner y)))
 
 (defmethod render-graph :stack [_ [h? t data c] conf {:keys [w h x y] :as chart-data}]
@@ -323,7 +326,7 @@
                                   (assoc chart-data-inner :h (second (sizes k))))])]
     (do-graph (assoc chart-data :orientation og) false
       (doseq [[k v] (reverse charts)
-              :let [[p] (sizes k)]]
+              :let [[^double p] (sizes k)]]
         (-> c
             (push-matrix)
             (translate (:anchor v)))

@@ -11,6 +11,9 @@
   (:import [clojure2d.java.filter Blur]
            [marchingsquares Algorithm]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
 
 (defmethod render-graph :scatter [_ data {:keys [color stroke size shape] :as conf}
                                   {:keys [w h x y] :as chart-data}]
@@ -37,7 +40,6 @@
         z-extent (extent (map #(% 2) hd))]
     (render-graph :bubble hd (assoc-in conf [:extent :z] z-extent) chart-data)))
 
-
 ;;
 
 (defmethod prepare-data :ppplot [_ [d1 d2] {:keys [points] :or {points 100}}]
@@ -57,7 +59,7 @@
 
 (defonce ^:private bw-gradient (c/gradient [:black :white]))
 
-(defmethod render-graph :density-2d [_ data {:keys [palette kernel kernel-params logarithmic? blur-kernel-size contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
+(defmethod render-graph :density-2d [_ data {:keys [palette kernel kernel-params logarithmic? ^double blur-kernel-size ^int contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
   (let [palette (c/resample contours palette)
         scale-x (:scale x)
         scale-y (:scale y)
@@ -85,9 +87,9 @@
             (if fill?
               (do
                 (set-color c col)
-                (.fill (.graphics c) p)
+                (.fill ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)
                 (set-color c (c/darken col))
-                (.draw (.graphics c) p))
+                (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p))
               (do
                 (set-color c :black 200)
-                (.draw (.graphics c) p)))))))))
+                (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)))))))))

@@ -6,6 +6,11 @@
             [clojure2d.core :refer :all]
             [clojure2d.color :as c]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
+
 (defn- swap-counts
   [h]
   (update h :bins #(map (fn [[x y1 y2]] [x y2 y1]) %)))
@@ -26,9 +31,9 @@
 
 (defmethod data-extent :histogram [_ data _]
   (let [d (map second (:bins data))        
-        max-bin (reduce max (flatten d))
-        mn (:min data)
-        mx (:max data)
+        max-bin (reduce fast-max (flatten d))
+        ^double mn (:min data)
+        ^double mx (:max data)
         diff (- mx mn)]
     {:x [:numerical [(if (< diff 2.0) mn (m/floor mn))
                      (if (< diff 2.0) mx (m/ceil mx))]]
@@ -36,31 +41,31 @@
 
 (defn- draw-rectangles
   [canvas {:keys [palette stroke? stroke]} bands w ys scale-y]
-  (let [zero+ (inc (scale-y 0))]
+  (let [zero+ (inc ^double (scale-y 0))]
     (doseq [[id y] (map-indexed vector ys)
-            :let [{:keys [start end point]} (bands id)
-                  x (* w start)
-                  ww (* w (- end start))
+            :let [{:keys [^double start ^double end]} (bands id)
+                  x (* ^double w start)
+                  ww (* ^double w (- end start))
                   col (nth palette id)
-                  yy (- (scale-y y) 4)]]
+                  yy (- ^double (scale-y y) 4)]]
       (if stroke?
         (-> canvas
-           (set-stroke-custom stroke)
-           (filled-with-stroke col (c/darken col) rect x zero+ ww yy))
+            (set-stroke-custom stroke)
+            (filled-with-stroke col (c/darken col) rect x zero+ ww yy))
         (-> canvas
-           (set-color col) 
-           (rect x zero+ ww yy)))))
+            (set-color col) 
+            (rect x zero+ ww yy)))))
   canvas)
 
 (defn- draw-lollies
   [canvas {:keys [palette stroke]} bands w ys scale-y]
   (let [zero (scale-y 0)]
     (doseq [[id y] (map-indexed vector ys)
-            :let [{:keys [start end point]} (bands id)
-                  x (* w point)
-                  size (* w (- end start))
+            :let [{:keys [^double start ^double end ^double point]} (bands id)
+                  x (* ^double w point)
+                  size (* ^double w (- end start))
                   col (nth palette id)
-                  yy (max 0 (- (scale-y y) (/ size 2)))]]
+                  yy (max 0 (- ^double (scale-y y) (/ size 2)))]]
       (-> canvas
           (set-color col)
           (set-stroke-custom stroke)
@@ -79,9 +84,9 @@
         bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
         draw-fn (type-fn type)]
     (do-graph chart-data false
-      (doseq [[x ys] (:bins data)
-              :let [xx (scale-x x)
-                    xx2 (scale-x (+ x (:step data)))
+      (doseq [[^double x ys] (:bins data)
+              :let [^double xx (scale-x x)
+                    ^double xx2 (scale-x (+ x ^double (:step data)))
                     diff (- xx2 xx)]]
         (-> c
             (push-matrix)

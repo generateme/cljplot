@@ -66,13 +66,13 @@
 
 (defn- log-forward
   "Logarithmic scale to [0,1]."
-  ^double [^double start ^double end]
+  [^double start ^double end]
   (let [v (/ (m/ln (/ end start)))]
     (fn [^double x] (* (m/ln (/ x start)) v))))
 
 (defn- log-inverse
   "[0,1] to logarithmic scale"
-  ^double [^double start ^double end]
+  [^double start ^double end]
   (if (neg? start)
     (fn [^double t]
       (* (- (m/pow (- end) t))
@@ -105,14 +105,14 @@
 
 (defn- pow-forward
   "Power scale to [0-1]"
-  ^double [^double start ^double end ^double exponent]
+  [^double start ^double end ^double exponent]
   (let [a (spow start exponent)
         v (/ (- (spow end exponent) a))]
     (fn [x] (* (- (spow x exponent) a) v))))
 
 (defn- pow-inverse
   "Power scale inverse"
-  ^double [^double start ^double end ^double exponent]
+  [^double start ^double end ^double exponent]
   (let [a (spow start exponent)
         v (- (spow end exponent) a)
         re (/ 1.0 exponent)]

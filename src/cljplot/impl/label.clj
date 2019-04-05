@@ -4,11 +4,15 @@
             [clojure2d.core :refer :all]
             [fastmath.core :as m]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
 (defmethod data-extent :label [_ _ _] nil)
 (defmethod prepare-data :label [_ s conf]
   (assoc (label-size s conf) :s s :conf conf))
 
-(defmethod render-graph :label [_ {:keys [s pos shift-y]} {:keys [font font-size font-style color]} {:keys [w h orientation] :as chart-data}]
+(defmethod render-graph :label [_ {:keys [s pos shift-y]} {:keys [font font-size font-style color]} {:keys [^int w ^int h orientation] :as chart-data}]
   (let [fix-orientation (assoc chart-data :orientation (case orientation
                                                          :left :right
                                                          :top :bottom

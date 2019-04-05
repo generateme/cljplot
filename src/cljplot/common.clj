@@ -15,10 +15,9 @@
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
 
-(def ^:private ^:const ^int canvas-border 100)
-(def ^:private ^:const ^int canvas-shift (/ canvas-border 2))
-(def ^:private ^:const ^int canvas-shift- (- canvas-shift))
-
+(defn fast+ {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (+ a b))
+(defn fast-max {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (max a b))
+(defn fast-min {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (min a b))
 
 (defn graph-canvas
   "Create canvas to draw a chart on"
@@ -90,8 +89,7 @@
                   (zero?)) "Types of series should have the same type: continuous or categorical")
       (let [[t _ sconf] (first s)
             res [t (if (#{:numerical :temporal} t)
-                     (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [#(min ^double %1 ^double %2)
-                                                                            #(max ^double %1 ^double %2)])]
+                     (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [fast-min fast-max])]
                        (reduce (fn [[ca cb] [a b]] [(fmin ca a) (fmax cb b)]) (map second s)))
                      (distinct (mapcat identity (map second s))))]]
         (if sconf (conj res sconf) res)))))
@@ -292,6 +290,12 @@
        {:shift-y (/ margin 2)
         :auto-size (+ margin (m/ceil h))
         :pos [x (m/floor (- y))]}))))
+
+;; hack
+
+(defn fast+ ^double [^double a ^double b] (+ a b))
+(defn fast-max ^double [^double a ^double b] (max a b))
+(defn fast-min ^double [^double a ^double b] (min a b))
 
 ;;
 

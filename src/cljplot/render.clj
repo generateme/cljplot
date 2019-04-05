@@ -7,14 +7,18 @@
             [fastmath.core :as m]
             [fastmath.vector :as v]))
 
+(set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
+(m/use-primitive-operators)
+
 (defn- get-pos-size
   "Sum sizes of all charts in given direction."
   [block]
-  (reduce + 0 (map :size block)))
+  (reduce clojure.core/+ 0 (map :size block)))
 
 (defn- get-max-size
   [side]
-  (reduce max 0 (map get-pos-size (vals side))))
+  (reduce clojure.core/max 0 (map get-pos-size (vals side))))
 
 (defmacro place-image
   [c canv anch px py]
@@ -25,13 +29,13 @@
        (pop-matrix)))
 
 (defn- place-sides
-  [c series scale [tx ty] orientation axis bands]
+  [c series scale [^int tx ^int ty] orientation axis bands]
   (let [x? (= :x axis)]
     (doseq [[pos srs] series
             :let [[start ssize] (bands pos)
                   [imgx imgy] (if x? [start 0] [0 start])]]
       (push-matrix c)
-      (doseq [{:keys [size series]} srs]
+      (doseq [{:keys [^double size series]} srs]
         (doseq [[t d conf] series
                 :let [sx (scale pos)
                       ;; construct y scale
@@ -52,9 +56,9 @@
 
 (defn- render-lattice-inner
   [c {:keys [rows cols series scales sizes left right top bottom] :as srs}
-   {:keys [padding-in padding-out width height]
+   {:keys [padding-in padding-out ^int width ^int height]
     :or {padding-in 0.05 padding-out 0.0}}]   
-  (let [[l r t b] (map (comp get-max-size srs) [:left :right :top :bottom])
+  (let [[^long l ^long r ^long t ^long b] (map (comp get-max-size srs) [:left :right :top :bottom])
         ww (- width l r)
         hh (- height t b)
         bands-conf {:padding-in padding-in :padding-out padding-out}
@@ -69,7 +73,7 @@
     (translate c l t)
     
     ;; draw lattice
-    (doseq [[x y :as id] (keys series)
+    (doseq [[^int x ^int y :as id] (keys series)
             :let [[start-x w] (bands-x x)
                   [start-y h] (bands-y y)]]
 
@@ -114,12 +118,12 @@
 (defn render-lattice
   ([srs] (render-lattice srs {}))
   ([{:keys [labels] :or {labels {}} :as srs}
-    {:keys [width height background border]
+    {:keys [^int width ^int height background ^int border]
      :or {width 800 height 800 background 0xe8e8f0 border 10}
      :as conf}]
 
    (let [{:keys [left right top bottom]} labels
-         [l r t b] (map (comp #(or % 0) :auto-size) [left right top bottom])
+         [^int l ^int r ^int t ^int b] (map (comp #(or % 0) :auto-size) [left right top bottom])
          tl (+ border l)
          tt (+ border t)
          ww (- width tl r border)
@@ -135,7 +139,7 @@
        
        ;; labels
        ;; take inner chart position and sides
-       (let [[il ir it ib iw ih] (render-lattice-inner c srs (assoc conf :width ww :height hh))]
+       (let [[^int il ^int ir ^int it ^int ib ^int iw ^int ih] (render-lattice-inner c srs (assoc conf :width ww :height hh))]
          
          (pop-matrix c)
          (place-label c left border (+ it tt) conf :left ih l)
