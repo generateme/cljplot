@@ -1,7 +1,8 @@
 (ns cljplot.render
   (:require [cljplot.scale :as s]
             [cljplot.common :refer :all]
-            [clojure2d.core :refer :all]
+            [cljplot.axis :as ax]
+            [clojure2d.core :refer :all] 
             [clojure2d.extra.utils :as utils]
             [cljplot.build :as b]
             [fastmath.core :as m]
@@ -119,16 +120,18 @@
 ;; outer part (labels, legends, gradients)
 (defn render-lattice
   ([srs] (render-lattice srs {}))
-  ([{:keys [labels] :or {labels {}} :as srs}
+  ([{:keys [labels legend] :or {labels {}} :as srs}
     {:keys [^int width ^int height background ^int border]
      :or {width 800 height 800 background 0xe8e8f0 border 10}
      :as conf}]
 
    (let [{:keys [left right top bottom]} labels
-         [^int l ^int r ^int t ^int b] (map (comp #(or % 0) :size) [left right top bottom])
+         [^int l ^int r ^int t ^int b] (map (comp #(or % 0) :block-size) [left right top bottom])
+         legend (when legend (ax/legends legend))
+         ^int legend-width (or (:block-size legend) 0)
          tl (+ border l)
          tt (+ border t)
-         ww (- width tl r border)
+         ww (- width tl r border legend-width)
          hh (- height tt b border)]
      (with-canvas [c (canvas width height)]
        
@@ -144,9 +147,10 @@
        (let [[^int il ^int ir ^int it ^int ib ^int iw ^int ih] (render-lattice-inner c srs (assoc conf :width ww :height hh))]
          
          (pop-matrix c)
+         (when legend (place-image c (:canvas legend) (:anchor legend) (+ tl ww) (+ it tt)))
          (place-label c left border (+ it tt) conf :left ih l)
          (place-label c top (+ il tl) border conf :top iw t)
          (place-label c bottom (+ il tl) (+ tt hh) conf :bottom iw b)
-         (place-label c right (+ tl ww) (+ it tt) conf :right ih r))
+         (place-label c right (+ tl ww legend-width) (+ it tt) conf :right ih r)) 
 
        c))))

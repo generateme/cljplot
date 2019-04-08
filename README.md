@@ -26,14 +26,14 @@ See `sketches` folder for examples
 * More chart types (`+` - easier; `-` - harder):
     - ~~heatmaps (various grids)~~ (`+`)
     - ~~point clouds (log and linear rendering)~~ (`+`)
-    - contours (`-`), flow fields (`+`)
+    - ~~contours (`-`), flow fields (`+`)~~
     - categorical x categorical plots (scatter plot matrix  (`+`)
     - ~~stacked area/stream~~
     - parallel / hive (`+`/`-`)
     - radial charts, like pie (`+`), sunburst (`-`), radial tree (`-`)
     - arc(?) (`+`)
     - markers: line, text, etc...
-* ~~Labels~~ / legends
+* ~~Labels~~ / ~~legends~~ / gradients / palettes
 * Higher level API
     - single function for each chart type (easier)
     - faceting/lattice (harder)
@@ -45,7 +45,7 @@ See `sketches` folder for examples
 * Data DSL(?)
 * geo maps
 * elements of UpSet
-* signal processing / time series
+* signal processing / time series (partially done)
 * annotations
 * grid of charts / subplots (with independent axes)
 * kind of interactivity

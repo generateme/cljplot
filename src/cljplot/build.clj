@@ -195,8 +195,8 @@
 
 (defn- find-size
   [side-nseries]
-  (let [s (remove nil? (map (comp :size second) side-nseries))]
-    (if (seq s) (reduce #(max ^double %1 ^double %2) s) nil)))
+  (let [s (remove nil? (map (comp :block-size second) side-nseries))]
+    (when (seq s) (reduce fast-max s))))
 
 (defn- append-side
   [series side pos size side-nseries]
@@ -227,5 +227,12 @@
    (let [conf (merge-configuration :label conf)
          data (prepare-data :label label conf)]
      (assoc-in series [:labels side] data))))
+
+(defn add-legends
+  [series name & defs]
+  (if (seq defs)
+    (update series :legend update name (fn [v] (vec (if (seq v) (concat v defs) defs))))
+    series))
+
 
 ;;;;;;;;;;;;;;;;;

@@ -193,6 +193,7 @@
     (b/add-axes :left)
     (b/add-label :bottom "y(t)")
     (b/add-label :left "y(t+7)")
+    (b/add-legends "Pair" [:shape "point" {:shape \o}])
     (r/render-lattice {:width 600 :height 600})
     (save "results/examples/lag.jpg")
     (show))
