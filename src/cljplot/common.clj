@@ -288,7 +288,7 @@
      (when font-size (set-font-attributes c font-size))
      (let [[x ^double y _ h] (text-bounding-box c s)]
        {:shift-y (/ margin 2)
-        :auto-size (+ margin (m/ceil h))
+        :size (+ margin (m/ceil h))
         :pos [x (m/floor (- y))]}))))
 
 ;; hack

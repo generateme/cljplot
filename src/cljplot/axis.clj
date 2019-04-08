@@ -187,53 +187,73 @@
   (set-color canvas color)
   (rect canvas 0 0 mark-size h))
 
+(defn- legend-circle-mark
+  [canvas ^long h {:keys [color size] :or {size 10} :as conf}]
+  (set-color canvas color)
+  (ellipse canvas (/ mark-size 2) (/ h 2) size size))
 
-(defn legend
-  [name data]
-  (let [txts (map second data)
-        txts (if name (conj txts name) txts)
-        [^double mw ^double mh] (with-canvas [c (canvas 1 1)]
-                                  (set-font-attributes c 12 :normal)
-                                  (map #(m/ceil %) (reduce (fn [[^double w ^double h] t] 
-                                                             (let [[_ _ ^double cw ^double ch] (text-bounding-box c t)]
-                                                               [(max w cw) (max h ch)])) [0 0] txts)))
+(defn legends-sizes
+  ([name ls gap] (legends-sizes name ls gap nil 12))
+  ([name ls gap font-size] (legends-sizes name ls gap nil font-size))
+  ([name ls gap font font-size]
+   (with-canvas [c (canvas 1 1)]
+     (when font (set-font c font))
+     (set-font-attributes c font-size :normal)
+     (let [[^double mw ^double mh] (map #(m/ceil %) (reduce (fn [[^double w ^double h] t]
+                                                              (let [[_ _ ^double cw ^double ch] (text-bounding-box c t)]
+                                                                [(max w cw) (max h ch)])) [0 0] (map second ls)))]
+       (set-font-attributes c font-size :bold)
+       (let [[^double lw ^double lh] (map #(m/ceil %) (drop 2 (text-bounding-box c name)))]
+         [(max mw lw) (m/ceil (+ (inc lh) mh mh (* (count ls) (+ ^double gap (inc mh)))))])))))
+
+(defn legends
+  [data {:keys [gap marker-size font font-size color]}]
+  (let [sizes (map (fn [[k ls]] (legends-sizes k ls gap font font-size)) data)
         
-        h (+ legend-gap legend-gap (* (count txts) (inc mh)))
-        w (+ legend-gap3 mw mark-size)
+        ^int h (reduce fast+ (map second sizes))
+        ^int w (reduce fast-max (map first sizes))
         c (canvas (+ 50 w) (+ 50 h) :highest)]
 
     (with-canvas [c c]
-      (translate c (+ 25 legend-gap) (+ 25 legend-gap))
+      (set-background c :white)
+      (translate c 25 25)
 
-      (when name
-        (let [[^double sx ^double sy] (map #(m/ceil %) (text-bounding-box c name))]
+      #_(doseq [[k ls]])
+      
+      #_(when name
+          (let [[^double sx ^double sy] (map #(m/ceil %) (text-bounding-box c name))]
+            (-> c
+                (set-color :black)
+                (push-matrix)
+                (translate sx (- sy))
+                (set-font-attributes 12 :bold)
+                (text name 0 0)
+                (pop-matrix)
+                (translate 0 (+ legend-gap legend-gap h)))))
+
+      #_(set-font-attributes c 12 :normal)
+      #_(doseq [[type title conf] data
+                :let [[^double sx ^double sy bw bh] (map #(m/ceil %) (text-bounding-box c title))]]
+
+          (case type
+            :line (legend-line-mark c bh conf)
+            :rect (legend-rect-mark c bh conf)
+            :shape (legend-shape-mark c bh conf)
+            :circle (legend-circle-mark c bh conf))
+
           (-> c
-              (set-color :black)
               (push-matrix)
-              (translate sx (- sy))
-              (set-font-attributes 12 :bold)
-              (text name 0 0)
+              (translate (+ legend-gap mark-size sx) (- sy))
+              (set-color :black)
+              (text title 0 0)
               (pop-matrix)
-              (translate 0 (+ legend-gap legend-gap mh)))))
-
-      (set-font-attributes c 12 :normal)
-      (doseq [[type title conf] data
-              :let [[^double sx ^double sy bw bh] (map #(m/ceil %) (text-bounding-box c title))]]
-
-        (case type
-          :line (legend-line-mark c bh conf)
-          :rect (legend-rect-mark c bh conf))
-
-        (-> c
-            (push-matrix)
-            (translate (+ legend-gap mark-size sx) (- sy))
-            (set-color :black)
-            (text title 0 0)
-            (pop-matrix)
-            (translate 0 (inc mh))))
+              (translate 0 (inc h))))
       {:canvas c
-       :anchor [25 25]})))
+       :anchor [25 25]
+       :size w})))
 
-;;(require '[cljplot.core :as cc])
+#_(require '[clojure2d.extra.utils :as cc])
 
-;;(cc/show (:canvas (legend "Blah" [[:line "asdf" {:shape \A :color :blue}] [:line "This is test of longer line" {:color :maroon}] [:line 333 {:color :gray}]])))
+#_(cc/show-image (save (:canvas (legend "This is a title" [[:line "asdf" {:shape \A :color :blue}] [:line "This is longer line" {:color :maroon}] [:line 333 {:color :gray}] [:shape "Shape only" {:shape \s :color :blue}] [:rect "Rectangle" {:color :dark-olivegreen}]])) "legend1.jpg"))
+
+#_(cc/show-image (save (:canvas (legend "This is a title" [[:circle "asdf" {:size 20 :color :blue}] [:circle "Middle circle" {:color :maroon :size 25}] [:circle 333 {:color :blue :size 30}]])) "legend2.jpg"))

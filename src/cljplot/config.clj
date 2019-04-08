@@ -59,7 +59,12 @@
 (def ^:private stroke-common {:color nil :size 1.0 :cap :butt})
 
 (def ^:private configuration (merge axes-config 
-                                    {:label {:color :black
+                                    {:legend {:color :black
+                                              :font "Liberation Mono"
+                                              :font-size 12
+                                              :gap 5
+                                              :marker-size 30}
+                                     :label {:color :black
                                              :font "Liberation Mono"
                                              :font-size 12
                                              :font-style :bold

@@ -195,10 +195,10 @@
 
 (defn- find-size
   [side-nseries]
-  (let [s (remove nil? (map (comp :auto-size second) side-nseries))]
+  (let [s (remove nil? (map (comp :size second) side-nseries))]
     (if (seq s) (reduce #(max ^double %1 ^double %2) s) nil)))
 
-(defn- update-side
+(defn- append-side
   [series side pos size side-nseries]
   (let [s (update (get series side {pos []}) pos conj {:size (or (find-size side-nseries) size) :series side-nseries})]
     (assoc series side s)))
@@ -213,13 +213,13 @@
          scale-id (position->scale-id side)]
      (reduce (fn [s [pos scale]]
                (let [size (axis/axis-size scale scale-id config)]
-                 (update-side s side pos size [[:axis scale-id config]]))) series (get (:scales series) scale-id)))))
+                 (append-side s side pos size [[:axis scale-id config]]))) series (get (:scales series) scale-id)))))
 
 (defn add-side
   ([series side side-series] (add-side series side 50 side-series))
   ([series side size side-series] (add-side series side 0 size side-series))
   ([series side pos size side-series]
-   (update-side series side pos size (preprocess-steps side-series))))
+   (append-side series side pos size (preprocess-steps side-series))))
 
 (defn add-label
   ([series side label] (add-label series side label {}))

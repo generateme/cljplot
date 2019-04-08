@@ -54,6 +54,7 @@
       (pop-matrix c))
     c))
 
+;; inner part
 (defn- render-lattice-inner
   [c {:keys [rows cols series scales sizes left right top bottom] :as srs}
    {:keys [padding-in padding-out ^int width ^int height]
@@ -115,6 +116,7 @@
                                                 (assoc conf :orientation o :w w :h h))]
       (place-image c canvas anchor px py))))
 
+;; outer part (labels, legends, gradients)
 (defn render-lattice
   ([srs] (render-lattice srs {}))
   ([{:keys [labels] :or {labels {}} :as srs}
@@ -123,7 +125,7 @@
      :as conf}]
 
    (let [{:keys [left right top bottom]} labels
-         [^int l ^int r ^int t ^int b] (map (comp #(or % 0) :auto-size) [left right top bottom])
+         [^int l ^int r ^int t ^int b] (map (comp #(or % 0) :size) [left right top bottom])
          tl (+ border l)
          tt (+ border t)
          ww (- width tl r border)
