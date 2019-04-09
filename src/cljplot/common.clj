@@ -256,9 +256,13 @@
       \o (ellipse canv x y size size true)
       \O (filled-with-stroke canv color (c/darken color) ellipse x y size size)
       \. (point canv x y)
-      (-> canv
-          (set-font-attributes size)
-          (text (str type) x (+ (- (font-height canv) (font-ascent canv)) y) :center)))))
+      (let [[^double sx ^double sy] (map #(m/ceil %) (text-bounding-box canv (str type)))]
+        (-> canv
+            (push-matrix)
+            (translate (+ x sx) (- y (/ sy 2)))
+            (set-font-attributes size)
+            (text (str type) 0 0 :center)
+            (pop-matrix))))))
 
 ;;
 

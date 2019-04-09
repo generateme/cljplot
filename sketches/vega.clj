@@ -134,7 +134,7 @@
 
 ;; ;; https://vega.github.io/vega-lite/examples/bar_grouped.html
 
-(-> (b/series [:stack-vertical [:bar population-male-female]])
+(-> (b/series [:stack-vertical [:bar population-male-female {:palette ["#EA98D2" "#659CCA"]}]])
     (b/preprocess-series)
     (b/update-scale :y :ticks 10)
     (b/update-scale :y :fmt "%,.0f")
@@ -142,6 +142,9 @@
     (b/add-axes :bottom)
     (b/add-label :top "age")
     (b/add-label :left "population")
+    (b/add-legend "gender"
+                  [[:rect "Female" {:color "#EA98D2"}]
+                   [:rect "Male" {:color "#659CCA"}]])
     (r/render-lattice {:width 800 :height 400})
     (save "results/vega/bar-grouped.jpg")
     (show))
@@ -156,7 +159,10 @@
                 (map-kv (fn [v]
                           (let [mm (into {} (map (fn [[[_ w] cnt]] [w cnt]) v))]
                             (map #(or % 0) (selector mm)))))
-                (into (sorted-map)))]
+                (into (sorted-map)))
+      legend (map #(vector :rect (name %2) {:color %1})
+                  ["#e7ba52" "#9467bd" "#1f77b4" "#c7c7c7" "#aec7e8"]
+                  [:sun :snow :rain :fog :drizzle])]
   
   (-> (b/series
        [:grid nil {:x nil}]
@@ -169,7 +175,8 @@
       (b/add-axes :bottom)
       (b/add-label :bottom "Month of the year")
       (b/add-label :left "Count of Records")
-      (r/render-lattice {:width 400 :height 300}) 
+      (b/add-legend "Weather type" legend)
+      (r/render-lattice {:width 500 :height 300}) 
       (save "results/vega/stacked-bar-weather.jpg")
       (show)))
 
@@ -183,18 +190,21 @@
                 (map-kv (fn [v]
                           (selector (reduce (fn [m {:keys [site yield]}] 
                                               (update m (keyword site) + yield)) m v))))
-                (sort-by (comp int first first) >))]
+                (sort-by (comp int first first) >))
+      pal (reverse (take 6 (c/palette-presets :tableau-10-2)))
+      legend (map #(vector :rect (name %2) {:color %1}) pal varietes)]
   
   (-> (b/series
        [:grid nil {:y nil}]
-       [:stack-horizontal [:sbar data {:palette (reverse (take 6 (c/palette-presets :tableau-10-2)))}]])
+       [:stack-horizontal [:sbar data {:palette pal}]])
       (b/preprocess-series)
       (b/update-scale :x :ticks 5)
       (b/add-axes :left)
       (b/add-axes :bottom)
       (b/add-label :left "variety")
       (b/add-label :bottom "Sum of yield")
-      (r/render-lattice {:width 400 :height 300})
+      (b/add-legend "site" legend)
+      (r/render-lattice {:width 600 :height 300})
       (save "results/vega/stacked-bar-h.jpg")
       (show)))
 
@@ -206,7 +216,10 @@
       (b/add-axes :left)
       (b/add-axes :bottom)
       (b/add-label :left "population")
-      (b/add-label :bottom "age")      
+      (b/add-label :bottom "age")
+      (b/add-legend "gender"
+                    [[:rect "Female" {:color "#EA98D2"}]
+                     [:rect "Male" {:color "#659CCA"}]])
       (r/render-lattice {:width 600 :height 300})     
       (save "results/vega/stacked-bar-normalize.jpg")
       (show)))
@@ -253,7 +266,10 @@
       (b/add-axes :left)
       (b/add-axes :bottom)
       (b/add-label :left "population")
-      (b/add-label :bottom "age")      
+      (b/add-label :bottom "age")
+      (b/add-legend "gender"
+                    [[:rect "Female" {:color "#EA98D2"}]
+                     [:rect "Male" {:color "#659CCA"}]])
       (r/render-lattice {:width 600 :height 300})
       (save "results/vega/stacked-bar-layer.jpg")
       (show)))
@@ -314,8 +330,11 @@
 ;; https://vega.github.io/vega-lite/examples/point_color_with_shape.html
 
 (let [countries (sort (distinct (map :Origin cars)))
-      origins (apply assoc {} (interleave countries [\o \s \^]))
-      colors (apply assoc {} (interleave countries (c/palette-presets :tableau-10-2)))
+      markers [\o \s \^]
+      pal (c/palette-presets :tableau-10-2)
+      origins (apply assoc {} (interleave countries markers))
+      colors (apply assoc {} (interleave countries pal))
+      legend (map #(vector :shape %1 {:color %2 :shape %3 :size 8 :stroke {:size 2}}) countries pal markers)
       data (filter (partial every? identity) (map (juxt :Horsepower :Miles_per_Gallon :Origin) cars))]
 
   (-> (b/series [:grid] [:scatter data {:shape (fn [[_ _ v] _] (origins v)) :size 8 :stroke {:size 2}
@@ -325,6 +344,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "Horsepower")
       (b/add-label :left "Miles_per_Gallon")
+      (b/add-legend "Origin" legend)
       (r/render-lattice {:width 400 :height 400})
       (save "results/vega/color-with-shape.jpg")
       (show)))
@@ -432,8 +452,11 @@
 ;; https://vega.github.io/vega-lite/examples/text_scatterplot_colored.html
 
 (let [countries (sort (distinct (map :Origin cars)))
-      origins (apply assoc {} (interleave countries ["E" "J" "U"]))
-      colors (apply assoc {} (interleave countries (c/palette-presets :tableau-10-2)))
+      markers ["E" "J" "U"]
+      pal (c/palette-presets :tableau-10-2)
+      origins (apply assoc {} (interleave countries markers))
+      colors (apply assoc {} (interleave countries pal))
+      legend (map #(vector :shape %1 {:color %2 :shape %3 :size 18 :stroke {:size 2}}) countries pal markers)
       data (filter (partial every? identity) (map (juxt :Horsepower :Miles_per_Gallon :Origin) cars))]
   
   (-> (b/series [:grid] [:scatter data {:shape (fn [[_ _ v] _] (origins v)) :size 18 :stroke {:size 2}
@@ -443,7 +466,8 @@
       (b/add-axes :left)
       (b/add-label :bottom "Horsepower")
       (b/add-label :left "Miles_per_Gallon")
-      (r/render-lattice {:width 400 :height 400})
+      (b/add-legend "Origin" legend)
+      (r/render-lattice {:width 450 :height 400})
       (save "results/vega/text-scatterplot-colored.jpg")
       (show)))
 
@@ -475,15 +499,18 @@
                                (map-kv (fn [v]
                                          (stats/mean (map last v))))
                                (into [])
-                               (sort-by first)))))]
+                               (sort-by first)))))
+      pal (c/palette-presets :tableau-10-2)
+      legend (map #(vector :line (name %2) {:color %1 :shape \O}) pal (keys data))]
   (-> (b/series [:grid])
-      (b/add-multi :line data {:stroke {:size 2} :point {:type \O}} {:color (c/palette-presets :tableau-10-2)})
+      (b/add-multi :line data {:stroke {:size 2} :point {:type \O}} {:color pal})
       (b/preprocess-series)
       (b/update-scale :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
       (b/add-label :bottom "date (year)")
       (b/add-label :left "Mean of price")
+      (b/add-legend "symbol" legend)
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/line-overlay.jpg")
       (show)))
@@ -492,14 +519,17 @@
 
 (let [data (->> stocks
                 (group-by first)
-                (map-kv (fn [v] (sort-by first (map rest v)))))]
+                (map-kv (fn [v] (sort-by first (map rest v)))))
+      pal (c/palette-presets :tableau-10-2)
+      legend (map #(vector :line (name %2) {:color %1 :stroke {:size 2}}) pal (keys data))]
   (-> (b/series [:grid])
-      (b/add-multi :line data {:stroke {:size 2}} {:color (c/palette-presets :tableau-10-2)})
+      (b/add-multi :line data {:stroke {:size 2}} {:color pal})
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
       (b/add-label :bottom "date")
       (b/add-label :left "price")
+      (b/add-legend "symbol" legend)
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/line-color.jpg")
       (show)))
@@ -550,15 +580,18 @@
 
 (let [data (->> stocks
                 (group-by first)
-                (map-kv (fn [v] (sort-by first (map rest v)))))]
+                (map-kv (fn [v] (sort-by first (map rest v)))))
+      pal (c/palette-presets :tableau-10-2)
+      legend (map #(vector :line (name %2) {:color %1 :stroke {:size 2}}) pal (keys data))]
   (-> (b/series [:grid])
-      (b/add-multi :line data {:point {:type \O :size (fn [[_ size] _] (/ size 50.0))}} {:color (c/palette-presets :tableau-10-2)})
+      (b/add-multi :line data {:point {:type \O :size (fn [[_ size] _] (/ size 50.0))}} {:color pal})
       (b/preprocess-series)
       (b/update-scale :x :ticks 4)
       (b/add-axes :bottom)
       (b/add-axes :left)
       (b/add-label :bottom "date")
       (b/add-label :left "price")
+      (b/add-legend "symbol" legend)
       (r/render-lattice {:width 600 :height 400})
       (save "results/vega/trail-color.jpg")
       (show)))
@@ -566,12 +599,11 @@
 
 ;; https://vega.github.io/vega-lite/examples/layer_line_co2_concentration.html
 
-(defn co2-date->number [d]
-  (let [yd (mod (dt/as d :year) 10)
-        m (dec (dt/as d :month-of-year))]
-    (+ yd (/ m 12.0))))
-
-(let [data (->> co2-concentration
+(let [co2-date->number (fn [d]
+                         (let [yd (mod (dt/as d :year) 10)
+                               m (dec (dt/as d :month-of-year))]
+                           (+ yd (/ m 12.0))))
+      data (->> co2-concentration
                 (group-by (comp #(m/floor (/ (dt/as % :year) 10.0)) first))
                 (sort-by first)
                 (map (fn [[k v]] [k (sort-by first (map (fn [[d co2]] [(co2-date->number d) co2]) v))]))
@@ -622,36 +654,45 @@
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area.html
 
-(-> (b/series [:grid] [:sarea unemployment-area])
-    (b/preprocess-series)
-    (b/update-scale :y :fmt int)
-    (b/add-axes :bottom)
-    (b/add-axes :left)
-    (b/add-label :bottom "date (year-month)")
-    (b/add-label :left "Sum of count")
-    (r/render-lattice {:width 600 :height 400})
-    (save "results/vega/stacked-area.jpg")
-    (show))
+(let [pal (cycle (c/palette-presets :category20b))
+      legend (reverse (map #(vector :rect %2 {:color %1}) pal (keys unemployment-area)))]
+  (-> (b/series [:grid] [:sarea unemployment-area])
+      (b/preprocess-series)
+      (b/update-scale :y :fmt int)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "date (year-month)")
+      (b/add-label :left "Sum of count")
+      (b/add-legend "series" legend)
+      (r/render-lattice {:width 800 :height 400})
+      (save "results/vega/stacked-area.jpg")
+      (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area_normalize.html
 
-(-> (b/series [:grid] [:sarea unemployment-area {:method :normalized}])
-    (b/preprocess-series)
-    (b/add-axes :bottom)
-    (b/add-label :bottom "date (year-month)")
-    (r/render-lattice {:width 600 :height 400})
-    (save "results/vega/stacked-area-normalize.jpg")
-    (show))
+(let [pal (cycle (c/palette-presets :category20b))
+      legend (reverse (map #(vector :rect %2 {:color %1}) pal (keys unemployment-area)))]
+  (-> (b/series [:grid] [:sarea unemployment-area {:method :normalized}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-label :bottom "date (year-month)")
+      (b/add-legend "series" legend)
+      (r/render-lattice {:width 800 :height 400})
+      (save "results/vega/stacked-area-normalize.jpg")
+      (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area_stream.html
 
-(-> (b/series [:grid] [:sarea unemployment-area {:method :stream}])
-    (b/preprocess-series)
-    (b/add-axes :bottom)
-    (b/add-label :bottom "date (year-month)")
-    (r/render-lattice {:width 600 :height 400})
-    (save "results/vega/stacked-area-stream.jpg")
-    (show))
+(let [pal (cycle (c/palette-presets :category20b))
+      legend (reverse (map #(vector :rect %2 {:color %1}) pal (keys unemployment-area)))]
+  (-> (b/series [:grid] [:sarea unemployment-area {:method :stream}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-label :bottom "date (year-month)")
+      (b/add-legend "series" legend)
+      (r/render-lattice {:width 800 :height 400})
+      (save "results/vega/stacked-area-stream.jpg")
+      (show)))
 
 ;; https://vega.github.io/vega-lite/examples/layer_point_errorbar_ci.html
 
