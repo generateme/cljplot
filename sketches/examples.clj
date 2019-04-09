@@ -221,6 +221,7 @@
       (b/update-scales :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
+      (b/add-side :right (b/series [:grid nil {:y nil}] [:histogram data {:bins 20}]))
       (r/render-lattice {:width 600 :height 200})
       (save "results/examples/ma2.jpg")
       (show))

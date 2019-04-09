@@ -292,7 +292,7 @@ Every (soon!) stroke definition follows [this configuration](https://clojure2d.g
 * \- \| \\ \/ - strokes
 * \+ - plus
 * \x - x
-* any other char - a char itself
+* any other char or String - a char/string itself
 
 Due to orientation on some charts shapes can be rotated (scatter plot has this fixed).
 
