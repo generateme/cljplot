@@ -228,8 +228,8 @@
          data (prepare-data :label label conf)]
      (assoc-in series [:labels side] data))))
 
-(defn add-legends
-  [series name & defs]
+(defn add-legend
+  [series name defs]
   (if (seq defs)
     (update series :legend update name (fn [v] (vec (if (seq v) (concat v defs) defs))))
     series))
