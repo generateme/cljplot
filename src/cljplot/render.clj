@@ -66,7 +66,6 @@
         bands-conf {:padding-in padding-in :padding-out padding-out}
         bands-x (bands->positions-size (s/bands bands-conf cols) ww)
         bands-y-raw (s/bands bands-conf (reverse (range rows)))
-        ;;         gap (* hh (- (:step (:info bands-y-raw)) (:bandwidth (:info bands-y-raw))))
         bands-y (bands->positions-size bands-y-raw hh)
         scale-x (:x scales)
         scale-y (:y scales)] 
@@ -120,15 +119,17 @@
 ;; outer part (labels, legends, gradients)
 (defn render-lattice
   ([srs] (render-lattice srs {}))
-  ([{:keys [labels legend] :or {labels {}} :as srs}
+  ([{:keys [labels legend gradient] :or {labels {}} :as srs}
     {:keys [^int width ^int height background ^int border]
      :or {width 800 height 800 background 0xe8e8f0 border 10}
      :as conf}]
 
    (let [{:keys [left right top bottom]} labels
          [^int l ^int r ^int t ^int b] (map (comp #(or % 0) :block-size) [left right top bottom])
+         
          legend (when legend (ax/legends legend))
          ^int legend-width (or (:block-size legend) 0)
+         
          tl (+ border l)
          tt (+ border t)
          ww (- width tl r border legend-width)

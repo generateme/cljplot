@@ -52,8 +52,8 @@
         rsqrt (/ 1.0 (m/sqrt cnt))
         ci (* rsqrt ^double (rnd/icdf gaussian (* 0.5 (inc 0.95))))]
     (if (= method :acf)
-      [acf rsqrt ci (map #(* ci (m/sqrt (dec (* 2.0 ^double %))))
-                         (reductions (fn [^double acc ^double s] (+ acc (* s s))) (map second acf)))]
+      [acf rsqrt ci (mapv #(* ci (m/sqrt (dec (* 2.0 ^double %))))
+                          (reductions (fn [^double acc ^double s] (+ acc (* s s))) (map second acf)))]
       [(rest acf) rsqrt ci])))
 
 #_(last (p-acf-data :acf ma2 10))
@@ -96,7 +96,7 @@
         [_ [^double mn mx]] (:y e)]
     (assoc-in e [:y 1] [(min 0.0 mn) mx])))
 
-;; pars: ci
+;; pars: ci 0.95, color :red
 (defmethod render-graph :acf [_ [data ^double rsqrt ^double ci0 cis] conf {:keys [^int w ^int h x y] :as chart-data}]
   (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
@@ -107,23 +107,26 @@
     (do-graph (assoc chart-data :oversize 0) false
 
       (set-color c :grey 80)
+
       (if cis
         (let [p1 (map-indexed #(vector (scale-x %1) (scale-y %2)) cis)
-              p2 (reverse (map-indexed #(vector (scale-x %1) (scale-y (- ^double %2))) cis))]
+              p2 (reverse (map-indexed #(vector (scale-x %1) (scale-y (- ^double %2))) cis))] 
           (path c (concat p2 p1) true false))
-        (-> c
-            (rect 0 ci- w (- ci ci-))
-            (line 0 ci w- ci)
-            (line 0 ci- w- ci-)))
+        
+        (rect c 0 ci- w (- ci ci-)))
       
       (-> c
           (set-color :black)
           (line 0 zero w- zero)) 
-      (doseq [[x y] data
+      (doseq [[id [x y]] (map-indexed vector data)
               :let [xx (scale-x x)
                     yy (scale-y y)]]
+        (set-color c :black)
         (line c xx zero xx yy)
-        (ellipse c xx yy 3 3)))))
+        (when (or (and (not cis) (> (m/abs y) ci0))
+                  (and cis (> (m/abs y) ^double (cis id))))
+          (set-color c :red))
+        (ellipse c xx yy 4 4)))))
 
 ;; pacf
 

@@ -103,15 +103,15 @@
 (defn- find-max-tick-size
   "Find maximum tick size."
   [{:keys [ticks]} config]
-  (let [size-fn (get-in config [:ticks :size])]
-    (max 0.0 (inc ^double (get-in config [:line :stroke :size]))
-         ^double (reduce #(max ^double %1 ^double %2) (map #(size-fn % config) ticks)))))
+  (let [size-fn (-> config :ticks :size)]
+    (max 0.0 (inc (double (-> config :line :stroke :size)))
+         ^double (reduce fast-max (map #(size-fn % config) ticks)))))
 
 (defn- find-text-bounding-box
   "Find biggest bounding box from ticks"
   [{:keys [ticks fmt]} config]
   (with-canvas [c (canvas 1 1)]
-    (set-axis-font c (get-in config [:ticks :font]) (get-in config [:ticks :font-size]))
+    (set-axis-font c (get-in config [:ticks :font]) (-> config :ticks :font-size))
     (reduce (fn [[^double w ^double h] t] 
               (let [s (fmt t)
                     [_ _ ^double cw ^double ch] (text-bounding-box c s)]
@@ -203,20 +203,19 @@
                                                                 [(max w cw) (max h ch)])) [0 0] (map second ls)))]
        (set-font-attributes c font-size :bold)
        (let [[^double lw ^double lh] (map #(m/ceil %) (drop 2 (text-bounding-box c name)))]
-         [(inc lh) (max mw lw) (m/ceil (+ (inc lh) gap mh (* (count ls) (+ ^int gap (inc mh)))))])))))
+         [(inc lh) (max mw lw) (m/ceil (+ (inc lh) ^int gap mh (* (count ls) (+ ^int gap (inc mh)))))])))))
 
 (defn legends
-  ([data] (legends data (cfg/merge-configuration :legend {})))
-  ([data {:keys [^int gap ^int marker-size font font-size color]}]
-   (let [sizes (map (fn [[k ls]] (legends-sizes k ls gap font font-size)) data)
+  ([data] (legends data {}))
+  ([data conf]
+   (let [{:keys [^int gap ^int marker-size font font-size color]} (cfg/merge-configuration :legend conf)
+         sizes (map (fn [[k ls]] (legends-sizes k ls gap font font-size)) data)
          
          ^int h (reduce fast+ (map last sizes))
          w (+ marker-size (* 3 gap) ^int (reduce fast-max (map second sizes)))
          ^int grouph (reduce fast-max (map first sizes))
          c (canvas (+ 50 w) (+ 50 h))]
 
-
-     
      (with-canvas [c c]
        (translate c (+ gap 25) 25)
 
@@ -224,7 +223,7 @@
 
          (let [[^double sx ^double sy] (map #(m/ceil %) (text-bounding-box c k))]
            (-> (set-axis-font c font font-size :bold) 
-               (set-color :black)
+               (set-color color)
                (push-matrix)
                (translate sx (- sy))
                (text k 0 0)
@@ -252,6 +251,50 @@
        {:canvas c
         :anchor [-25 -25]
         :block-size w}))))
+
+;;
+
+(defn gradient-width
+  ^long [{:keys [^int gap ^int marker-size font font-size]} title mn mx]
+  (with-canvas [c (canvas 1 1)]
+    (set-axis-font c font font-size :bold)
+    (max (text-width c title)
+         (+ marker-size gap gap (max (text-width c mn)
+                                     (text-width c mx))))))
+
+(defn gradient
+  [gradient w h title mn mx conf]
+  (let [{:keys [^int gap ^int marker-size font font-size color]} (cfg/merge-configuration :gradient conf)
+        c (canvas (+ ^long w 50) (+ ^long h 50))]
+    (with-canvas [c c]
+      (translate c (+ gap 25) 25)
+
+      (let [[^double sx ^double sy bw ^double bh] (map #(m/ceil %) (text-bounding-box c title))
+            gh (- ^int h bh gap)]
+        (-> (set-color c color)
+            (set-axis-font font font-size :bold)
+            (push-matrix)
+            (translate sx (- sy))
+            (text title 0 0)
+            (pop-matrix)
+            (translate 0 (+ bh gap))
+            (set-axis-font font font-size :normal)
+            (push-matrix)
+            (translate sx (- sy))
+            (text mx (+ marker-size gap) 0)
+            (translate 0 (- gh bh))
+            (text mn (+ marker-size gap) 0)
+            (pop-matrix))
+        
+        (dotimes [id gh]
+          (let [gid (m/norm id 0 h 1.0 0.0)]
+            (set-color c (gradient gid))
+            (line c 0 id marker-size id)))))
+    
+    {:canvas c
+     :anchor [-25 -25]}))
+
+#_(cc/show-image (:canvas (gradient (c/gradient-presets :red-blue) 130 200 "ABBA babba" -10 20 (cfg/get-configuration :gradient))))
 
 #_(cc/show-image (:canvas (legends {"First" [[:line "ABC" {:shape \A :color :blue}]
                                              [:line "ABCDDD" {:shape \A :color :blue}]
