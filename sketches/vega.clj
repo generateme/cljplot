@@ -8,7 +8,10 @@
             [cljplot.scale :as s]
             [fastmath.core :as m]
             [cljplot.core :refer :all]
-            [java-time :as dt]))
+            [java-time :as dt]
+            [fastmath.random :as rnd]))
+
+(rnd/set-seed! rnd/default-rng 143)
 
 ;; global fns
 
@@ -160,9 +163,9 @@
                           (let [mm (into {} (map (fn [[[_ w] cnt]] [w cnt]) v))]
                             (map #(or % 0) (selector mm)))))
                 (into (sorted-map)))
-      legend (map #(vector :rect (name %2) {:color %1})
-                  ["#e7ba52" "#9467bd" "#1f77b4" "#c7c7c7" "#aec7e8"]
-                  [:sun :snow :rain :fog :drizzle])]
+      legend (reverse (map #(vector :rect (name %2) {:color %1})
+                           ["#e7ba52" "#9467bd" "#1f77b4" "#c7c7c7" "#aec7e8"]
+                           [:sun :snow :rain :fog :drizzle]))]
   
   (-> (b/series
        [:grid nil {:x nil}]

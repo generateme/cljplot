@@ -15,6 +15,8 @@
             [clojure2d.core :as c2d]
             [fastmath.vector :as v]))
 
+(rnd/set-seed! rnd/default-rng 143)
+
 ;; data
 
 (defn data->timeseries

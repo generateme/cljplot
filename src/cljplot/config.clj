@@ -63,7 +63,7 @@
                                               :font "Liberation Mono"
                                               :font-size 12
                                               :gap 5
-                                              :marker-size 30}
+                                              :marker-size 25}
                                      :label {:color :black
                                              :font "Liberation Mono"
                                              :font-size 12
@@ -222,7 +222,8 @@
               :ppplot :scatter
               :qqplot :ppplot
               :stack-vertical :stack
-              :stack-horizontal :stack})
+              :stack-horizontal :stack
+              :gradient :legend})
 
 (defn- val->fn
   "Convert value to function if it's not a function."

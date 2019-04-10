@@ -196,7 +196,7 @@
                        (let [cnt (or cnt 1)
                              cell (grid/coords->mid g (v/vec2 (scale-x x) (scale-y y)))]
                          (if (contains? m cell)
-                           (update m cell #(+ ^double %1 ^double %2) cnt)
+                           (update m cell fast+ cnt)
                            (assoc m cell cnt)))) {} vx)]
     (map (fn [[[x y] cnt]]
            (v/vec3 (iscale-x x) (iscale-y y) cnt)) cnts)))
