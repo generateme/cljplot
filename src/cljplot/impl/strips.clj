@@ -325,13 +325,13 @@
                  [k (render-graph t d cc
                                   (assoc chart-data-inner :h (second (sizes k))))])]
     (do-graph (assoc chart-data :orientation og) false
-      (doseq [[k v] (reverse charts)
-              :let [[^double p] (sizes k)]]
-        (-> c
-            (push-matrix)
-            (translate (:anchor v)))
-        (if h? (image c (:canvas v) 0 (dec p)) (image c (:canvas v) p 0))
-        (pop-matrix c)))))
+              (doseq [[k v] (reverse charts)
+                      :let [[^double p] (sizes k)]]
+                (-> c
+                    (push-matrix)
+                    (translate (:anchor v)))
+                (if h? (image c (:canvas v) 0 (dec p)) (image c (:canvas v) p -1))
+                (pop-matrix c)))))
 
 ;; delegates
 
