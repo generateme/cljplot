@@ -76,7 +76,7 @@
 (defmethod prepare-data :cdf [_ data conf]
   (let [data (extract-first data)
         domain (take 2 (stats/extent data))
-        f (partial r/cdf (r/distribution :enumerated-real {:data data}))
+        f (partial r/cdf (r/distribution :enumerated-real {:data (sort data)}))
         with-domain (assoc conf :domain domain)]
     [with-domain (prepare-data :function f with-domain)]))
 
