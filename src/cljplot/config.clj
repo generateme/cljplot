@@ -124,7 +124,7 @@
                                      :strip {:color (c/set-alpha blue 50)
                                              :size 10.0
                                              :distort 0.0
-                                             :scale 0.25
+                                             :scale 1.0
                                              :shape \O
                                              :margins {:x [0.05 0.05]}}
                                      :extent-stat {:extent-type :min-max
@@ -227,7 +227,8 @@
               :stack-horizontal :stack
               :gradient :legend
               :vline :abline
-              :hline :abline})
+              :hline :abline
+              :lollipop :bar})
 
 (defn- val->fn
   "Convert value to function if it's not a function."

@@ -108,8 +108,8 @@
   [bands ^double size]
   (into {} (mapv (fn [id]
                    (let [{:keys [^double start ^double end]} (bands id)
-                         ss (m/floor (* size (- end start)))
-                         st (m/floor (* size start))]
+                         ss (m/round (- (* size end) (* size start)))
+                         st (m/round (* size start))]
                      [id [st ss]])) (:domain bands))))
 
 (defn common-extent

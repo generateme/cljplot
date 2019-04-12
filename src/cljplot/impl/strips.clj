@@ -37,7 +37,7 @@
     (do-graph chart-data (#{\o \O} shape)
       (doseq [[^double v :as all] data
               :let [x (scale-x 0 w (+ ^double (r/grand distort) v))
-                    y (r/grand (/ h 2) (* h scale distort))]]
+                    y (+ ^double (r/grand distort) (* 0.5 h scale))]]
         (draw-shape c x y shape (color all conf) nil (size all conf))))))
 
 ;;
@@ -225,7 +225,7 @@
       (doseq [[^long id ^double v] (map-indexed vector data)
               :let [{:keys [^double start ^double end]} (bands (- cnt id 1))
                     st (* start h)
-                    hh (* (- end start) h)
+                    hh (* (- end start) h) 
                     col (if col? (color v conf) (nth pal id))
                     ^double sv (scale-x v)
                     [x w] (if (neg? v) [sv (- zero sv)] [zero (- sv zero)])]]
@@ -236,6 +236,32 @@
           (-> c
               (set-color col) 
               (rect x st w hh)))))))
+
+(defmethod prepare-data :lollipop [_ data conf] (prepare-data :bar data conf))
+(defmethod data-extent :lollipop [_ data conf] (data-extent :bar data conf))
+(defmethod render-graph :lollipop [_ data {:keys [palette color stroke padding-in padding-out ^double size]
+                                           :or {size 0.3} :as conf}
+                                   {:keys [^int w ^int h x] :as chart-data}]
+  (let [cnt (count data)
+        bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
+        scale-x (partial (:scale x) 0 w)
+        ^double zero (scale-x 0)
+        pal (if (seq palette) (cycle palette) (repeat color))
+        col? (and color (= cnt 1))]
+    (do-graph chart-data false
+      (doseq [[^long id ^double v] (map-indexed vector data)
+              :let [{:keys [^double start ^double end ^double point]} (bands (- cnt id 1))
+                    hh (* point h)
+                    col (if col? (color v conf) (nth pal id))
+                    ^double sv (scale-x v)
+                    size (* h size (- end start))
+                    [x w] (if (neg? v) [sv (- zero sv)] [zero (- sv zero)])]]
+        (-> (set-color c col)
+            (set-stroke-custom stroke)
+            (line x hh w hh)
+            (ellipse w hh size size))))))
+
+
 
 (defmethod data-extent :rbar [_ data _]
   {:x [:numerical data]
@@ -325,13 +351,13 @@
                  [k (render-graph t d cc
                                   (assoc chart-data-inner :h (second (sizes k))))])]
     (do-graph (assoc chart-data :orientation og) false
-              (doseq [[k v] (reverse charts)
-                      :let [[^double p] (sizes k)]]
-                (-> c
-                    (push-matrix)
-                    (translate (:anchor v)))
-                (if h? (image c (:canvas v) 0 (dec p)) (image c (:canvas v) p -1))
-                (pop-matrix c)))))
+      (doseq [[k v] (reverse charts)
+              :let [[^double p] (sizes k)]]
+        (-> c
+            (push-matrix)
+            (translate (:anchor v)))
+        (if h? (image c (:canvas v) 0 p) (image c (:canvas v) p -1))
+        (pop-matrix c)))))
 
 ;; delegates
 

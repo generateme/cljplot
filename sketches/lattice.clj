@@ -28,9 +28,9 @@
 
   (def chem97 (read-json "data/chem97.json"))
   (def score-gcsescore (->> chem97
-                          (group-by :score)
-                          (map-kv #(map :gcsescore %))
-                          (into (sorted-map))))
+                            (group-by :score)
+                            (map-kv #(map :gcsescore %))
+                            (into (sorted-map))))
 
   (def oats (read-json "data/oats.json"))
   (def barley (read-json "data/barley.json"))
@@ -55,13 +55,19 @@
                      :data (map first (read-json nm))}))
 
   ;; VADeaths
-  (def vadeaths {:keys ["Rural Male" "Rural Female" "Urban Male" "Urban Female"]
-                 :vals {"50-54" [11.7 8.7 15.4 8.4]
-                        "55-59" [18.1 11.7 24.3 13.6]
-                        "60-64" [26.9 20.3 37.0 19.3]
-                        "65-69" [41.0 30.9 54.6 35.1]
-                        "70-74" [66.0 54.3 71.1 50.0]}})
-  
+  (def vadeaths (let [ks ["Rural Male" "Rural Female" "Urban Male" "Urban Female"]
+                      vs {"50-54" [11.7 8.7 15.4 8.4]
+                          "55-59" [18.1 11.7 24.3 13.6]
+                          "60-64" [26.9 20.3 37.0 19.3]
+                          "65-69" [41.0 30.9 54.6 35.1]
+                          "70-74" [66.0 54.3 71.1 50.0]}]
+                  (mapcat (fn [[age fqs]]
+                            (map (fn [fq k] {:age age :person k :freq fq}) fqs ks)) vs)))
+
+  (def postdoc (read-json "data/postdoc.json"))
+  (def postdoc-scaled (let [margins (map-kv #(reduce + (map :Freq %)) (group-by :Field postdoc))]
+                        (map (fn [{:keys [Freq Field] :as all}]
+                               (assoc all :Freq (/ Freq (margins Field)))) postdoc)))
   
   (def hnanes (read-json "data/nhanes.json"))
   
@@ -611,6 +617,139 @@
       (r/render-lattice {:height 400 :width 600})
       (save "results/lattice/figure_3.16.jpg")
       (show)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chapter 4
+
+;; figure 4.1
+
+(let [data (->> vadeaths
+                (group-by :person)
+                (map-kv (fn [g] [:strip (sort-by first (map-kv (fn [v] (map :freq v)) (group-by :age g)))
+                                {:color :black :distort 0.0 :size 5}])))]
+  (-> (b/lattice :stack-horizontal data {} {:label str :grid {:x nil}})
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :top "Death Rates in Virginia - 1940")
+      (b/add-label :bottom "freq")
+      (r/render-lattice {:height 400 :width 600})
+      (save "results/lattice/figure_4.1.jpg")
+      (show)))
+
+;; figure 4.2
+
+(let [data (->> vadeaths
+                (group-by :person)
+                (map-kv (fn [g] [:lollipop (sort-by first (map-kv (fn [v] (map :freq v)) (group-by :age g)))])))]
+  (-> (b/lattice :stack-horizontal data {} {:shape [4 1] :label str})
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :top "Death Rates in Virginia - 1940")
+      (b/add-label :bottom "freq")
+      (r/render-lattice {:height 800 :width 400})
+      (save "results/lattice/figure_4.2.jpg")
+      (show)))
+
+;; figure 4.3
+
+(let [ys (zipmap (range 5) (sort (distinct (map :age vadeaths))))
+      data (->> vadeaths
+                (group-by :person)
+                (map-kv (fn [g] (map-indexed #(vector (:freq %2) %1) (sort-by :age g)))))]
+  (-> (b/series [:grid])
+      (b/add-multi :line data {:stroke {:size 2}} {[:stroke :dash] line-dash-styles
+                                                   :color (c/palette-presets :category10)
+                                                   [:point :type] [\o \^ \v \s]})
+      (b/preprocess-series)
+      (b/update-scale :y :fmt (comp ys int))
+      (b/update-scale :y :ticks (range 5))
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Rage (per 1000)")
+      (b/add-label :top "Death Rates in Virginia - 1940")
+      (r/render-lattice {:height 500 :width 600})
+      (save "results/lattice/figure_4.3.jpg")
+      (show)))
+
+
+;; figure 4.4
+
+(let [data (->> vadeaths
+                (group-by :person)
+                (map-kv (fn [g] [:bar (sort-by first (map-kv (fn [v] (map :freq v)) (group-by :age g)))])))]
+  (-> (b/lattice :stack-horizontal data {} {:shape [4 1] :label str})
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :top "Death Rates in Virginia - 1940")
+      (b/add-label :bottom "Rate (per 1000)")
+      (r/render-lattice {:height 800 :width 400})
+      (save "results/lattice/figure_4.4.jpg")
+      (show)))
+
+;; figure 4.5
+
+(let [varietes (sort (distinct (map :Reason postdoc-scaled)))
+      selector (apply juxt (map #(fn [v] (get v %)) varietes))
+      m (apply assoc {} (interleave varietes (repeat 0)))
+      data (->> postdoc-scaled
+                (group-by :Field)
+                (map-kv (fn [v]
+                          (selector (reduce (fn [m {:keys [Reason Freq]}] 
+                                              (update m Reason + Freq)) m v))))
+                (sort-by (comp int first first) >))
+      pal (reverse (take 6 (c/palette-presets :tableau-10-2)))
+      legend (map #(vector :rect (name %2) {:color %1}) pal varietes)]
+  
+  (-> (b/series
+       [:grid nil {:y nil}]
+       [:stack-horizontal [:sbar data {:palette pal :method :normalized}]])
+      (b/preprocess-series)
+      (b/add-axes :left)
+      (b/add-axes :bottom)
+      (b/add-label :bottom "propotion")
+      (b/add-legend "site" legend)
+      (r/render-lattice {:width 1000 :height 300})
+      (save "results/lattice/figure_4.5.jpg")
+      (show)))
+
+;; figure 4.6
+
+(let [data (->> postdoc-scaled
+                (group-by :Reason)
+                (map-kv (fn [g] [:strip (sort-by first (map-kv (fn [v] (map :Freq v)) (group-by :Field g)))
+                                {:color :black :distort 0.0 :size 5}])))]
+  (-> (b/lattice :stack-horizontal data {} {:label str :grid {:x nil}})
+      (b/preprocess-series)
+      (b/tie-domains :x)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Propotion")
+      (r/render-lattice {:height 400 :width 800})
+      (save "results/lattice/figure_4.6.jpg")
+      (show)))
+
+;; figure 4.7
+
+(let [data (->> postdoc-scaled
+                (group-by :Reason)
+                (map-kv (fn [g] [:strip (sort-by (comp first second) (map-kv (fn [v] (map :Freq v)) (group-by :Field g)))
+                                {:color :black :distort 0.0 :size 5}]))
+                (sort-by (comp stats/median (fn [vs] (map (comp first second) vs)) second second)))]
+  (-> (b/lattice :stack-horizontal data {} {:label str :grid {:x nil} :shape [5 1]})
+      (b/preprocess-series)
+      (b/tie-domains :x)
+      (b/update-scales :x :ticks 5)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "Propotion")
+      (r/render-lattice {:height 800 :width 500})
+      (save "results/lattice/figure_4.7.jpg")
+      (show)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Chapter 13
