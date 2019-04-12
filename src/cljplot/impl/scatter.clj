@@ -42,18 +42,29 @@
 
 ;;
 
-(defmethod prepare-data :ppplot [_ [d1 d2] {:keys [points] :or {points 100}}]
+(defmethod prepare-data :qqplot [_ [d1 d2] {:keys [points] :or {points 100}}]
   (let [d1 (if (satisfies? r/DistributionProto d1) d1
-               (r/distribution :empirical {:data (sort (extract-first d1))}))
+               (r/distribution :empirical {:data (extract-first d1)}))
         d2 (if (satisfies? r/DistributionProto d2) d2
                (r/distribution :empirical {:data (extract-first d2)}))]
     (map #(let [v (m/norm % 0 points)]
             (vector (r/icdf d1 v) (r/icdf d2 v))) (range 1 points))))
 
-(defmethod render-graph :ppplot [_ data conf graph-conf] (render-graph :scatter data conf graph-conf))
-
-(defmethod prepare-data :qqplot [_ data conf] (prepare-data :ppplot [(r/distribution :normal) data] conf))
 (defmethod render-graph :qqplot [_ data conf graph-conf] (render-graph :scatter data conf graph-conf))
+
+(defmethod prepare-data :normal-plot [_ data conf] (prepare-data :qqplot [(r/distribution :normal) data] conf))
+(defmethod render-graph :normal-plot [_ data conf graph-conf] (render-graph :scatter data conf graph-conf))
+
+(defmethod prepare-data :ppplot [_ [d1 d2] {:keys [^int points domain] :or {points 100}}]
+  (let [[dx dy] (or domain [-1.0 1.0])
+        d1 (if (satisfies? r/DistributionProto d1) d1
+               (r/distribution :enumerated-real {:data (extract-first d1)}))
+        d2 (if (satisfies? r/DistributionProto d2) d2
+               (r/distribution :enumerated-real {:data (extract-first d2)}))]
+    (map #(let [v (m/norm % 0 points dx dy)]
+            (vector (r/cdf d1 v) (r/cdf d2 v))) (range 0 (inc points)))))
+
+(defmethod render-graph :ppplot [_ data conf graph-conf] (render-graph :scatter data conf graph-conf))
 
 ;;
 

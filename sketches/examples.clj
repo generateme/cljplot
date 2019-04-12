@@ -239,3 +239,24 @@
 
 ;;
 
+;; qqplot/ppplot
+
+(-> (b/series [:grid]
+              [:abline]
+              [:ppplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)] {:domain [-3 3]}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (r/render-lattice {:width 600 :height 600})
+    (show))
+
+(-> (b/series [:grid]
+              [:abline]
+              [:vline]
+              [:hline]
+              [:qqplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)]])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (r/render-lattice {:width 600 :height 600})
+    (show))

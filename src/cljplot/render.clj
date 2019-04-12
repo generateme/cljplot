@@ -57,7 +57,7 @@
 
 ;; inner part
 (defn- render-lattice-inner
-  [c {:keys [rows cols series scales sizes left right top bottom] :as srs}
+  [c {:keys [rows cols series extents scales sizes left right top bottom] :as srs}
    {:keys [padding-in padding-out ^int width ^int height]
     :or {padding-in 0.05 padding-out 0.0}}]   
   (let [[^long l ^long r ^long t ^long b] (map (comp get-max-size srs) [:left :right :top :bottom])
@@ -86,7 +86,9 @@
       (doseq [[t d conf] (series id) 
               :let [sx (scale-x x)
                     sy (scale-y y)
-                    {:keys [canvas anchor]} (render-graph t d conf {:w w :h h :x sx :y sy})]]
+                    ex (-> extents :x (get x) second)
+                    ey (-> extents :y (get y) second)
+                    {:keys [canvas anchor]} (render-graph t d conf {:w w :h h :x sx :y sy :extent {:x ex :y ey}})]]
 
         (place-image c canvas (v/add anchor [0 1]) start-x start-y)
         

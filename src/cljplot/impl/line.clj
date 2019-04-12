@@ -130,4 +130,36 @@
         (set-color c col)
         (path c p true false)))))
 
-;;
+;; lines
+
+(defmethod data-extent :abline [_ _ _] nil)
+(defmethod render-graph :abline [_ [a b x1 x2] {:keys [color] :as conf} {:keys [w h x y extent] :as chart-data}]
+  (let [scale-x (partial (:scale x) 0 w)
+        scale-y (partial (:scale y) 0 h)
+        ^double a (or a 1.0)
+        ^double b (or b 0.0)
+        [mnx mxx] (:x extent)
+        ^double x1 (or x1 mnx)
+        ^double x2 (or x2 mxx)
+        y1 (+ b (* a x1))
+        y2 (+ b (* a x2))]
+    (do-graph (assoc chart-data :oversize 0) false
+      (-> (set-color c color)
+          (set-stroke-custom conf)
+          (line (scale-x x1) (scale-y y1) (scale-x x2) (scale-y y2))))))
+
+(defmethod data-extent :vline [_ _ _] nil)
+(defmethod render-graph :vline [_ xx {:keys [color] :as conf} {:keys [w ^int h x] :as chart-data}]
+  (let [xx ((:scale x) 0 w (or xx 0.0))]
+    (do-graph (assoc chart-data :oversize 0) false
+      (-> (set-color c color)
+          (set-stroke-custom conf)
+          (line xx 0 xx (dec h))))))
+
+(defmethod data-extent :hline [_ _ _] nil)
+(defmethod render-graph :hline [_ yy {:keys [color] :as conf} {:keys [^int w h y] :as chart-data}]
+  (let [yy ((:scale y) 0 h (or yy 0.0))]
+    (do-graph (assoc chart-data :oversize 0) false
+      (-> (set-color c color)
+          (set-stroke-custom conf)
+          (line 0 yy (dec w) yy)))))

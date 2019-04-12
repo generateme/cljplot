@@ -59,7 +59,8 @@
 (def ^:private stroke-common {:color nil :size 1.0 :cap :butt})
 
 (def ^:private configuration (merge axes-config 
-                                    {:legend {:color :black
+                                    {:abline {:color (c/gray 175)}
+                                     :legend {:color :black
                                               :font "Liberation Mono"
                                               :font-size 12
                                               :gap 5
@@ -219,11 +220,14 @@
               :pacf :scatter
               :area :line
               :cdf :function
+              :qqplot :scatter
               :ppplot :scatter
-              :qqplot :ppplot
+              :normal-plot :qqplot
               :stack-vertical :stack
               :stack-horizontal :stack
-              :gradient :legend})
+              :gradient :legend
+              :vline :abline
+              :hline :abline})
 
 (defn- val->fn
   "Convert value to function if it's not a function."

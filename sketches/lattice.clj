@@ -408,7 +408,7 @@
                 (group-by :score)
                 (map-kv (fn [v] (map :gcsescore v)))
                 (sort-by first))]
-  (-> (b/lattice :qqplot data {:shape \o} {:label str})
+  (-> (b/lattice :normal-plot data {:shape \o} {:label str})
       (b/preprocess-series)
       (b/tie-domains :y)
       (b/update-scales :y :ticks 5)
@@ -426,7 +426,7 @@
                 (group-by :score)
                 (map-kv #(map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
-  (-> (mapcat (fn [[k shape]] (b/lattice :qqplot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
+  (-> (mapcat (fn [[k shape]] (b/lattice :normal-plot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
       (b/add-series labels)
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -444,7 +444,7 @@
                 (group-by :score)
                 (map-kv #(map-kv (fn [v] (map (fn [rec] (m/pow (:gcsescore rec) 2.34)) v)) (group-by :gender %))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
-  (-> (mapcat (fn [[k shape]] (b/lattice :qqplot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
+  (-> (mapcat (fn [[k shape]] (b/lattice :normal-plot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
       (b/add-series labels)
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -482,7 +482,7 @@
                 (group-by :gender)
                 (map-kv #(sort-by first (map-kv (fn [v] [uniform (filter pos? (map :gcsescore v))]) (group-by :score %)))))
       labels (b/lattice :empty (second (first data)) {} {:label str :shape [1 6]})]
-  (-> (mapcat (fn [[k col]] (b/lattice :ppplot (data k) {:size 2 :color col} {:shape [1 6]})) (map vector (keys data) (c/palette-presets :category10)))
+  (-> (mapcat (fn [[k col]] (b/lattice :qqplot (data k) {:size 2 :color col} {:shape [1 6]})) (map vector (keys data) (c/palette-presets :category10)))
       (b/add-series labels)
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -497,16 +497,14 @@
 
 ;; figure 3.10
 
-;; TODO: guide line
-
 (let [data (->> chem97
                 (group-by :score)
                 (map-kv #(let [data (map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))]
                            [(data "M") (data "F")]))
                 (sort-by first))
       labels (b/lattice :empty data {} {:label str})]
-  (-> (b/lattice :ppplot data {} {:grid true})
-      (b/add-series (b/lattice :function (zipmap (keys data) (repeat identity)) {:color (c/color :gray 100) :domain [3 8]}))
+  (-> (b/lattice :qqplot data {} {:grid true})
+      (b/add-series (b/lattice :abline (zipmap (keys data) (repeat [1.0 0.0 3.0 8.0]))))
       (b/add-series labels)
       (b/preprocess-series)
       (b/tie-domains :x :y)
