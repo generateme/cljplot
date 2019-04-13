@@ -23,3 +23,11 @@
 
 (def show utils/show-image)
 
+;;
+
+(defmacro xy-chart
+  [conf series & mods]
+  `(-> ~series
+       (b/preprocess-series)
+       ~@mods
+       (r/render-lattice ~conf)))
