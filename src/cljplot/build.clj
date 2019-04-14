@@ -233,9 +233,3 @@
   (if (seq defs)
     (update series :legend update name (fn [v] (vec (if (seq v) (concat v defs) defs))))
     series))
-
-
-;;;;;;;;;;;;;;;;;
-;; some macros
-
-

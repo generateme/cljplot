@@ -356,7 +356,7 @@
         (-> c
             (push-matrix)
             (translate (:anchor v)))
-        (if h? (image c (:canvas v) 0 p) (image c (:canvas v) p -1))
+        (if h? (image c (:canvas v) 0 p) (image c (:canvas v) p -2))
         (pop-matrix c)))))
 
 ;; delegates

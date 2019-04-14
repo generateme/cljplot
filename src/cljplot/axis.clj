@@ -121,7 +121,7 @@
   [position scale-info config {:keys [w]}]
   (let [a (draw-axis w scale-info config)]
     (if (= :x position)
-      (update a :anchor v/sub (v/vec2 0.0 1.0))
+      (update a :anchor v/sub (v/vec2 0.0 0.0))
       (update-in a [:anchor 1] clojure.core/+ w))))
 
 (defn axis-size
