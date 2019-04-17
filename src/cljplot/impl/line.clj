@@ -74,11 +74,13 @@
 ;;
 
 (defmethod prepare-data :cdf [_ data conf]
-  (let [data (extract-first data)
-        domain (take 2 (stats/extent data))
-        f (partial r/cdf (r/distribution :enumerated-real {:data (sort data)}))
-        with-domain (assoc conf :domain domain)]
-    [with-domain (prepare-data :function f with-domain)]))
+  (if (satisfies? r/DistributionProto data)
+    [conf (prepare-data :function (partial r/cdf data) conf)]
+    (let [data (extract-first data)
+          domain (take 2 (stats/extent data))
+          f (partial r/cdf (r/distribution :enumerated-real {:data (sort data)}))
+          with-domain (assoc conf :domain domain)]
+      [with-domain (prepare-data :function f with-domain)])))
 
 (defmethod data-extent :cdf [_ [with-domain data] _] (data-extent :function data with-domain))
 (defmethod render-graph :cdf [_ [with-domain data] _ graph-conf] (render-graph :function data with-domain graph-conf))
