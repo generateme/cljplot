@@ -15,7 +15,9 @@
             [clojure2d.pixels :as p]
             [fastmath.complex :as cx]
             [fastmath.fields :as f]
-            [fastmath.vector :as v]))
+            [fastmath.vector :as v]
+            [fastmath.gp :as gp]
+            [fastmath.kernel.mercer :as k]))
 
 ;; logo
 
@@ -246,7 +248,9 @@
                         [:abline]
                         [:ppplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)] {:domain [-3 3]}])
               (b/add-axes :bottom)
-              (b/add-axes :left))
+              (b/add-axes :left)
+              (b/add-label :bottom "ppplot t-student vs normal"))
+    (save "results/examples/ppplot.jpg")
     (show))
 
 (-> (xy-chart {:width 600 :height 600}
@@ -256,7 +260,9 @@
                         [:hline]
                         [:qqplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)]])
               (b/add-axes :bottom)
-              (b/add-axes :left))
+              (b/add-axes :left)
+              (b/add-label :bottom "qqplot t-student vs normal"))
+    (save "results/examples/qqplot.jpg")
     (show))
 
 
@@ -273,58 +279,56 @@
                     (b/add-multi :function kdes
                                  {:points 600 :domain [1.0 6.0] :stroke {:size 1.5}} {:color (cycle (map #(c/set-alpha % 200) (c/palette-presets :category10)))}))
                 (b/add-axes :bottom)
-                (b/add-axes :left))
+                (b/add-axes :left)
+                (b/add-label :bottom "Various kernel densities"))
+      (save "results/examples/kernel-densities.jpg")
       (show)))
-
 
 
 ;;
 
-(require '[fastmath.kernel.mercer :as k]
-         '[fastmath.rbf :as rbf])
 
-(defn sinf [v] (+ (rnd/grand 0.00005) (m/sin (* 0.9 v))))
+(defn sinf [v] (+ (rnd/grand 0.00005) (m/sin (- (* 0.9 v)))))
 
-(defn cov-matrix
-  ([kernel xs ys]
-   (org.apache.commons.math3.linear.MatrixUtils/createRealMatrix   
-    (m/seq->double-double-array (for [x xs]
-                                  (map #(kernel [x] [%]) ys)))))
-  ([kernel xs] (cov-matrix kernel xs xs)))
-
-(cov-matrix (k/kernel :gaussian 1.0) [1 2 3 4])
-
-(time (let [N 100
+(time (let [N 200
             xs (repeatedly 10 #(rnd/drand -5 5))
             ys (map sinf xs)
-            k (k/kernel :gaussian (m/sqrt 1))
-            kernel (cov-matrix k xs)
-            sigma (org.apache.commons.math3.linear.MatrixUtils/createRealDiagonalMatrix (m/seq->double-array (repeat (count xs) 0.00005)))
-            cholesky (org.apache.commons.math3.linear.CholeskyDecomposition. (.add kernel sigma))
-            L (.getL cholesky)
+            gp (gp/gaussian-process xs ys {:kernel (k/kernel :gaussian (m/sqrt 0.1))})
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-            kernelxtest (cov-matrix k xs xtest)
-            kernelxtest-v (mapv #(.getColumnVector kernelxtest %) (range (.getColumnDimension kernelxtest)))
-            ys-v (org.apache.commons.math3.linear.MatrixUtils/createRealVector (m/seq->double-array ys))]
+            [mu stddev] (gp/predict gp xtest true)
+            s95 (map (partial * 1.96) stddev)
+            s50 (map (partial * 0.67) stddev)]
+        (-> (xy-chart {:width 800 :height 600}
+                      (b/series [:grid]
+                                [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]
+                                [:ci [(map vector xtest (map - mu s50)) (map vector xtest (map + mu s50))] {:color (c/color :lightblue)}]
+                                [:function sinf {:domain [-5 5] :color :red :samples N :smooth? true :stroke {:size 1.5}}]
+                                [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
 
-        (run! #(org.apache.commons.math3.linear.MatrixUtils/solveLowerTriangularSystem L %)
-              kernelxtest-v)
-        (org.apache.commons.math3.linear.MatrixUtils/solveLowerTriangularSystem L ys-v)
+                                [:scatter (map vector xs ys) {:size 10}])
+                      (b/add-axes :bottom)
+                      (b/add-axes :left)
+                      (b/add-label :bottom "Gaussian Process - prediction sampled"))
+            (save "results/examples/gp-predict.jpg")
+            (show))))
 
-        (let [mu (map #(.dotProduct ys-v %) kernelxtest-v)
-              k2 (cov-matrix k xtest xtest)
-              s (map #(* 3 (m/sqrt (- (.getEntry k2 %1 %1) %2))) (range (count xtest)) (map #(.dotProduct % %) kernelxtest-v))]
-          (-> (xy-chart {:width 600 :height 600}
-                        (b/series [:grid]
-                                  [:function sinf {:domain [-5 5] :color :red}]
-                                  [:line (map vector xtest mu) {:color :gray}]
-                                  [:line (map vector xtest (map - mu s))]
-                                  [:line (map vector xtest (map + mu s))]
-                                  [:scatter (map vector xs ys)])
-                        (b/add-axes :bottom)
-                        (b/add-axes :left))
-              (show)))))
-
+(let [N 100
+      xs [-4 1 2]
+      ys [-5 1 2]
+      xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
+      gp (gp/gaussian-process xs ys {:kernel (k/kernel :gaussian 0.8) :noise 0.0001})
+      [mu stddev] (gp/posterior-samples gp xtest true)
+      s95 (map #(* 1.96 %) stddev)]
+  (-> (xy-chart {:width 800 :height 600}
+                (b/series [:grid]
+                          [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]                          
+                          [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
+                          [:scatter (map vector xs ys)])
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-label :bottom "Gaussian Process - posterior samples"))
+      (save "results/examples/gp-posterior.jpg")
+      (show)))
 
 
 

@@ -12,25 +12,28 @@
 (m/use-primitive-operators)
 
 
+(defn- process-interpolation
+  [data interpolation x w]
+  (if (fn? interpolation) 
+    (let [sampled-values (m/sample (:inverse (:scale x)) 0.0 1.0 (/ ^int w 2) false)
+          i (wrap-interpolator-for-dt interpolation (:domain x) (map first data) (map second data))]
+      (map #(vector % (i %)) sampled-values))
+    data))
+
 ;; TODO: move interpolation to the prepare-data phase (like in sarea)
 
 (defmethod render-graph :line [_ data {:keys [color stroke interpolation smooth? area? point] :as conf}
-                               {:keys [^int w h x y] :as chart-data}]
-  (let [raw-scale-x (:scale x)
-        scale-x (partial (:scale x) 0 w)
+                               {:keys [w h x y] :as chart-data}]
+  (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
-        data (if (fn? interpolation) 
-               (let [sampled-values (m/sample (:inverse raw-scale-x) 0.0 1.0 (/ w 2) false)
-                     i (wrap-interpolator-for-dt interpolation (:domain x) (map first data) (map second data))]
-                 (map #(vector % (i %)) sampled-values))
-               data)
+        data (process-interpolation data interpolation x w)
         pfn (if (and smooth? (not area?)) path-bezier path)
         lcolor (if area? (c/darken color) color)
         p (map (juxt (comp scale-x first) (comp scale-y second)) data)]
     (do-graph chart-data (#{\o \O} (:type point))
       (when area?
         (set-color c color)
-        (path c (conj (vec (conj p [0.0 0.0])) [w 0.0]) true false))
+        (pfn c (conj (vec (conj p [0.0 0.0])) [w 0.0]) true false))
       (-> c
           (set-color lcolor)
           (set-stroke-custom stroke)
@@ -45,6 +48,28 @@
 
 (defmethod render-graph :area [_ data conf chart-data]
   (render-graph :line data (assoc conf :area? true) chart-data))
+
+;;
+
+(defmethod data-extent :ci [_ [top bottom] _] (common-extent (concat top bottom)))
+(defmethod render-graph :ci [_ [top bottom] {:keys [color stroke interpolation smooth?] :as conf}
+                             {:keys [w h x y] :as chart-data}]
+  (let [scale-x (partial (:scale x) 0 w)
+        scale-y (partial (:scale y) 0 h)
+        data-top (process-interpolation top interpolation x w)
+        data-bottom (process-interpolation bottom interpolation x w)
+        p-top (map (juxt (comp scale-x first) (comp scale-y second)) data-top)
+        p-bottom (map (juxt (comp scale-x first) (comp scale-y second)) data-bottom)]
+    (do-graph chart-data (#{\o \O} (:type point))
+      (-> c
+          (set-color color)
+          (path (concat p-top (reverse p-bottom)) true false))
+      (when stroke
+        (-> c
+            (set-color (c/darken color))
+            (set-stroke-custom stroke)
+            (path p-top)
+            (path p-bottom))))))
 
 ;;
 

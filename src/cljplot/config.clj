@@ -228,7 +228,8 @@
               :gradient :legend
               :vline :abline
               :hline :abline
-              :lollipop :bar})
+              :lollipop :bar
+              :ci :area})
 
 (defn- val->fn
   "Convert value to function if it's not a function."

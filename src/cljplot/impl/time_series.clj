@@ -15,8 +15,6 @@
 (defmethod prepare-data :lag [_ data {:keys [lag]}] (map vector data (drop (or lag 1) data)))
 (defmethod render-graph :lag [_ data conf chart-data] (render-graph :scatter data conf chart-data))
 
-(defonce ^:private gaussian (rnd/distribution :normal))
-
 (defn- ensure-vec
   [data]
   (if (vector? data) data (vec data)))
@@ -50,7 +48,7 @@
         acf-fn (if (= method :acf) acf pacf)
         acf (map-indexed vector (acf-fn vdata lags))
         rsqrt (/ 1.0 (m/sqrt cnt))
-        ci (* rsqrt ^double (rnd/icdf gaussian (* 0.5 (inc 0.95))))]
+        ci (* rsqrt ^double (rnd/icdf rnd/default-normal (* 0.5 (inc 0.95))))]
     (if (= method :acf)
       [acf rsqrt ci (mapv #(* ci (m/sqrt (dec (* 2.0 ^double %))))
                           (reductions (fn [^double acc ^double s] (+ acc (* s s))) (map second acf)))]
