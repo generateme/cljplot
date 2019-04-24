@@ -111,32 +111,32 @@
 ;;
 
 (-> (b/series [:complex #(cx/div (cx/log %) (cx/sin %)) {:x [-6 6] :y [-6 6] :colorspace :HSI :wrap-method :log2}])
-   (b/preprocess-series)
-   (b/add-axes :bottom)
-   (b/add-axes :left)
-   (b/add-label :bottom "log(z)/sin(z)")
-   (r/render-lattice {:width 600 :height 600})
-   (save "results/examples/complex.jpg")
-   (show)) 
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "log(z)/sin(z)")
+    (r/render-lattice {:width 600 :height 600})
+    (save "results/examples/complex.jpg")
+    (show)) 
 
 (-> (b/series [:scalar #(apply rnd/vnoise %)  {:x [-6 6] :y [-6 6]}])
-   (b/preprocess-series)
-   (b/add-axes :bottom)
-   (b/add-axes :left)
-   (b/add-label :bottom "value noise")
-   (r/render-lattice {:width 600 :height 600})
-   (save "results/examples/vnoise.jpg")
-   (show)) 
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "value noise")
+    (r/render-lattice {:width 600 :height 600})
+    (save "results/examples/vnoise.jpg")
+    (show)) 
 
 (let [field (f/combine {:type :operation, :name :comp, :var1 {:type :operation, :name :comp, :var1 {:type :variation, :name :secant, :amount 1.0, :config {}}, :var2 {:type :variation, :name :diamond, :amount 1.0, :config {}}, :amount 1.0}, :var2 {:type :variation, :name :power, :amount 1.0, :config {}}, :amount 1.0})]
   (-> (b/series [:grid] [:field field  {:jitter 1.0 :x [-4 4] :y [-4 4] :wrap? false}])
-     (b/preprocess-series)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (b/add-label :bottom "vector field")
-     (r/render-lattice {:width 600 :height 600})
-     (save "results/examples/field.jpg")
-     (show))) 
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "vector field")
+      (r/render-lattice {:width 600 :height 600})
+      (save "results/examples/field.jpg")
+      (show))) 
 
 ;;
 
@@ -156,14 +156,14 @@
 
 (let [field (f/field :exp)]
   (-> (b/series [:grid]
-               [:trace field {:x [-7 7] :y [-7 7]}])
-     (b/preprocess-series)
-     (b/add-axes :bottom)
-     (b/add-axes :left)
-     (b/add-label :bottom "exponential")
-     (r/render-lattice {:width 600 :height 600})
-     (save "results/examples/field-trace.jpg")
-     (show)))
+                [:trace field {:x [-7 7] :y [-7 7]}])
+      (b/preprocess-series)
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "exponential")
+      (r/render-lattice {:width 600 :height 600})
+      (save "results/examples/field-trace.jpg")
+      (show)))
 
 (def faithful (read-json "data/faithful.json"))
 
@@ -220,7 +220,7 @@
       (b/update-scales :x :fmt int)
       (b/add-axes :bottom)
       (b/add-axes :left)
-      (b/add-side :right (b/series [:grid nil {:y nil}] [:histogram data {:bins 20}]))
+      ;; (b/add-side :right (b/series [:grid nil {:y nil}] [:histogram data {:bins 20}]))
       (r/render-lattice {:width 600 :height 200})
       (save "results/examples/ma2.jpg")
       (show))
@@ -258,4 +258,74 @@
               (b/add-axes :bottom)
               (b/add-axes :left))
     (show))
+
+
+;;;
+
+(let [data (concat (repeatedly 500 #(rnd/grand 4.5 0.1))
+                   (take 10000 (remove #(== (m/round (* % 10.0)) 30.0) (repeatedly #(+ (rnd/grand 2.0 0.1) (* (rnd/drand) (rnd/drand 1.0 3.0)))))))
+      fu (stats/kernel-density :uniform data)
+      fs (stats/kernel-density :gaussian data)
+      m (keys (methods stats/kernel-density))
+      kdes (zipmap m (map #(stats/kernel-density % data) m))]
+  (-> (xy-chart {:width 600 :height 600}
+                (-> (b/series [:grid] )
+                    (b/add-multi :function kdes
+                                 {:points 600 :domain [1.0 6.0] :stroke {:size 1.5}} {:color (cycle (map #(c/set-alpha % 200) (c/palette-presets :category10)))}))
+                (b/add-axes :bottom)
+                (b/add-axes :left))
+      (show)))
+
+
+
+;;
+
+(require '[fastmath.kernel.mercer :as k]
+         '[fastmath.rbf :as rbf])
+
+(defn sinf [v] (+ (rnd/grand 0.00005) (m/sin (* 0.9 v))))
+
+(defn cov-matrix
+  ([kernel xs ys]
+   (org.apache.commons.math3.linear.MatrixUtils/createRealMatrix   
+    (m/seq->double-double-array (for [x xs]
+                                  (map #(kernel [x] [%]) ys)))))
+  ([kernel xs] (cov-matrix kernel xs xs)))
+
+(cov-matrix (k/kernel :gaussian 1.0) [1 2 3 4])
+
+(time (let [N 100
+            xs (repeatedly 10 #(rnd/drand -5 5))
+            ys (map sinf xs)
+            k (k/kernel :gaussian (m/sqrt 1))
+            kernel (cov-matrix k xs)
+            sigma (org.apache.commons.math3.linear.MatrixUtils/createRealDiagonalMatrix (m/seq->double-array (repeat (count xs) 0.00005)))
+            cholesky (org.apache.commons.math3.linear.CholeskyDecomposition. (.add kernel sigma))
+            L (.getL cholesky)
+            xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
+            kernelxtest (cov-matrix k xs xtest)
+            kernelxtest-v (mapv #(.getColumnVector kernelxtest %) (range (.getColumnDimension kernelxtest)))
+            ys-v (org.apache.commons.math3.linear.MatrixUtils/createRealVector (m/seq->double-array ys))]
+
+        (run! #(org.apache.commons.math3.linear.MatrixUtils/solveLowerTriangularSystem L %)
+              kernelxtest-v)
+        (org.apache.commons.math3.linear.MatrixUtils/solveLowerTriangularSystem L ys-v)
+
+        (let [mu (map #(.dotProduct ys-v %) kernelxtest-v)
+              k2 (cov-matrix k xtest xtest)
+              s (map #(* 3 (m/sqrt (- (.getEntry k2 %1 %1) %2))) (range (count xtest)) (map #(.dotProduct % %) kernelxtest-v))]
+          (-> (xy-chart {:width 600 :height 600}
+                        (b/series [:grid]
+                                  [:function sinf {:domain [-5 5] :color :red}]
+                                  [:line (map vector xtest mu) {:color :gray}]
+                                  [:line (map vector xtest (map - mu s))]
+                                  [:line (map vector xtest (map + mu s))]
+                                  [:scatter (map vector xs ys)])
+                        (b/add-axes :bottom)
+                        (b/add-axes :left))
+              (show)))))
+
+
+
+
 

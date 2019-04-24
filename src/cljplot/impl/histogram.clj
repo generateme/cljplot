@@ -15,6 +15,8 @@
   [h]
   (update h :bins #(map (fn [[x y1 y2]] [x y2 y1]) %)))
 
+;; PMF vs density (density = pmf/step)
+
 (defmethod prepare-data :histogram [_ data {:keys [bins percents?]}]
   (let [s? (sequential? (first data))
         fd (if s? (flatten data) data)
@@ -47,7 +49,8 @@
                   x (* ^double w start)
                   ww (* ^double w (- end start))
                   col (nth palette id)
-                  yy (- ^double (scale-y y) 4)]]
+                  yy (- ^double (scale-y y) 4)]
+            :when (pos? (double y))]
       (if stroke?
         (-> canvas
             (set-stroke-custom stroke)
