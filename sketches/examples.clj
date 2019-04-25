@@ -290,17 +290,18 @@
 ;;
 
 
-(defn sinf [v] (+ (rnd/grand 0.00005) (m/sin (- (* 0.9 v)))))
+(defn sinf [v] (+ (rnd/grand 0.00005) (+ 10 (m/sin (- (* 0.7 v))))))
 
 (defn rbf
   [f]
   (fn [x y]
-    (f (dist/chebyshev x y))))
+    (f (dist/euclidean x y))))
 
 (time (let [N 100
-            xs (repeatedly 10 #(rnd/drand -5 5))
+            n 10
+            xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
-            gp (gp/gaussian-process xs ys {:kernel (rbf (rbf/rbf :wendland 4))
+            gp (gp/gaussian-process xs ys {:normalize? true :kernel (rbf (rbf/rbf :wendland 3))
                                            ;; (k/kernel :gaussian (m/sqrt 0.1))
                                            })
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
@@ -311,7 +312,7 @@
                       (b/series [:grid]
                                 [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]
                                 [:ci [(map vector xtest (map - mu s50)) (map vector xtest (map + mu s50))] {:color (c/color :lightblue)}]
-                                [:function sinf {:domain [-5 5] :color :red :samples N :smooth? true :stroke {:size 1.5}}]
+                                [:function sinf {:domain [-5 5] :color :red :samples N :stroke {:size 1.5}}]
                                 [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
 
                                 [:scatter (map vector xs ys) {:size 10}])
