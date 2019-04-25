@@ -17,7 +17,9 @@
             [fastmath.fields :as f]
             [fastmath.vector :as v]
             [fastmath.gp :as gp]
-            [fastmath.kernel.mercer :as k]))
+            [fastmath.kernel.mercer :as k]
+            [fastmath.rbf :as rbf]
+            [fastmath.distance :as dist]))
 
 ;; logo
 
@@ -290,10 +292,17 @@
 
 (defn sinf [v] (+ (rnd/grand 0.00005) (m/sin (- (* 0.9 v)))))
 
-(time (let [N 200
+(defn rbf
+  [f]
+  (fn [x y]
+    (f (dist/chebyshev x y))))
+
+(time (let [N 100
             xs (repeatedly 10 #(rnd/drand -5 5))
             ys (map sinf xs)
-            gp (gp/gaussian-process xs ys {:kernel (k/kernel :gaussian (m/sqrt 0.1))})
+            gp (gp/gaussian-process xs ys {:kernel (rbf (rbf/rbf :wendland 4))
+                                           ;; (k/kernel :gaussian (m/sqrt 0.1))
+                                           })
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
             [mu stddev] (gp/predict gp xtest true)
             s95 (map (partial * 1.96) stddev)
@@ -309,7 +318,7 @@
                       (b/add-axes :bottom)
                       (b/add-axes :left)
                       (b/add-label :bottom "Gaussian Process - prediction sampled"))
-            (save "results/examples/gp-predict.jpg")
+            ;; (save "results/examples/gp-predict.jpg")
             (show))))
 
 (let [N 100
@@ -323,13 +332,10 @@
                 (b/series [:grid]
                           [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]                          
                           [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
-                          [:scatter (map vector xs ys)])
+                          [:scatter (map vector xs ys) {:size 10}])
                 (b/add-axes :bottom)
                 (b/add-axes :left)
                 (b/add-label :bottom "Gaussian Process - posterior samples"))
-      (save "results/examples/gp-posterior.jpg")
+      ;; (save "results/examples/gp-posterior.jpg")
       (show)))
-
-
-
 
