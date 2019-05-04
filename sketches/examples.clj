@@ -19,7 +19,8 @@
             [fastmath.gp :as gp]
             [fastmath.kernel.mercer :as k]
             [fastmath.rbf :as rbf]
-            [fastmath.distance :as dist]))
+            [fastmath.distance :as dist]
+            [fastmath.kernel :as kk]))
 
 ;; logo
 
@@ -301,8 +302,11 @@
             n 10
             xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
-            gp (gp/gaussian-process xs ys {:normalize? true :kernel (rbf (rbf/rbf :wendland 3))
-                                           ;; (k/kernel :gaussian (m/sqrt 0.1))
+            gp (gp/gaussian-process xs ys {:normalize? true :kernel
+                                           ;; (rbf (rbf/rbf :wendland 3))
+                                           ;; (k/kernel :linear)
+                                           (kk/mercer :wave )
+                                           ;; (kk/rbf->mercer (kk/rbf :wendland-41 2))
                                            })
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
             [mu stddev] (gp/predict gp xtest true)
@@ -338,5 +342,16 @@
                 (b/add-axes :left)
                 (b/add-label :bottom "Gaussian Process - posterior samples"))
       ;; (save "results/examples/gp-posterior.jpg")
+      (show)))
+
+
+;; TO REMOVE
+;;
+
+(let [k (kk/rbf :wendland-10)]
+  (-> (xy-chart {:width 400 :height 400}
+                (b/series [:grid] [:function k {:domain [-1.1 1.1] :samples 200}])
+                (b/add-axes :bottom)
+                (b/add-axes :left))
       (show)))
 
