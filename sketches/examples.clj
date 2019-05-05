@@ -302,10 +302,9 @@
             n 10
             xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
-            gp (gp/gaussian-process xs ys {:normalize? true :kernel
+            gp (gp/gaussian-process xs ys {:normalize? true :kernel (k/kernel :gaussian (m/sqrt 0.1))
                                            ;; (rbf (rbf/rbf :wendland 3))
                                            ;; (k/kernel :linear)
-                                           (kk/mercer :wave )
                                            ;; (kk/rbf->mercer (kk/rbf :wendland-41 2))
                                            })
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
