@@ -17,8 +17,6 @@
             [fastmath.fields :as f]
             [fastmath.vector :as v]
             [fastmath.gp :as gp]
-            [fastmath.kernel.mercer :as k]
-            [fastmath.rbf :as rbf]
             [fastmath.distance :as dist]
             [fastmath.kernel :as kk]))
 
@@ -293,20 +291,12 @@
 
 (defn sinf [v] (+ (rnd/grand 0.00005) (+ 10 (m/sin (- (* 0.7 v))))))
 
-(defn rbf
-  [f]
-  (fn [x y]
-    (f (dist/euclidean x y))))
-
 (time (let [N 100
             n 10
             xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
-            gp (gp/gaussian-process xs ys {:normalize? true :kernel (k/kernel :gaussian (m/sqrt 0.1))
-                                           ;; (rbf (rbf/rbf :wendland 3))
-                                           ;; (k/kernel :linear)
-                                           ;; (kk/rbf->mercer (kk/rbf :wendland-41 2))
-                                           })
+            gp (gp/gaussian-process xs ys {:normalize? true :kernel
+                                           (kk/kernel :gaussian)})
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
             [mu stddev] (gp/predict gp xtest true)
             s95 (map (partial * 1.96) stddev)
@@ -322,7 +312,7 @@
                       (b/add-axes :bottom)
                       (b/add-axes :left)
                       (b/add-label :bottom "Gaussian Process - prediction sampled"))
-            ;; (save "results/examples/gp-predict.jpg")
+            (save "results/examples/gp-predict.jpg")
             (show))))
 
 (let [N 100
@@ -347,6 +337,19 @@
 ;; TO REMOVE
 ;;
 
+(time (let [k (kk/kernel->rbf (kk/kernel :scalar-functions #(m/log1p (m/abs (first %)))))
+            d [-5 -2 -1 -0.2 0 4 4.3 4.4 4.5 5.0]
+            r (map sinf d)
+            i (in/rbf (kk/smile-rbf k) d r)]
+        (-> (xy-chart {:width 400 :height 400}
+                      (b/series [:grid]
+                                [:function sinf {:domain [-5 5] :samples 200 :color :gray}]
+                                [:function i {:domain [-5 5] :samples 200}]
+                                [:scatter (map vector d r)])
+                      (b/add-axes :bottom)
+                      (b/add-axes :left))
+            (show))))
+
 (let [k (kk/rbf :wendland-10)]
   (-> (xy-chart {:width 400 :height 400}
                 (b/series [:grid] [:function k {:domain [-1.1 1.1] :samples 200}])
@@ -354,3 +357,63 @@
                 (b/add-axes :left))
       (show)))
 
+#_(let [w 600 h 600]
+    (c2d/with-canvas [cvs (c2d/canvas w h)]
+      (c2d/set-background cvs :black)
+
+      
+      (let [wnd (c2d/show-window cvs "ring")]
+
+
+        (c2d/set-color cvs :white )
+        (c2d/rect cvs 300 200 300 200 )
+        (c2d/set-color cvs :black 30)
+        (c2d/rect cvs 0 0 w h false)
+        (c2d/rect cvs 0 0 w h false)
+        ;; (c2d/rect cvs 0 0 w h false)
+        ;; (c2d/rect cvs 0 0 w h false)
+        ;; (c2d/rect cvs 0 0 w h false)
+        ;; (c2d/rect cvs 0 0 w h false)
+        (c2d/rect cvs 0 0 w h false)
+        (c2d/rect cvs 0 0 w h false)
+        (c2d/rect cvs 0 0 w h false)
+
+        )))
+
+#_(-> (xy-chart {:width 500 :height 300}
+                (b/series [:grid] [:line (map vector (range 50) (iterate (fn [x] (* x 0.85)) 1)) {:stroke {:size 3} :samples 300}])
+                (b/update-scale :x :fmt int)
+                (b/add-label :bottom "Layers")
+                (b/add-label :left "Brightness (luma)")
+                (b/add-axes :bottom)
+                (b/add-axes :left))
+      (save "alpha.jpg"))
+
+
+(let [draw (fn [canvas _ _ _]
+             (when (rnd/brand 0.9)
+               (let [x (rnd/drand (c2d/width canvas))
+                     y (rnd/drand (c2d/height canvas))]
+                 (c2d/filled-with-stroke canvas (c/color (rnd/drand 255) (rnd/drand 255) (rnd/drand 255)) :white c2d/ellipse x y 40 40)))
+             (-> canvas
+                 (c2d/set-color :black 10)
+                 (c2d/rect 0 0 400 400)
+                 (p/set-canvas-pixels! (p/filter-channels (p/box-blur 15) (p/to-pixels canvas)))
+                 ))]
+
+  (c2d/show-window {:canvas (c2d/with-canvas-> (c2d/canvas 400 400)
+                              (c2d/set-background :black))
+                    :draw-fn draw}))
+
+(c2d/show-window {:canvas (let [c (c2d/with-canvas-> (c2d/canvas 100 100)
+                                    (c2d/set-background :black)
+                                    (c2d/set-color :red)
+                                    (c2d/rect 0 0 40 40))
+                                res (c2d/with-canvas [c c]
+                                      (reduce (fn [i _]
+                                                (-> i
+                                                    (c2d/set-color :black 10)
+                                                    (c2d/rect 0 0 100 100)
+                                                    (p/set-canvas-pixels! (p/filter-channels p/horizontal-blur-5 (p/to-pixels i))))) c (range 1500)))]
+                            (print (take 10 (p/to-pixels res)))
+                            res)})

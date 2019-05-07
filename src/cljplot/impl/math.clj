@@ -37,6 +37,7 @@
     :log10 (m/frac (m/log10 (inc v)))
     :sin (m/norm (m/sin v) -1.0 1.0 0.0 1.0)
     :exp (- 1.0 (m/exp (- v)))
+    :sigmoid (m/sigmoid v)
     (m/frac v)))
 
 (defmethod render-graph :complex [_ f {:keys [colorspace permutation wrap-method] :as conf} {:keys [w h x y] :as chart-data}]

@@ -295,11 +295,14 @@
         :block-size (+ margin (m/ceil h))
         :pos [x (m/floor (- y))]}))))
 
-;; hack
 
-(defn fast+ ^double [^double a ^double b] (+ a b))
-(defn fast-max ^double [^double a ^double b] (max a b))
-(defn fast-min ^double [^double a ^double b] (min a b))
+;; ;;;;;;;;;;
+
+(defonce configuration (atom {}))
+
+(defn register-configuration!
+  [])
+
 
 ;;
 
@@ -309,3 +312,4 @@
 
 (defn read-csv [f] (rest (with-open [reader (io/reader f)]
                            (doall (csv/read-csv reader)))))
+
