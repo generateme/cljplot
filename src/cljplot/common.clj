@@ -16,6 +16,8 @@
 (m/use-primitive-operators)
 
 (defn fast+ {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (+ a b))
+(defn fast- {:inline (fn [^double x ^double y] `(- ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (- a b))
+(defn fast* {:inline (fn [^double x ^double y] `(* ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (* a b))
 (defn fast-max {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (max a b))
 (defn fast-min {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (min a b))
 
@@ -267,7 +269,7 @@
 ;;
 
 (def line-dash-styles
-  (cycle [[1  1] [2  2] [4  4] [5  1  3] [4  1] [10  2] [14  2  7  2] [14  2  2  7] [2  2  20  2  20  2]]))
+  (cycle [[1 1] [2 2] [4 4] [5 1 3] [4 1] [10 2] [14 2 7 2] [14 2 2 7] [2 2 20 2 20 2]]))
 
 ;;
 
@@ -300,8 +302,21 @@
 
 (defonce configuration (atom {}))
 
+(defn- inherite-configuration
+  [inheritance]
+  (reduce (fn [conf k]
+            (if (contains? @configuration k)
+              (deep-merge conf @(@configuration k))
+              conf)) {} inheritance))
+
 (defn register-configuration!
-  [])
+  [chart {:keys [config doc fns] :as config-map} & inheritance]
+  (swap! configuration assoc chart (delay (deep-merge (inherite-configuration inheritance) config-map))))
+
+#_(register-configuration! :abc {:stroke {:size 3 :line 123}})
+#_(register-configuration! :ded {:color :black} :abc :abc)
+#_(register-configuration! :vvv {:stroke {:size 10}} :ded :abc)
+
 
 
 ;;

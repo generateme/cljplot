@@ -5,6 +5,7 @@
             [cljplot.common :refer :all]
             [fastmath.interpolation :as in]
             [fastmath.stats :as stats]
+            [fastmath.kernel :as k]
             [fastmath.random :as r]))
 
 (set! *warn-on-reflection* true)
@@ -85,11 +86,13 @@
 
 ;;
 
-(defmethod prepare-data :density [_ data {:keys [kernel-bandwidth margins] :as conf}]
+(defmethod prepare-data :density [_ data {:keys [kernel-bandwidth kernel-type margins]
+                                          :or {kernel-type :smile}
+                                          :as conf}]
   (let [dens-data (extract-first data)
         f (if kernel-bandwidth
-            (stats/kernel-density dens-data kernel-bandwidth)
-            (stats/kernel-density dens-data))
+            (k/kernel-density kernel-type dens-data kernel-bandwidth)
+            (k/kernel-density kernel-type dens-data))
         with-domain (assoc conf :domain (extend-domain-numerical (take 2 (stats/extent dens-data)) (or (:x margins) [0 0])))]
     [with-domain (prepare-data :function f with-domain)]))
 

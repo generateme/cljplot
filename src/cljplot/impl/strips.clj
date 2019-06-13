@@ -4,6 +4,7 @@
             [fastmath.random :as r]
             [clojure2d.core :refer :all]
             [fastmath.stats :as stats]
+            [fastmath.kernel :as k]
             [cljplot.scale :as s]
             [clojure2d.color :as c]
             [fastmath.core :as m]))
@@ -104,13 +105,13 @@
 
 ;;
 
-(defmethod prepare-data :violin [_ data {:keys [kernel-bandwidth samples margins] :as conf}]
+(defmethod prepare-data :violin [_ data {:keys [kernel-bandwidth samples margins kernel-type] :as conf}]
   (let [dens-data (extract-first data)
         stats (stats/stats-map dens-data)
         [mn mx] (extend-domain-numerical [(:Min stats) (:Max stats)] (or (:x margins) [0.0 0.0]))
         density (m/sample (if kernel-bandwidth
-                            (stats/kernel-density dens-data kernel-bandwidth)
-                            (stats/kernel-density dens-data)) mn mx (or samples 100) true)]
+                            (k/kernel-density kernel-type dens-data kernel-bandwidth)
+                            (k/kernel-density kernel-type dens-data)) mn mx (or samples 100) true)]
     [density stats]))
 
 (defmethod data-extent :violin [_ [density stats] _]
@@ -138,13 +139,13 @@
 
 ;;
 
-(defmethod prepare-data :density-strip [_ data {:keys [kernel-bandwidth samples margins] :as conf}]
+(defmethod prepare-data :density-strip [_ data {:keys [kernel-bandwidth samples margins kernel-type] :as conf}]
   (let [dens-data (extract-first data)
         [omn omx :as all] (stats/extent dens-data)
         [mn mx] (extend-domain-numerical all (or (:x margins) [0.0 0.0]))
         density (m/sample (if kernel-bandwidth
-                            (stats/kernel-density dens-data kernel-bandwidth)
-                            (stats/kernel-density dens-data)) mn mx (or samples 100) true)]
+                            (k/kernel-density kernel-type dens-data kernel-bandwidth)
+                            (k/kernel-density kernel-type dens-data)) mn mx (or samples 100) true)]
     [density all]))
 
 (defmethod data-extent :density-strip [_ [density [xmn xmx]] _]

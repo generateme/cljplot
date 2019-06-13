@@ -16,9 +16,10 @@
             [fastmath.complex :as cx]
             [fastmath.fields :as f]
             [fastmath.vector :as v]
-            [fastmath.gp :as gp]
+            [fastmath.optimization :as opt]
             [fastmath.distance :as dist]
-            [fastmath.kernel :as kk]))
+            [fastmath.kernel :as kk]
+            [fastmath.regression :as reg]))
 
 ;; logo
 
@@ -271,10 +272,10 @@
 
 (let [data (concat (repeatedly 500 #(rnd/grand 4.5 0.1))
                    (take 10000 (remove #(== (m/round (* % 10.0)) 30.0) (repeatedly #(+ (rnd/grand 2.0 0.1) (* (rnd/drand) (rnd/drand 1.0 3.0)))))))
-      fu (stats/kernel-density :uniform data)
-      fs (stats/kernel-density :gaussian data)
-      m (keys (methods stats/kernel-density))
-      kdes (zipmap m (map #(stats/kernel-density % data) m))]
+      fu (kk/kernel-density :uniform data)
+      fs (kk/kernel-density :gaussian data)
+      m (keys (methods kk/kernel-density))
+      kdes (zipmap m (map #(kk/kernel-density % data) m))]
   (-> (xy-chart {:width 600 :height 600}
                 (-> (b/series [:grid] )
                     (b/add-multi :function kdes
@@ -295,10 +296,12 @@
             n 10
             xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
-            gp (gp/gaussian-process xs ys {:normalize? true :kernel
-                                           (kk/kernel :gaussian)})
+            gp (reg/gaussian-process+ {:normalize? true :kernel
+                                       (kk/kernel :gaussian 0.8)} xs ys)
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-            [mu stddev] (gp/predict gp xtest true)
+            pairs (reg/predict-all gp xtest true)
+            mu (map first pairs)
+            stddev (map second pairs)
             s95 (map (partial * 1.96) stddev)
             s50 (map (partial * 0.67) stddev)]
         (-> (xy-chart {:width 800 :height 600}
@@ -319,8 +322,10 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gp (gp/gaussian-process xs ys {:kernel (k/kernel :gaussian 0.8) :noise 0.0001})
-      [mu stddev] (gp/posterior-samples gp xtest true)
+      gp (reg/gaussian-process+ {:kernel (kk/kernel :gaussian 0.8) :noise 0.0001} xs ys)
+      pairs (reg/posterior-samples gp xtest true)
+      mu (map first pairs)
+      stddev (map second pairs)
       s95 (map #(* 1.96 %) stddev)]
   (-> (xy-chart {:width 800 :height 600}
                 (b/series [:grid]
@@ -334,60 +339,7 @@
       (show)))
 
 
-;; TO REMOVE
-;;
 
-(time (let [k (kk/kernel->rbf (kk/kernel :scalar-functions #(m/log1p (m/abs (first %)))))
-            d [-5 -2 -1 -0.2 0 4 4.3 4.4 4.5 5.0]
-            r (map sinf d)
-            i (in/rbf (kk/smile-rbf k) d r)]
-        (-> (xy-chart {:width 400 :height 400}
-                      (b/series [:grid]
-                                [:function sinf {:domain [-5 5] :samples 200 :color :gray}]
-                                [:function i {:domain [-5 5] :samples 200}]
-                                [:scatter (map vector d r)])
-                      (b/add-axes :bottom)
-                      (b/add-axes :left))
-            (show))))
-
-(let [k (kk/rbf :wendland-10)]
-  (-> (xy-chart {:width 400 :height 400}
-                (b/series [:grid] [:function k {:domain [-1.1 1.1] :samples 200}])
-                (b/add-axes :bottom)
-                (b/add-axes :left))
-      (show)))
-
-#_(let [w 600 h 600]
-    (c2d/with-canvas [cvs (c2d/canvas w h)]
-      (c2d/set-background cvs :black)
-
-      
-      (let [wnd (c2d/show-window cvs "ring")]
-
-
-        (c2d/set-color cvs :white )
-        (c2d/rect cvs 300 200 300 200 )
-        (c2d/set-color cvs :black 30)
-        (c2d/rect cvs 0 0 w h false)
-        (c2d/rect cvs 0 0 w h false)
-        ;; (c2d/rect cvs 0 0 w h false)
-        ;; (c2d/rect cvs 0 0 w h false)
-        ;; (c2d/rect cvs 0 0 w h false)
-        ;; (c2d/rect cvs 0 0 w h false)
-        (c2d/rect cvs 0 0 w h false)
-        (c2d/rect cvs 0 0 w h false)
-        (c2d/rect cvs 0 0 w h false)
-
-        )))
-
-#_(-> (xy-chart {:width 500 :height 300}
-                (b/series [:grid] [:line (map vector (range 50) (iterate (fn [x] (* x 0.85)) 1)) {:stroke {:size 3} :samples 300}])
-                (b/update-scale :x :fmt int)
-                (b/add-label :bottom "Layers")
-                (b/add-label :left "Brightness (luma)")
-                (b/add-axes :bottom)
-                (b/add-axes :left))
-      (save "alpha.jpg"))
 
 
 (let [draw (fn [canvas _ _ _]
@@ -417,3 +369,82 @@
                                                     (p/set-canvas-pixels! (p/filter-channels p/horizontal-blur-5 (p/to-pixels i))))) c (range 1500)))]
                             (print (take 10 (p/to-pixels res)))
                             res)})
+
+
+
+;;
+
+(defn- target-fn
+  [[x]]
+  (+ (m/exp (- (m/sq (- x 2.0))))
+     (m/exp (* -0.1 (m/sq (- x 6.0))))
+     (/ (inc (* x x)))))
+
+(defn- black-box
+  [[x y]]
+  (inc (- (- (* x x))
+          (m/sq (dec y)))))
+
+(-> (xy-chart {:width 600 :height 400}
+              (b/series [:grid]
+                        [:function (comp target-fn vector) {:domain [-2 10]}])
+              (b/add-axes :bottom)
+              (b/add-axes :left))
+    (show))
+
+
+
+(initial-values target-fn 3 [[-2 10]])
+(initial-values black-box 3 [[-2 4] [-3 3]])
+
+(last (last (take 5 (bayesian-optimization target-fn {:bounds [[-2 10]]}))))
+
+(last (last (take 5 (bayesian-optimization black-box {:utility-function :ucb :bounds [[-2 2] [-2 2]]}))))
+;; => [(0.010928762384104555 1.0026914335967843) 0.9998733183379459]
+
+
+(let [N 100
+      xtest (map #(m/norm % 0 (dec N) -2.0 10.0) (range N))      ]
+  (doseq [[gp xs ys [[xx] yy]] (take 5 (bayesian-optimization target-fn {:utility-param 0.5 :utility-function :ucb :kernel (kk/kernel :gaussian 1) :bounds [[-2 10]]}))
+          :let [[mu stddev] (gp/predict-all gp xtest true)
+                s95 (map (partial * 1.96) stddev)
+                s50 (map (partial * 0.67) stddev)]]
+    (-> (xy-chart {:width 800 :height 600}
+                  (b/series [:grid]
+                            [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]
+                            [:ci [(map vector xtest (map - mu s50)) (map vector xtest (map + mu s50))] {:color (c/color :lightblue)}]
+                            [:function (comp target-fn vector) {:domain [-2 10] :color :red :samples N :stroke {:size 1.5}}]
+                            [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
+
+                            [:scatter (map vector (map first xs) ys) {:size 10}]
+                            [:scatter [[xx yy]] {:size 20 :color :red}])
+                  (b/add-axes :bottom)
+                  (b/add-axes :left)
+                  (b/add-label :bottom "Gaussian Process - prediction sampled"))
+        (show))))
+
+
+
+;;;;;
+
+(-> (b/series
+     [:grid]
+     [:frequencies [[1 2 2 3 1 12 2] [3 4 5 4 5 4 3 2 3 4 11 12]] {:padding-out 0.5 :sort? true :range? true :pmf? false :type :lollies}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (r/render-lattice)
+    (show))
+
+(def hdata  (repeatedly 1300 rnd/grand))
+(def hdata2 (repeatedly 100 rnd/grand))
+
+(-> (b/series
+     [:grid]
+     [:histogram hdata {:cumulative? false :density? true :bins 130 :type :lollipops}]
+     [:density hdata {:color (c/color :red 120) :area? true :kernel-bandwidth 0.04}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (r/render-lattice)
+    (show))

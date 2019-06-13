@@ -229,7 +229,8 @@
               :vline :abline
               :hline :abline
               :lollipop :bar
-              :ci :area})
+              :ci :area
+              :frequencies :histogram})
 
 (defn- val->fn
   "Convert value to function if it's not a function."
