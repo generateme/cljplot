@@ -23,7 +23,26 @@
      (m/exp (- (* 0.1 (m/sq (- x 6.0)))))
      (/ (inc (* x x)))))
 
-(def bounds [-2 10])
+(defn target
+  ^double [^double x]
+  (- (+ (* x (m/sin x))
+        (* x (m/cos (+ x x))))))
+
+(defn target
+  ^double [^double x]
+  (- (/ (+ (m/sq x) (* -5.0 x) 6.0)
+        (inc (m/sq x)))))
+
+(defn target
+  ^double [^double x]
+  (* (+ x (m/sin x))
+     (m/exp (- (m/sq x)))))
+
+(defn target
+  ^double [^double x]
+  (- (+ 10.0 (- (* x x) (* 10.0 (m/cos (* m/TWO_PI x)))))))
+
+(def bounds [-5.12 5.12])
 
 (-> (xy-chart {:width 600 :height 600}
               (b/series [:grid]
@@ -32,41 +51,42 @@
               (b/add-axes :left))
     (show))
 
-(def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :mattern-52 2)
+(def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :mattern-52 0.9)
                                                   :bounds [bounds]
                                                   :utility-function-type :ei
-                                                  :optimizer :cmaes
                                                   :init-points 1
-                                                  :utility-param 0.2}))
+                                                  :jitter 1
+                                                  :utility-param 0.3}))
 
 (defn draw-bo
   ([opt] (draw-bo opt 0))
   ([opt idx]
    (let [{:keys [x y util-fn gp xs ys util-best]} (nth opt idx)
          pairs (map vector (map first xs) ys)
-         xtest (map #(m/norm % 0 99 -2.0 10.0) (range 100))
+         [x1 x2] bounds
+         xtest (map #(m/norm % 0 199 x1 x2) (range 200))
          ms-pairs (reg/predict-all gp xtest true)
          mu (map first ms-pairs)
          stddev (map second ms-pairs)
          s95 (map (partial fast* 1.96) stddev)
          s50 (map (partial fast* 0.67) stddev)]
-     (-> (xy-chart {:width 800 :height 600}
+     (-> (xy-chart {:width 800 :height 500}
                    (b/series [:grid]
                              [:ci [(map vector xtest (map fast- mu s95)) (map vector xtest (map fast+ mu s95))] {:color (c/color :lightblue 120)}]
                              [:ci [(map vector xtest (map fast- mu s50)) (map vector xtest (map fast+ mu s50))] {:color (c/color :lightblue)}]
-                             [:function target {:stroke {:size 2} :domain bounds}]
-                             [:line (map vector xtest mu) {:color :black :stroke {:dash [5 1]}}]
+                             [:function target {:stroke {:size 2} :domain bounds :samples 400}]
+                             [:line (map vector xtest mu) {:color :darkblue :stroke {:size 2 :dash [20 3]}}]
                              [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]
-                             [:scatter pairs {:size 13 :color 0x7788ff}]
-                             [:scatter [[(first x) y]] {:color :maroon :size 5}])
-                   (b/add-side :top 120 (b/series [:grid nil {:y nil}]
-                                                  [:function util-fn {:domain bounds}]
+                             [:scatter pairs {:size 8 :color :darkcyan}]
+                             [:scatter [[(first x) y]] {:color :maroon :size 10}])
+                   (b/add-side :top 100 (b/series [:grid nil {:y nil}]
+                                                  [:function util-fn {:domain bounds :samples 400}]
                                                   [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]))
                    (b/add-axes :bottom)
                    (b/add-axes :left))
          (show)))))
 
-(draw-bo optimizer 3)
+(draw-bo optimizer 22)
 
 (-> (xy-chart {:width 600 :height 600}
               (b/series [:grid]
@@ -77,3 +97,4 @@
 
 
 (keys (nth optimizer 0));; => (:x :y :util-fn :gp :xs :ys)
+
