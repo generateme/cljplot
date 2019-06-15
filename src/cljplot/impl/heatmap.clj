@@ -54,3 +54,4 @@
       (doseq [[[x y] v] data]
         (set-color c (gradient v))
         (grid-cell c grid x y)))))
+

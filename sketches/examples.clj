@@ -286,7 +286,6 @@
       (save "results/examples/kernel-densities.jpg")
       (show)))
 
-
 ;;
 
 
@@ -340,91 +339,6 @@
 
 
 
-
-
-(let [draw (fn [canvas _ _ _]
-             (when (rnd/brand 0.9)
-               (let [x (rnd/drand (c2d/width canvas))
-                     y (rnd/drand (c2d/height canvas))]
-                 (c2d/filled-with-stroke canvas (c/color (rnd/drand 255) (rnd/drand 255) (rnd/drand 255)) :white c2d/ellipse x y 40 40)))
-             (-> canvas
-                 (c2d/set-color :black 10)
-                 (c2d/rect 0 0 400 400)
-                 (p/set-canvas-pixels! (p/filter-channels (p/box-blur 15) (p/to-pixels canvas)))
-                 ))]
-
-  (c2d/show-window {:canvas (c2d/with-canvas-> (c2d/canvas 400 400)
-                              (c2d/set-background :black))
-                    :draw-fn draw}))
-
-(c2d/show-window {:canvas (let [c (c2d/with-canvas-> (c2d/canvas 100 100)
-                                    (c2d/set-background :black)
-                                    (c2d/set-color :red)
-                                    (c2d/rect 0 0 40 40))
-                                res (c2d/with-canvas [c c]
-                                      (reduce (fn [i _]
-                                                (-> i
-                                                    (c2d/set-color :black 10)
-                                                    (c2d/rect 0 0 100 100)
-                                                    (p/set-canvas-pixels! (p/filter-channels p/horizontal-blur-5 (p/to-pixels i))))) c (range 1500)))]
-                            (print (take 10 (p/to-pixels res)))
-                            res)})
-
-
-
-;;
-
-(defn- target-fn
-  [[x]]
-  (+ (m/exp (- (m/sq (- x 2.0))))
-     (m/exp (* -0.1 (m/sq (- x 6.0))))
-     (/ (inc (* x x)))))
-
-(defn- black-box
-  [[x y]]
-  (inc (- (- (* x x))
-          (m/sq (dec y)))))
-
-(-> (xy-chart {:width 600 :height 400}
-              (b/series [:grid]
-                        [:function (comp target-fn vector) {:domain [-2 10]}])
-              (b/add-axes :bottom)
-              (b/add-axes :left))
-    (show))
-
-
-
-(initial-values target-fn 3 [[-2 10]])
-(initial-values black-box 3 [[-2 4] [-3 3]])
-
-(last (last (take 5 (bayesian-optimization target-fn {:bounds [[-2 10]]}))))
-
-(last (last (take 5 (bayesian-optimization black-box {:utility-function :ucb :bounds [[-2 2] [-2 2]]}))))
-;; => [(0.010928762384104555 1.0026914335967843) 0.9998733183379459]
-
-
-(let [N 100
-      xtest (map #(m/norm % 0 (dec N) -2.0 10.0) (range N))      ]
-  (doseq [[gp xs ys [[xx] yy]] (take 5 (bayesian-optimization target-fn {:utility-param 0.5 :utility-function :ucb :kernel (kk/kernel :gaussian 1) :bounds [[-2 10]]}))
-          :let [[mu stddev] (gp/predict-all gp xtest true)
-                s95 (map (partial * 1.96) stddev)
-                s50 (map (partial * 0.67) stddev)]]
-    (-> (xy-chart {:width 800 :height 600}
-                  (b/series [:grid]
-                            [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]
-                            [:ci [(map vector xtest (map - mu s50)) (map vector xtest (map + mu s50))] {:color (c/color :lightblue)}]
-                            [:function (comp target-fn vector) {:domain [-2 10] :color :red :samples N :stroke {:size 1.5}}]
-                            [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
-
-                            [:scatter (map vector (map first xs) ys) {:size 10}]
-                            [:scatter [[xx yy]] {:size 20 :color :red}])
-                  (b/add-axes :bottom)
-                  (b/add-axes :left)
-                  (b/add-label :bottom "Gaussian Process - prediction sampled"))
-        (show))))
-
-
-
 ;;;;;
 
 (-> (b/series
@@ -448,3 +362,42 @@
     (b/add-axes :left)
     (r/render-lattice)
     (show))
+
+;; BUBBLE example
+
+(defn parse-line
+  [defs line]
+  (mapv #((or %1 read-line) %2) defs line))
+
+(def sweather (->> (read-csv "data/seattle-weather.csv")
+                   (map (partial parse-line [(partial dt/local-date "yyyy/MM/dd")
+                                             read-string read-string read-string read-string keyword]))
+                   (map rest)))
+
+;; Seattle weather dataset
+;; t1 - minimal temperature. x-axis
+;; t2 - maximal temperature, y-axis
+;; w - wind, color gradient
+;; p - precipitation, size
+
+(let [data (map (fn [[p t1 t2 w]] [t2 t1 w p]) sweather) ;; reorganize data
+      [min-wind max-wind] (stats/extent (map #(nth % 2) data)) ;; find out wind extent
+      [min-prec max-prec] (stats/extent (map #(nth % 3) data)) ;; find out precipitation extent
+      wind-map (s/linear [min-wind max-wind]) ;; create linear scale for wind (just lerp)
+      grad (comp #(c/set-alpha % 200)
+                 c/darken
+                 (c/gradient (:gnbu-9 c/palette-presets))
+                 wind-map)] ;; create gradient from green-blue palette, darkened
+  (-> (xy-chart {:width 600 :height 600}
+                (b/series
+                 [:grid]
+                 [:scatter data {:color (fn [[_ _ w] _] (grad w)) ;; callback function which returns color from gradient based on wind
+                                 :size (fn [[_ _ _ p] _] (m/norm p min-prec max-prec 2 50)) ;; callback for size based on precipitation
+                                 }])
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-label :bottom "Minimal temperature")
+                (b/add-label :left "Maximal temperature")
+                (b/add-label :top "Seattle weather"))
+      (save "results/bubble.jpg")
+      (show)))

@@ -46,7 +46,7 @@
 
 (-> (xy-chart {:width 600 :height 600}
               (b/series [:grid]
-                        [:function target {:domain bounds}])
+                        [:function target {:domain bounds :samples 500}])
               (b/add-axes :bottom)
               (b/add-axes :left))
     (show))
@@ -86,7 +86,7 @@
                    (b/add-axes :left))
          (show)))))
 
-(draw-bo optimizer 22)
+(draw-bo optimizer 10)
 
 (-> (xy-chart {:width 600 :height 600}
               (b/series [:grid]
