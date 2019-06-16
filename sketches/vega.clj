@@ -748,7 +748,7 @@
 ;; https://vega.github.io/vega-lite/examples/rect_binned_heatmap.html
 
 (let [data (map (juxt :IMDB_Rating :Rotten_Tomatoes_Rating) movies)]
-  (-> (b/series [:heatmap data {:grid :square :size 10 :gradient (c/gradient (c/palette-presets :ylgnbu-9))}])
+  (-> (b/series [:binned-heatmap data {:grid :square :size 10 :gradient (c/gradient (c/palette-presets :ylgnbu-9))}])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
@@ -761,7 +761,7 @@
 ;; https://vega.github.io/vega-lite/examples/concat_marginal_histograms.html
 
 (let [data (map (juxt :IMDB_Rating :Rotten_Tomatoes_Rating) movies)]
-  (-> (b/series [:heatmap data {:grid :square :size 20 :gradient (c/gradient (c/palette-presets :ylgnbu-9))}])
+  (-> (b/series [:binned-heatmap data {:grid :square :size 20 :gradient (c/gradient (c/palette-presets :ylgnbu-9))}])
       (b/preprocess-series)
       (b/add-side :right (b/series [:histogram (remove nil? (map second data)) {:bins 10}]))
       (b/add-side :top (b/series [:histogram (remove nil? (map first data)) {:bins 10}]))

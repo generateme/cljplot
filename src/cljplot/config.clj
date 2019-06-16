@@ -77,10 +77,10 @@
                                                   :blur-kernel-size 0.1
                                                   :contours 10
                                                   :fill? true}
-                                     :heatmap {:grid :pointy-hex
-                                               :alpha-factor 0.0
-                                               :size 20
-                                               :gradient (comp (c/gradient-presets :k2) #(- 1.0 %))}
+                                     :binned-heatmap {:grid :pointy-hex
+                                                      :alpha-factor 0.0
+                                                      :size 20
+                                                      :gradient (comp (c/gradient-presets :k2) #(- 1.0 %))}
                                      :complex {:colorspace :HSB
                                                :permutation 0
                                                :wrap-method :log2}

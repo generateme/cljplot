@@ -28,7 +28,7 @@
       (let [p (p/to-pixels grad conf)]        
         (image c (get-image p) 0 0)))))
 
-(defn- calc-heatmap
+(defn- calc-bheatmap
   [data g sx sy]
   (reduce (fn [m [x y cnt]]
             (if-not (and x y)
@@ -39,11 +39,11 @@
                   (update m cell clojure.core/+ cnt)
                   (assoc m cell cnt))))) {} data))
 
-(defmethod render-graph :heatmap [_ data {:keys [grid size gradient ^double alpha-factor] :as conf} {:keys [x y ^int w ^int h] :as chart-data}]
+(defmethod render-graph :binned-heatmap [_ data {:keys [grid size gradient ^double alpha-factor] :as conf} {:keys [x y ^int w ^int h] :as chart-data}]
   (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
         grid (grid/grid grid size)
-        data (calc-heatmap data grid scale-x scale-y)
+        data (calc-bheatmap data grid scale-x scale-y)
         [mnz mxz] (stats/extent (vals data))
         gradient (if (pos? alpha-factor)
                    (fn [v] (let [id (m/norm v mnz mxz)]
@@ -55,3 +55,19 @@
         (set-color c (gradient v))
         (grid-cell c grid x y)))))
 
+;;
+
+(defmacro ^:private distinct-categorical
+  [sort? data which]
+  `(as-> (map ~which ~data) d#
+     (distinct d#)
+     (if ~sort? (sort d#) d#)))
+
+(defmethod data-extent :heatmap [_ data {:keys [sort?]}]
+  (let [ks (map first data)]
+    {:x [:categorical (distinct-categorical sort? ks first)]
+     :y [:categorical (distinct-categorical sort? ks second)]
+     :z [:numerical (map second data)]}))
+
+(defmethod render-graph :heatmap [_ data {:keys [gradient]} {:keys [x y w h] :as chart-data}]
+  (let [scale-x (partial (:scale x) 0 w)]))

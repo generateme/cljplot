@@ -890,7 +890,7 @@
                 (filter #(and (:TIBC %) (:Hemoglobin %)))
                 (group-by :Sex)
                 (map-kv (fn [v] (map (juxt :TIBC :Hemoglobin) v))))]
-  (-> (b/lattice :heatmap data {:alpha-factor 0.1 :size 10} {:label str})
+  (-> (b/lattice :binned-heatmap data {:alpha-factor 0.1 :size 10} {:label str})
       (b/preprocess-series)
       (b/update-scales :x :ticks 5)
       (b/update-scales :x :fmt int)

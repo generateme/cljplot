@@ -104,7 +104,7 @@
 
 (let [data (repeatedly 10000 #(rnd/randval [(rnd/grand) (rnd/grand)]
                                            [(rnd/grand -10 1) (rnd/grand -10 1)]))]
-  (-> (b/series [:grid] [:heatmap data {:grid :flat-hex :alpha-factor 0 :size 20 :gradient (c/gradient-presets :prl-2)}])
+  (-> (b/series [:grid] [:binned-heatmap data {:grid :flat-hex :alpha-factor 0 :size 20 :gradient (c/gradient-presets :prl-2)}])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
