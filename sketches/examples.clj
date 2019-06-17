@@ -18,8 +18,8 @@
             [fastmath.vector :as v]
             [fastmath.optimization :as opt]
             [fastmath.distance :as dist]
-            [fastmath.kernel :as kk]
-            [fastmath.regression :as reg]))
+            [fastmath.regression :as reg]
+            [fastmath.kernel :as k]))
 
 ;; logo
 
@@ -272,10 +272,10 @@
 
 (let [data (concat (repeatedly 500 #(rnd/grand 4.5 0.1))
                    (take 10000 (remove #(== (m/round (* % 10.0)) 30.0) (repeatedly #(+ (rnd/grand 2.0 0.1) (* (rnd/drand) (rnd/drand 1.0 3.0)))))))
-      fu (kk/kernel-density :uniform data)
-      fs (kk/kernel-density :gaussian data)
-      m (keys (methods kk/kernel-density))
-      kdes (zipmap m (map #(kk/kernel-density % data) m))]
+      fu (k/kernel-density :uniform data)
+      fs (k/kernel-density :gaussian data)
+      m (keys (methods k/kernel-density))
+      kdes (zipmap m (map #(k/kernel-density % data) m))]
   (-> (xy-chart {:width 600 :height 600}
                 (-> (b/series [:grid] )
                     (b/add-multi :function kdes
@@ -296,7 +296,7 @@
             xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
             gp (reg/gaussian-process+ {:normalize? true :kernel
-                                       (kk/kernel :gaussian 0.8)
+                                       (k/kernel :gaussian 0.8)
                                        :noise 0.0005} xs ys)
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
             pairs (reg/predict-all gp xtest true)
@@ -322,7 +322,7 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gp (reg/gaussian-process+ {:kernel (kk/kernel :gaussian 0.8) :noise 0.0001} xs ys)
+      gp (reg/gaussian-process+ {:kernel (k/kernel :gaussian 0.8) :noise 0.0001} xs ys)
       pairs (reg/posterior-samples gp xtest true)
       mu (map first pairs)
       stddev (map second pairs)
@@ -343,7 +343,7 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gps (repeatedly posterior-cnt #(reg/gaussian-process+ {:kernel (kk/kernel :wave 0.3) :noise 0.0001} xs ys))
+      gps (repeatedly posterior-cnt #(reg/gaussian-process+ {:kernel (k/kernel :periodic 0.5 8.0) :noise 0.0001} xs ys))
       pairs (map #(reg/posterior-samples % xtest true) gps)
       lines (map #(vector :line (map vector xtest (map first %)) {:color (c/color :black 100)}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
@@ -362,7 +362,7 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gps (repeatedly prior-cnt #(reg/gaussian-process+ {:kernel (kk/kernel :gaussian) :noise 0.0000001} xs ys))
+      gps (repeatedly prior-cnt #(reg/gaussian-process+ {:kernel (k/kernel :gaussian) :noise 0.0000001} xs ys))
       pairs (map #(reg/prior-samples % xtest) gps)
       lines (map #(vector :line (map vector xtest %) {:color (c/color :black 100)}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
@@ -445,8 +445,7 @@
                  y (range 40)]
              [[x y] (rnd/drand x y)])]
   (-> (xy-chart {:width 600 :height 600}
-                (b/series [:grid]
-                          [:heatmap data ])
+                (b/series [:heatmap data ])
                 (b/add-axes :bottom)
                 (b/add-axes :left)
                 (b/add-label :left "Y")
@@ -458,8 +457,7 @@
                  y (range 15)]
              [[x y] (rnd/drand x y)])]
   (-> (xy-chart {:width 600 :height 600}
-                (b/series [:grid]
-                          [:heatmap data {:gradient (c/gradient-presets :yellow-red)
+                (b/series [:heatmap data {:gradient (c/gradient-presets :yellow-red)
                                           :annotate? true
                                           :annotate-fmt "%.1f"}])
                 (b/add-axes :bottom)
@@ -468,3 +466,46 @@
                 (b/add-label :bottom "X"))
       (save "results/examples/heatmap-matrix-ann.jpg")
       (show)))
+
+;; kernels
+
+(let [k1 (k/kernel :gaussian)
+      k2 (k/kernel :periodic 1.0 2)
+      k3 (k/kernel :thin-plate 2)
+      k4 (k/mult k1 k2)
+      fk (fn [f] #(f [0] [%]))
+      cfg {:domain [-3 3] :samples 200 :stroke {:size 2}}]
+  (-> (xy-chart {:width 900 :height 300}
+                (b/series
+                 [:grid nil {:position [0 0]}]
+                 [:grid nil {:position [1 0]}]
+                 [:grid nil {:position [2 0]}]
+                 [:function (fk k1) (assoc cfg :position [0 0] :label "gaussian")]
+                 [:function (fk k2) (assoc cfg :position [1 0] :label "periodic")]
+                 [:function (fk k3) (assoc cfg :position [2 0] :label "thin-plate")])
+                (b/add-label :top "Various kernels around 0")
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-axes :right))
+      (show)))
+
+(let [k1 (k/kernel :gaussian)
+      k2 (k/kernel :periodic 1.0 2)
+      k3 (k/kernel :thin-plate 2)
+      k4 (k/mult k1 k2)
+      r (range -3 3 0.25)
+      data #(for [x r
+                  y r]
+              [[x y] (% [x] [y])])]
+  (-> (xy-chart {:width 900 :height 325}
+                (b/series [:heatmap (data k1) {:position [0 0] :label "gaussian"}]
+                          [:heatmap (data k2) {:position [1 0] :label "periodic"}]
+                          [:heatmap (data k3) {:position [2 0] :label "thin-plate"}])
+                (b/add-label :top "Covariance matrices for different kernels")
+                (b/update-scales :x :ticks 8)
+                (b/update-scales :y :ticks 8)
+                (b/add-axes :bottom)
+                (b/add-axes :left))
+      (show)))
+
+

@@ -436,7 +436,7 @@
 
 (defmulti ticks- (fn [s & _] (:type s)))
 
-(defmethod ticks- :default [s & [c]]
+(defmethod ticks- :default [s c]
   {:ticks (map #(+ 0.0 (m/approx % 4)) (ticks-linear (:start s) (:end s) (or c 10)))})
 
 (defn- logp 
@@ -467,8 +467,11 @@
                                       lst
                                       [(m/approx (pows start))]))}))
 
-(defmethod ticks- :bands [s & _] {:ticks (:domain s)})
-(defmethod ticks- :time [s & [c]] (ticks-dt (:start s) (:end s) (or c 10.0)))
+(defmethod ticks- :bands [s c]
+  {:ticks (if c
+            (take-nth (max 1 (int (m/floor (/ ^int (count (:domain s)) (double c))))) (:domain s))
+            (:domain s))})
+(defmethod ticks- :time [s c] (ticks-dt (:start s) (:end s) (or c 10.0)))
 
 
 ;; scale/ticks factory
@@ -503,7 +506,7 @@
   ([scale] (make-ticks scale nil))
   ([scale ticks]
    (if-not (sequential? ticks)
-     (ticks- scale (max 1 (long (or ticks 10))))
+     (ticks- scale ticks)
      {:ticks ticks})))
 
 (defn- coerce-format-fn
