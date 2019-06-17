@@ -76,9 +76,19 @@ In my case, the main obstacle was the ability to save hundreds of charts without
 One can say: jfreechart! I can say: try to generate heatmaps... Every library I've found had some issues or produces ugly result or was web based or was notebook based or...
 So I fell into the lisp curse and I'm writing my own.
 
+## Contributing
+
+YES! A lot of things to do:
+* documentation
+* configuration
+* new charts
+* testing, test-cases
+
+Let's chat about this: https://clojurians.zulipchat.com/#narrow/stream/197967-cljplot-dev
+
 ## License
 
-Copyright © 2018 FIXME
+Copyright © 2019
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

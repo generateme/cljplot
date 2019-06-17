@@ -157,6 +157,15 @@
     (map first data)
     data))
 
+(defn coerce-format-fn
+  "Find formating funciton."
+  [fmt]
+  (cond
+    (string? fmt) (partial format fmt)
+    (fn? fmt) fmt
+    :else str))
+
+
 ;;
 
 (defmulti data-extent (fn [t data config] t))
@@ -267,6 +276,14 @@
             (pop-matrix))))))
 
 ;;
+
+(defn transformed-text
+  [c s x y & r]
+  (push-matrix c)
+  (let [[nx ny] (transform c x y)]
+    (reset-matrix c)
+    (apply text c s nx ny r)
+    (pop-matrix c)))
 
 (def line-dash-styles
   (cycle [[1 1] [2 2] [4 4] [5 1 3] [4 1] [10 2] [14 2 7 2] [14 2 2 7] [2 2 20 2 20 2]]))

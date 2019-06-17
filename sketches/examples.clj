@@ -289,14 +289,15 @@
 ;;
 
 
-(defn sinf [v] (+ (rnd/grand 0.00005) (+ 10 (m/sin (- (* 0.7 v))))))
+(defn sinf [v] (+ (rnd/grand 0.0005) (+ 10 (m/sin (- (* 0.7 v))))))
 
 (time (let [N 100
             n 10
             xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
             gp (reg/gaussian-process+ {:normalize? true :kernel
-                                       (kk/kernel :gaussian 0.8)} xs ys)
+                                       (kk/kernel :gaussian 0.8)
+                                       :noise 0.0005} xs ys)
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
             pairs (reg/predict-all gp xtest true)
             mu (map first pairs)
@@ -333,8 +334,44 @@
                           [:scatter (map vector xs ys) {:size 10}])
                 (b/add-axes :bottom)
                 (b/add-axes :left)
-                (b/add-label :bottom "Gaussian Process - posterior samples"))
-      ;; (save "results/examples/gp-posterior.jpg")
+                (b/add-label :bottom "Gaussian Process - posterior sample"))
+      (save "results/examples/gp-posterior.jpg")
+      (show)))
+
+(let [posterior-cnt 20
+      N 100
+      xs [-4 1 2]
+      ys [-5 1 2]
+      xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
+      gps (repeatedly posterior-cnt #(reg/gaussian-process+ {:kernel (kk/kernel :wave 0.3) :noise 0.0001} xs ys))
+      pairs (map #(reg/posterior-samples % xtest true) gps)
+      lines (map #(vector :line (map vector xtest (map first %)) {:color (c/color :black 100)}) pairs)]
+  (-> (xy-chart {:width 800 :height 600}
+                (-> (b/series [:grid])
+                    (b/add-series lines)
+                    (b/add-serie [:scatter (map vector xs ys) {:size 10}]))
+                
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-label :bottom "Gaussian Process - posterior samples (20)"))
+      (save "results/examples/gp-posteriors-20.jpg")
+      (show)))
+
+(let [prior-cnt 20
+      N 300
+      xs [-4 1 2]
+      ys [-5 1 2]
+      xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
+      gps (repeatedly prior-cnt #(reg/gaussian-process+ {:kernel (kk/kernel :gaussian) :noise 0.0000001} xs ys))
+      pairs (map #(reg/prior-samples % xtest) gps)
+      lines (map #(vector :line (map vector xtest %) {:color (c/color :black 100)}) pairs)]
+  (-> (xy-chart {:width 800 :height 600}
+                (-> (b/series [:grid])
+                    (b/add-series lines))
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-label :bottom "Gaussian Process - prior samples (20)"))
+      (save "results/examples/gp-priors-20.jpg")
       (show)))
 
 
@@ -400,4 +437,34 @@
                 (b/add-label :left "Maximal temperature")
                 (b/add-label :top "Seattle weather"))
       (save "results/bubble.jpg")
+      (show)))
+
+;; heatmap matrix
+
+(let [data (for [x (range 40)
+                 y (range 40)]
+             [[x y] (rnd/drand x y)])]
+  (-> (xy-chart {:width 600 :height 600}
+                (b/series [:grid]
+                          [:heatmap data ])
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-label :left "Y")
+                (b/add-label :bottom "X"))
+      (save "results/examples/heatmap-matrix.jpg")
+      (show)))
+
+(let [data (for [x (range 15)
+                 y (range 15)]
+             [[x y] (rnd/drand x y)])]
+  (-> (xy-chart {:width 600 :height 600}
+                (b/series [:grid]
+                          [:heatmap data {:gradient (c/gradient-presets :yellow-red)
+                                          :annotate? true
+                                          :annotate-fmt "%.1f"}])
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-label :left "Y")
+                (b/add-label :bottom "X"))
+      (save "results/examples/heatmap-matrix-ann.jpg")
       (show)))

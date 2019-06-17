@@ -1,14 +1,10 @@
 (ns cljplot.axis
   (:require [clojure2d.core :refer :all]
-            [clojure2d.extra.utils :as utils]
-            [fastmath.stats :as stats]
             [fastmath.core :as m]
-            [cljplot.scale :as s]
             [cljplot.config :as cfg]
             [cljplot.common :refer :all]
             [clojure2d.color :as c]
-            [fastmath.vector :as v]
-            [fastmath.random :as r]))
+            [fastmath.vector :as v]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)

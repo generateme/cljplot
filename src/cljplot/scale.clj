@@ -2,8 +2,7 @@
   (:require [fastmath.core :as m]
             [fastmath.interpolation :as i]
             [fastmath.stats :as s]
-            [java-time :as dt]
-            [clojure2d.color :as c])
+            [java-time :as dt])
   (:import [clojure.lang IFn]
            [java.time LocalDateTime]))
 

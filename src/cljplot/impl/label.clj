@@ -1,6 +1,5 @@
 (ns cljplot.impl.label
   (:require [cljplot.common :refer :all]
-            [cljplot.config :as conf]
             [clojure2d.core :refer :all]
             [fastmath.core :as m]))
 

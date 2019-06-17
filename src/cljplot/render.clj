@@ -3,8 +3,6 @@
             [cljplot.common :refer :all]
             [cljplot.axis :as ax]
             [clojure2d.core :refer :all] 
-            [clojure2d.extra.utils :as utils]
-            [cljplot.build :as b]
             [fastmath.core :as m]
             [fastmath.vector :as v]))
 

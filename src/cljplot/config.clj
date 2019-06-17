@@ -81,6 +81,9 @@
                                                       :alpha-factor 0.0
                                                       :size 20
                                                       :gradient (comp (c/gradient-presets :k2) #(- 1.0 %))}
+                                     :heatmap {:gradient (comp (c/gradient-presets :k2) #(- 1.0 %))
+                                               :annotate? false
+                                               :annotate-fmt str}
                                      :complex {:colorspace :HSB
                                                :permutation 0
                                                :wrap-method :log2}

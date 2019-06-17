@@ -3,9 +3,7 @@
             [cljplot.common :refer :all]
             [fastmath.stats :as stats]
             [fastmath.core :as m]
-            [cljplot.config :as cfg]
-            [fastmath.random :as rnd]
-            [fastmath.interpolation :as in]))
+            [fastmath.random :as rnd]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)

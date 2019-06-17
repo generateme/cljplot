@@ -2,8 +2,6 @@
   (:require [clojure2d.core :refer :all]
             [cljplot.common :refer :all]
             [cljplot.scale :as s]
-            [fastmath.stats :as stats]
-            [fastmath.vector :as v]
             [fastmath.random :as r]
             [fastmath.core :as m]
             [clojure2d.pixels :as p]

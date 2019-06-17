@@ -3,8 +3,6 @@
             [cljplot.config :refer :all]
             [cljplot.axis :as axis]
             [cljplot.scale :as s]
-            [clojure2d.color :as c]
-            [fastmath.random :as r]
             [cljplot.build :as b]
             [fastmath.core :as m]))
 
@@ -36,7 +34,7 @@
      (reduce conj series
              (for [[idx [k d]] (map-indexed vector map-of-data)
                    :let [nconfig (reduce-kv (fn [m ky v]
-                                              ((if (sequential? ky) assoc-in assoc) m ky (nth v idx))) serie-config multi-config)]]
+                                              ((if (sequential? ky) assoc-in assoc) m ky (nth v idx))) serie-config mconfig)]]
                [serie-name d (assoc nconfig :serie-name k)])))))
 
 (defn- find-most-squared-shape
@@ -72,7 +70,7 @@
    (let [[rows cols] (ensure-rows-cols (:shape conf) (count data))
          positions (for [y (range rows) x (range cols)] [x y])
          grid-conf (when-let [gc (:grid conf)]
-                     (if (map? (:grid conf)) (:grid conf) {}))
+                     (if (map? gc) gc {}))
          label (when-let [lc (:label conf)]
                  (if (string? lc) (partial format lc) lc))]
      (mapcat (fn [[k v] p]
