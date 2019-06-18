@@ -14,6 +14,57 @@
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
 
+;; first regression
+
+(def domain [-3 3])
+
+(defn draw-gp
+  [xs ys title legend-name labels gps & [h w]]
+  (let [pal (c/palette-presets :category10)
+        leg (map #(vector :line %1 {:color %2}) labels pal)]
+    (-> (xy-chart {:width (or w 700) :height (or h 300)}
+                  (-> (b/series [:grid]
+                                [:scatter (map vector (map first xs) ys) {:size 8}])
+                      (b/add-multi :function gps {:samples 400
+                                                  :domain domain} {:color pal}))
+                  (b/add-axes :bottom)
+                  (b/add-axes :left)
+                  (b/add-legend legend-name leg)
+                  (b/add-label :top title)))))
+
+(let [xs [[0] [1] [-2] [-2.001]]
+      y [1 -1 0.5 -0.6]]
+  (println ((reg/gaussian-process {:lambda 0.00005} xs y) 0))
+  (show (draw-gp xs y "Gaussian processes with different noise"
+                 "Lambda" [0.0005 0.1 2]
+                 {:l1 (reg/gaussian-process {:lambda 0.00005} xs y)
+                  :l2 (reg/gaussian-process {:lambda 0.1} xs y)
+                  :l3 (reg/gaussian-process {:lambda 2} xs y)})))
+
+(seq (m/seq->double-array 3))
+
+(defn toy-fn
+  [[x]]
+  (+ (rnd/grand) (m/exp x) (* -5 (m/cos (* 3 x)))))
+
+(show (xy-chart {:width 700 :height 300}
+                (b/series [:grid] [:function (comp toy-fn vector) {:domain [-3 3]}])
+                (b/add-axes :bottom)
+                (b/add-axes :left)))
+
+(def xs (repeatedly 50 #(vector (apply rnd/drand domain))))
+(def ys (map toy-fn xs))
+
+(show (draw-gp xs ys "Gaussian processes with different noise"
+               "Lambda"
+               [0.5]
+               {:l1 (reg/gaussian-process {:lambda 10} xs ys)
+                :l2 (reg/gaussian-process {:lambda 0.0001} xs ys)} 300))
+
+(keys (methods k/kernel))
+;; => (:laplacian :hyperbolic-secant :histogram :chi-square-cpd :variance-function :periodic :mattern-52 :gaussian :multiquadratic :chi-square-pd :scalar-functions :mattern-12 :spherical :power :hyperbolic-tangent :spline :generalized-t-student :cauchy :pearson :dirichlet :exponential :bessel :polynomial :linear :circular :hellinger :wave :log :anova :mattern-32 :rational-quadratic :generalized-histogram :inverse-multiquadratic :thin-plate)
+
+
 ;; https://github.com/fmfn/BayesianOptimization/blob/master/examples/visualization.ipynb
 
 (defn target

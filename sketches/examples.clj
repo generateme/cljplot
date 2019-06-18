@@ -469,20 +469,15 @@
 
 ;; kernels
 
-(let [k1 (k/kernel :gaussian)
-      k2 (k/kernel :periodic 1.0 2)
-      k3 (k/kernel :thin-plate 2)
-      k4 (k/mult k1 k2)
-      fk (fn [f] #(f [0] [%]))
+(def kernels [:gaussian :periodic :cauchy
+              :mattern-12 :mattern-52])
+
+(let [fk (fn [f] #(f [0] [%]))
+      data (map (fn [k] [(str k)
+                        (fk (k/kernel k))]) kernels)
       cfg {:domain [-3 3] :samples 200 :stroke {:size 2}}]
-  (-> (xy-chart {:width 900 :height 300}
-                (b/series
-                 [:grid nil {:position [0 0]}]
-                 [:grid nil {:position [1 0]}]
-                 [:grid nil {:position [2 0]}]
-                 [:function (fk k1) (assoc cfg :position [0 0] :label "gaussian")]
-                 [:function (fk k2) (assoc cfg :position [1 0] :label "periodic")]
-                 [:function (fk k3) (assoc cfg :position [2 0] :label "thin-plate")])
+  (-> (xy-chart {:width 700 :height 500}
+                (b/lattice :function data cfg {:label name :grid true})
                 (b/add-label :top "Various kernels around 0")
                 (b/add-axes :bottom)
                 (b/add-axes :left)
@@ -507,5 +502,3 @@
                 (b/add-axes :bottom)
                 (b/add-axes :left))
       (show)))
-
-
