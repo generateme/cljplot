@@ -473,16 +473,28 @@
               :mattern-12 :mattern-52])
 
 (let [fk (fn [f] #(f [0] [%]))
-      data (map (fn [k] [(str k)
-                        (fk (k/kernel k))]) kernels)
+      make-data #(map (fn [k] [(str k)
+                              (fk (k/kernel k %))]) kernels)
       cfg {:domain [-3 3] :samples 200 :stroke {:size 2}}]
   (-> (xy-chart {:width 700 :height 500}
-                (b/lattice :function data cfg {:label name :grid true})
+                (-> (b/lattice :function (make-data 1) cfg {:label name :grid true})
+                    (b/add-series (b/lattice :function (make-data 0.5) (assoc cfg :color (c/color 215 50 40)) {:label name :grid true})))
                 (b/add-label :top "Various kernels around 0")
                 (b/add-axes :bottom)
                 (b/add-axes :left)
                 (b/add-axes :right))
       (show)))
+
+(let [fk (fn [f] #(f [0] [%]))
+      r (range -1 1 0.025)
+      data (map (fn [k] [(str k)
+                        (let [kernel (k/kernel k)]
+                          (for [x r y r] [[x y] (kernel [x] [y])]))]) kernels)]
+  (-> (xy-chart {:width 700 :height 500}
+                (-> (b/lattice :heatmap data {} {:label name :grid true}))
+                (b/add-label :top "Covariance matrices"))
+      (show)))
+
 
 (let [k1 (k/kernel :gaussian)
       k2 (k/kernel :periodic 1.0 2)

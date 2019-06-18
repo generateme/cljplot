@@ -13,10 +13,14 @@
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
+(m/unuse-primitive-operators)
 
 ;; first regression
 
 (def domain [-3 3])
+
+(def xs [[0] [1] [-2] [-2.001]]) ;; 4 points as vectors
+(def ys [-2 3 0.5 -0.6]) ;; 4 values
 
 (defn draw-gp
   [xs ys title legend-name labels gps & [h w]]
@@ -32,6 +36,14 @@
                   (b/add-legend legend-name leg)
                   (b/add-label :top title)))))
 
+(def kernels [:gaussian :cauchy :anova :linear :inverse-multiquadratic
+              :mattern-12 :mattern-52 :periodic :exponential])
+
+(show (draw-gp xs ys "GP regression with different lambda"
+               "Kernel" kernels 
+               (map vector kernels 
+                    (map #(reg/gaussian-process {:kernel (k/kernel %)} xs ys) kernels))))
+
 (let [xs [[0] [1] [-2] [-2.001]]
       y [1 -1 0.5 -0.6]]
   (println ((reg/gaussian-process {:lambda 0.00005} xs y) 0))
@@ -40,6 +52,40 @@
                  {:l1 (reg/gaussian-process {:lambda 0.00005} xs y)
                   :l2 (reg/gaussian-process {:lambda 0.1} xs y)
                   :l3 (reg/gaussian-process {:lambda 2} xs y)})))
+
+(def gps {:l1 (reg/gaussian-process {:lambda 0.00005} xs ys)
+          :l2 (reg/gaussian-process {:lambda 0.1} xs ys)
+          :l3 (reg/gaussian-process {:lambda 2} xs ys)})
+
+(def scatter-data (map vector (map first xs) ys))
+
+(show (xy-chart {:width 700 :height 600}
+                (-> (b/lattice :function gps {:domain domain} {:shape [-1 1] :grid true})
+                    (b/add-series (b/lattice :scatter (zipmap (keys gps) (repeat scatter-data)) {:size 8} {:label name :shape [-1 1]})))
+                (b/add-axes :bottom)
+                (b/add-axes :left)
+                (b/add-label :top "Various parametrization")))
+
+(defn gen-gps
+  [lambdas kernels kernel-params]
+  (map (fn [l k p]
+         (let [n (str "Kernel: " k "(" p "), lambda=" l)
+               kernel (k/kernel k p)]
+           [n (reg/gaussian-process {:kernel kernel :lambda l} xs ys)])) (cycle lambdas) (cycle kernels) kernel-params))
+
+(gen-gps [0.1 0.2] [:gaussian] [0.1 0.9])
+
+(defn draw-gp-lattice
+  [title gps]
+  (let [gps (into {} gps)]
+    (xy-chart {:width 700 :height 600}
+              (-> (b/lattice :function gps {:domain domain} {:shape [-1 1] :grid true})
+                  (b/add-series (b/lattice :scatter (zipmap (keys gps) (repeat scatter-data)) {:size 8} {:label name :shape [-1 1]})))
+              (b/add-axes :bottom)
+              (b/add-axes :left)
+              (b/add-label :top title))))
+
+(show (draw-gp-lattice "Various gaussian kernels" (gen-gps [0.001] [:gaussian] [0.1 1 4])))
 
 (seq (m/seq->double-array 3))
 
@@ -60,6 +106,41 @@
                [0.5]
                {:l1 (reg/gaussian-process {:lambda 10} xs ys)
                 :l2 (reg/gaussian-process {:lambda 0.0001} xs ys)} 300))
+
+(defn draw-prior
+  ([gp] (draw-prior gp 20))
+  ([gp cnt]
+   (let [xs (range -3 3.1 0.1)
+         priors (map #(vector % (map vector xs (reg/prior-samples gp xs))) (range cnt))]
+     (xy-chart {:width 700 :height 300}
+               (-> (b/series [:grid])
+                   (b/add-multi :line priors {} {:color (cycle (c/palette-presets :category20c))}))
+               (b/add-axes :bottom)
+               (b/add-axes :left)
+               (b/add-label :top "Priors")))))
+
+(def xs [-4 -1 2])
+(def ys [-5 -1 2])
+
+(defn draw-stddev
+  [gp]
+  (let [xxs (range -5 5.1 0.2)
+        pairs (reg/predict-all gp xxs true)
+        mu (map first pairs)
+        stddev (map second pairs)
+        s95 (map (partial * 1.96) stddev)
+        s50 (map (partial * 0.67) stddev)]
+    (xy-chart {:width 700 :height 300}
+              (b/series [:grid]
+                        [:ci [(map vector xxs (map - mu s95)) (map vector xxs (map + mu s95))] {:color (c/color :lightblue 180)}]
+                        [:ci [(map vector xxs (map - mu s50)) (map vector xxs (map + mu s50))] {:color (c/color :lightblue)}]
+                        [:line (map vector xxs mu) {:color :black :stroke {:size 2 :dash [5 2]}}]
+                        [:scatter (map vector xs ys) {:size 8}])
+              (b/add-axes :bottom)
+              (b/add-axes :left)
+              (b/add-label :top "Confidence intervals"))))
+
+(show (draw-stddev (reg/gaussian-process+ xs ys)))
 
 (keys (methods k/kernel))
 ;; => (:laplacian :hyperbolic-secant :histogram :chi-square-cpd :variance-function :periodic :mattern-52 :gaussian :multiquadratic :chi-square-pd :scalar-functions :mattern-12 :spherical :power :hyperbolic-tangent :spline :generalized-t-student :cauchy :pearson :dirichlet :exponential :bessel :polynomial :linear :circular :hellinger :wave :log :anova :mattern-32 :rational-quadratic :generalized-histogram :inverse-multiquadratic :thin-plate)
