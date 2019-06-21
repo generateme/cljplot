@@ -77,6 +77,9 @@
                                                   :blur-kernel-size 0.1
                                                   :contours 10
                                                   :fill? true}
+                                     :contour-2d {:palette [:black :white]
+                                                  :contours 10
+                                                  :fill? true}
                                      :binned-heatmap {:grid :pointy-hex
                                                       :alpha-factor 0.0
                                                       :size 20
@@ -233,7 +236,8 @@
               :hline :abline
               :lollipop :bar
               :ci :area
-              :frequencies :histogram})
+              :frequencies :histogram
+              :function-2d :scalar})
 
 (defn- val->fn
   "Convert value to function if it's not a function."

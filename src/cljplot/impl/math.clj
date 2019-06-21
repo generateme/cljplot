@@ -7,7 +7,10 @@
             [fastmath.random :as r]
             [fastmath.fields :as f]
             [clojure2d.core :refer :all]
-            [fastmath.grid :as grid]))
+            [fastmath.grid :as grid]
+            [fastmath.stats :as stats]
+            [cljplot.scale :as s])
+  (:import [marchingsquares Algorithm]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -83,6 +86,67 @@
                 v (wrap wrap-method (f (v/vec2 sx sy)))]
             (set-color c (gradient v))
             (rect c x y 1 1)))))))
+
+;;
+
+(defmethod data-extent :function-2d [_ d c] (data-extent :complex d c))
+
+(defmethod render-graph :function-2d [_ f {:keys [gradient wrap-method] :as conf} {:keys [^int w ^int h x y] :as chart-data}]
+  (let [iscale-x (:inverse (:scale x))
+        iscale-y (:inverse (:scale y))
+        dw (double w)
+        dh (double h)
+        buffer (double-array (* w h))]
+
+    (dotimes [y h]
+      (let [off (* y w)]
+        (dotimes [x w]
+          (let [xx (/ x dw)
+                yy (/ y dh)
+                ^double v (f (iscale-x xx) (iscale-y yy))]
+            (aset buffer (+ off x) v)))))
+
+    (let [[mnz mxz] (stats/extent buffer)]
+      (do-graph chart-data false
+        (dotimes [y h]
+          (let [off (* y w)]
+            (dotimes [x w]
+              (let [v (aget buffer (+ off x))]
+                (set-color c (gradient (m/norm v mnz mxz)))
+                (rect c x y 1 1)))))))))
+
+
+;; contour
+
+(defmethod data-extent :contour-2d [_ d c] (data-extent :complex d c))
+
+(defmethod render-graph :contour-2d [_ f {:keys [palette ^int contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
+  (let [palette (c/resample (inc contours) palette)
+        iscale-x (:inverse (:scale x))
+        iscale-y (:inverse (:scale y))
+        dw (double w)
+        dh (double h)
+        values (for [^long y (range h)
+                     ^long x (range w)
+                     :let [xx (/ x dw)
+                           yy (/ y dh)]]
+                 (f (iscale-x xx) (iscale-y yy)))]
+
+    (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) values)))            
+          steps (s/splice-range (inc contours) (.-min algo) (.-max algo))]
+      (do-graph chart-data true
+        (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
+                :let [col (nth palette id)]]
+          (if fill?
+            (do
+              (set-color c col)
+              (.fill ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)
+              (set-color c (c/darken col))
+              (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p))
+            (do
+              (set-color c :black 200)
+              (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p))))))))
+
 
 ;; field
 

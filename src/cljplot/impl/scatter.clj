@@ -86,7 +86,8 @@
                  (m/seq->double-array))
           target (double-array (alength g))]
 
-      (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* 0.1 blur-kernel-size (max w h)) blur-kernel-size))
+      (when (pos? blur-kernel-size)
+        (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* 0.1 blur-kernel-size (max w h)) blur-kernel-size)))
 
       (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
             steps (rest (s/splice-range (inc contours) (.-min algo) (.-max algo)))]

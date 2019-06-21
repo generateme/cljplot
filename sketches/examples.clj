@@ -132,6 +132,33 @@
     (save "results/examples/vnoise.jpg")
     (show)) 
 
+(defn fn2d
+  [^double x ^double y]
+  (* (- (+ (* x x)
+           (* y y)))
+     (m/sin x)
+     (m/sin y)
+     (m/sin (* x y))))
+
+(-> (b/series [:function-2d fn2d {:x [m/-PI m/PI] :y [m/-PI m/PI]}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "2d function")
+    (r/render-lattice {:width 600 :height 600})
+    (save "results/examples/function2d.jpg")
+    (show)) 
+
+(-> (b/series [:contour-2d fn2d {:x [m/-PI m/PI] :y [m/-PI m/PI]}])
+    (b/preprocess-series)
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (b/add-label :bottom "2d function")
+    (r/render-lattice {:width 600 :height 600})
+    (save "results/examples/contour2d.jpg")
+    (show)) 
+
+
 (let [field (f/combine {:type :operation, :name :comp, :var1 {:type :operation, :name :comp, :var1 {:type :variation, :name :secant, :amount 1.0, :config {}}, :var2 {:type :variation, :name :diamond, :amount 1.0, :config {}}, :amount 1.0}, :var2 {:type :variation, :name :power, :amount 1.0, :config {}}, :amount 1.0})]
   (-> (b/series [:grid] [:field field  {:jitter 1.0 :x [-4 4] :y [-4 4] :wrap? false}])
       (b/preprocess-series)
