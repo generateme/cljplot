@@ -256,7 +256,7 @@
                              [:ci [(map vector xtest (map fast- mu s95)) (map vector xtest (map fast+ mu s95))] {:color (c/color :lightblue 120)}]
                              [:ci [(map vector xtest (map fast- mu s50)) (map vector xtest (map fast+ mu s50))] {:color (c/color :lightblue)}]
                              [:function target {:stroke {:size 2} :domain bounds :samples 400}]
-                             [:line (map vector xtest mu) {:color :darkblue :stroke {:size 2 :dash [20 3]}}]
+                             [:line (map vector xtest mu) {:color :darkblue :stroke {:dash [20 3]}}]
                              [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]
                              [:scatter pairs {:size 8 :color :darkcyan}]
                              [:scatter [[(first x) y]] {:color :maroon :size 10}])
