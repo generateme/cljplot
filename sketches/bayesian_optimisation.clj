@@ -8,7 +8,10 @@
             [fastmath.optimization :as opt]
             [fastmath.kernel :as k]
             [fastmath.regression :as reg]
-            [clojure2d.color :as c]))
+            [fastmath.classification :as cl]
+            [clojure2d.color :as c]
+            [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -174,7 +177,53 @@
   ^double [^double x]
   (- (+ 10.0 (- (* x x) (* 10.0 (m/cos (* m/TWO_PI x)))))))
 
+(defn black-box-function2
+  ^double [^double x ^double y]
+  (* (m/sinc (+ 2.0 x y))
+     (m/sin (+ x x))
+     (m/cos (+ y y))
+     (m/sin (* 2.0 x y))))
+
+(defn rastrigin
+  ^double [^double x ^double y]
+  (- (+ 20 (m/sq x) (* -10 (m/cos (* m/TWO_PI x)))
+        (m/sq y) (* -10 (m/cos (* m/TWO_PI y))))))
+
+(def bounds2 [[-1.0 0.5] [-2 -0.5]])
+
+(def bo2 (opt/bayesian-optimization black-box-function2 {:bounds bounds2}))
+
+(keys (first bo2))
+;; => (:x :y :util-fn :gp :xs :ys :util-best)
+
+(let [{:keys [x y gp util-fn]} (nth bo2 5)
+      [m s] (gp [0 0] true)
+      d (/ (- m y) s)]
+  (println [m s y 0])
+  (rnd/cdf rnd/default-normal d))
+
+(let [id 15
+      pal (reverse (:rdylbu-9 c/palette-presets))
+      {:keys [util-fn gp xs]} (nth bo2 id)
+      b {:x (first bounds2)
+         :y (second bounds2)
+         :palette pal
+         :contours 30
+         :gradient (c/gradient pal)}]
+  (show (xy-chart {:width 700 :height 700}
+                  (b/series [:contour-2d black-box-function2 (assoc b :position [0 1])]
+                            [:scatter xs {:size 10 :color (c/darken (first pal))
+                                          :margins {:x [0 0] :y [0 0]}
+                                          :position [0 1]
+                                          :label "2d function with guessed points."}]
+                            [:function-2d util-fn (assoc b :position [0 0] :label "Utility function")]
+                            [:contour-2d (fn [x y] (gp [x y])) (assoc b :position [1 1] :label "Gaussian processes - mean (interpolation)")]
+                            [:contour-2d (fn [x y] (second (gp [x y] true))) (assoc b :position [1 0] :label "Gaussian processes - std dev")])
+                  (b/add-axes :bottom)
+                  (b/add-axes :left))))
+
 (def bounds [-5.12 5.12])
+
 
 (-> (xy-chart {:width 600 :height 600}
               (b/series [:grid]
@@ -182,7 +231,7 @@
               (b/add-axes :bottom)
               (b/add-axes :left))
     (show))
-
+;; => 
 (def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :mattern-52 0.9)
                                                   :bounds [bounds]
                                                   :utility-function-type :ei
@@ -230,3 +279,76 @@
 
 (keys (nth optimizer 0));; => (:x :y :util-fn :gp :xs :ys)
 
+
+;;
+
+(def dataset (with-open [data (io/reader "data/sonar.csv")]
+               (mapv #(-> %
+                          (str/trim)
+                          (str/split #",")
+                          (->> (map read-string))) (line-seq data))))
+
+(keyword (last (first dataset)))
+
+(def xs (map butlast dataset))
+(def ys (map (comp keyword last) dataset))
+
+(defn ada-boost-params
+  ^double [^double trees ^double nodes]
+  (let [ada-boost (cl/ada-boost {:number-of-trees (int trees)
+                                 :max-nodes (int nodes)} xs ys)]
+    (:accuracy (cl/cv ada-boost))))
+
+(defn svm-params
+  ^double [^double cp ^double cn]
+  (let [cp (m/pow 10 cp)
+        cn (m/pow 10 cn)
+        svm (cl/svm {:kernel (k/kernel :gaussian)
+                     :c-or-cp cp
+                     :cn cn} xs ys)]
+    (m/log (:accuracy (cl/cv svm)))))
+
+(ada-boost-params 1 200)
+
+(m/exp (svm-params 1 1))
+
+(def ada-boost-bo (opt/bayesian-optimization svm-params
+                                             {:init-points 5
+                                              :kernel (k/kernel :mattern-52 1.5)
+                                              :utility-param 0.2
+                                              :noise 0.1
+                                              :bounds [[-6 6]
+                                                       [-6 6]]}))
+
+(def palette (reverse (:rdylbu-9 c/palette-presets)))
+(def gradient (c/gradient palette))
+
+(defn draw-2d-2
+  [bounds bayesian-optimizer iteration]
+  (let [{:keys [util-fn gp xs]} (nth bayesian-optimizer iteration)
+        cfg {:x (first bounds)
+             :y (second bounds)
+             :palette palette
+             :contours 30}]
+    (xy-chart {:width 700 :height 300}
+              (b/series [:contour-2d (fn [x y] (gp [x y])) cfg]
+                        [:contour-2d (fn [x y] (second (gp [x y] true))) 
+                         (assoc cfg :position [1 0]
+                                :label "Gaussian processes - std dev")]
+                        [:scatter xs {:size 10 
+                                      :color (c/darken (first palette))
+                                      :margins {:x [0 0] :y [0 0]}
+                                      :position [0 0]
+                                      :label "Gaussian processes - mean (interpolation)"}])
+              (b/add-axes :bottom)
+              (b/add-axes :left))))
+
+(show (draw-2d-2 [[-6 6]
+                  [-6 6]] ada-boost-bo 10))
+
+[[1 (count dataset)]
+ [2 (count dataset)]]
+
+(select-keys (nth ada-boost-bo 20) [:x :y])
+
+(m/exp (:y (nth ada-boost-bo 10)))
