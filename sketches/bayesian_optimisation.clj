@@ -232,12 +232,13 @@
               (b/add-axes :left))
     (show))
 ;; => 
-(def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :mattern-52 0.9)
+(def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :mattern-52)
                                                   :bounds [bounds]
-                                                  :utility-function-type :ei
-                                                  :init-points 1
-                                                  :jitter 1
-                                                  :utility-param 0.3}))
+                                                  :utility-function-type :poi
+                                                  :utility-param 1
+                                                  :jitter 0
+                                                  :kernel-scale 0.0001
+                                                  :init-points 5}))
 
 (defn draw-bo
   ([opt] (draw-bo opt 0))
@@ -267,7 +268,7 @@
                    (b/add-axes :left))
          (show)))))
 
-(draw-bo optimizer 10)
+(draw-bo optimizer 20)
 
 (-> (xy-chart {:width 600 :height 600}
               (b/series [:grid]
@@ -299,6 +300,14 @@
                                  :max-nodes (int nodes)} xs ys)]
     (:accuracy (cl/cv ada-boost))))
 
+(defn dt-params
+  ^double [^double trees ^double nodes]
+  (let [dt (cl/decision-tree {:split-rule :classification-error
+                              :number-of-trees (int trees)
+                              :max-nodes (int nodes)} xs ys)]
+    (:accuracy (cl/cv dt))))
+
+
 (defn svm-params
   ^double [^double cp ^double cn]
   (let [cp (m/pow 10 cp)
@@ -308,17 +317,42 @@
                      :cn cn} xs ys)]
     (m/log (:accuracy (cl/cv svm)))))
 
+(defn nn-params
+  [l1 l2 l3 lr mm dc]
+  (let [l1 (int (* ^double l1 100))
+        l2 (int (* ^double l2 100))
+        l3 (int (* ^double l3 100))
+        nn (cl/neural-net {:layers [l1 l2 l3]
+                           :learning-rate lr
+                           :momentum mm
+                           :weight-decay (* 0.1 ^double dc)} xs ys)]
+    (:accuracy (cl/cv nn))))
+
 (ada-boost-params 1 200)
 
 (m/exp (svm-params 1 1))
 
-(def ada-boost-bo (opt/bayesian-optimization svm-params
-                                             {:init-points 5
-                                              :kernel (k/kernel :mattern-52 1.5)
-                                              :utility-param 0.2
-                                              :noise 0.1
-                                              :bounds [[-6 6]
-                                                       [-6 6]]}))
+(nn-params 0.2 0.2 0.01 0.1 0 0)
+
+(dt-params 100 200)
+
+(def dtbounds [[1 1000]
+               [2 1000]])
+
+(def nnbounds [[0.01 1.0]
+               [0.01 1.0]
+               [0.01 1.0]
+               [0.01 0.99]
+               [0.0 0.99]
+               [0.0 0.99]])
+
+(def bo (opt/bayesian-optimization dt-params
+                                   {:init-points 10
+                                    :kernel (k/kernel :mattern-52 200)
+                                    :utility-function-type :ucb
+                                    :utility-param 0.3
+                                    :noise 0.5
+                                    :bounds dtbounds}))
 
 (def palette (reverse (:rdylbu-9 c/palette-presets)))
 (def gradient (c/gradient palette))
@@ -343,12 +377,11 @@
               (b/add-axes :bottom)
               (b/add-axes :left))))
 
-(show (draw-2d-2 [[-6 6]
-                  [-6 6]] ada-boost-bo 10))
+(show (draw-2d-2 dtbounds bo 50))
 
 [[1 (count dataset)]
  [2 (count dataset)]]
 
-(select-keys (nth ada-boost-bo 20) [:x :y])
+(select-keys (nth bo 30) [:x :y])
 
-(m/exp (:y (nth ada-boost-bo 10)))
+#_(m/exp (:y (nth ada-boost-bo 30)))
