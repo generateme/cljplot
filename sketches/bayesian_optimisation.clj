@@ -234,11 +234,11 @@
 ;; => 
 (def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :mattern-52)
                                                   :bounds [bounds]
-                                                  :utility-function-type :poi
-                                                  :utility-param 1
-                                                  :jitter 0
+                                                  :utility-function-type :ei
+                                                  :utility-param 0.3
+                                                  :jitter 0.2
                                                   :kernel-scale 0.0001
-                                                  :init-points 5}))
+                                                  :init-points 2}))
 
 (defn draw-bo
   ([opt] (draw-bo opt 0))
@@ -252,27 +252,27 @@
          stddev (map second ms-pairs)
          s95 (map (partial fast* 1.96) stddev)
          s50 (map (partial fast* 0.67) stddev)]
-     (-> (xy-chart {:width 800 :height 500}
+     (-> (xy-chart {:width 700 :height 400}
                    (b/series [:grid]
                              [:ci [(map vector xtest (map fast- mu s95)) (map vector xtest (map fast+ mu s95))] {:color (c/color :lightblue 120)}]
                              [:ci [(map vector xtest (map fast- mu s50)) (map vector xtest (map fast+ mu s50))] {:color (c/color :lightblue)}]
-                             [:function target {:stroke {:size 2} :domain bounds :samples 400}]
+                             [:function target {:stroke {:size 2} :domain bounds :samples 600}]
                              [:line (map vector xtest mu) {:color :darkblue :stroke {:dash [20 3]}}]
                              [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]
                              [:scatter pairs {:size 8 :color :darkcyan}]
                              [:scatter [[(first x) y]] {:color :maroon :size 10}])
                    (b/add-side :top 100 (b/series [:grid nil {:y nil}]
-                                                  [:function util-fn {:domain bounds :samples 400}]
+                                                  [:function util-fn {:domain bounds :samples 600}]
                                                   [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]))
                    (b/add-axes :bottom)
                    (b/add-axes :left))
          (show)))))
 
-(draw-bo optimizer 20)
+(draw-bo optimizer 5)
 
 (-> (xy-chart {:width 600 :height 600}
               (b/series [:grid]
-                        [:function (:util-fn (nth optimizer 15)) {:domain [-2 10]}])
+                        [:function (:util-fn (nth optimizer 5)) {:samples 1000 :domain bounds}])
               (b/add-axes :bottom)
               (b/add-axes :left))
     (show))

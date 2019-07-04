@@ -496,7 +496,7 @@
 
 ;; kernels
 
-(def kernels [:gaussian :periodic :cauchy
+(def kernels [:gaussian :periodic :cauchy :linear
               :mattern-12 :mattern-52])
 
 (let [fk (fn [f] #(f [0] [%]))
@@ -541,3 +541,23 @@
                 (b/add-axes :bottom)
                 (b/add-axes :left))
       (show)))
+
+;; hline, vline, abline
+
+(-> (xy-chart {:width 900 :height 300}
+              (b/series [:hline 0 {:color :black}]
+                        [:hline 1]
+                        [:hline -1]
+                        [:vline m/HALF_PI {:dash [10 10] :size 5 :cap :round}]
+                        [:vline (* 0.75 m/TWO_PI) {:dash [10 10]
+                                                   :dash-phase 5
+                                                   :size 5
+                                                   :cap :round
+                                                   :color (c/set-alpha :maroon 100)}]
+                        [:abline [(/ (* 0.75 m/TWO_PI)) -1] {:dash [1 2 5 2]
+                                                             :size 3}]
+                        [:function #(m/sin %) {:samples 800 :domain [0 m/TWO_PI]}]) 
+              (b/add-axes :bottom)
+              (b/add-axes :left))
+    (save "results/examples/lines.jpg")
+    (show))
