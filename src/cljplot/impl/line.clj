@@ -31,19 +31,19 @@
         pfn (if (and smooth? (not area?)) path-bezier path)
         lcolor (if area? (c/darken color) color)
         p (map (juxt (comp scale-x first) (comp scale-y second)) data)]
-    (do-graph chart-data (#{\o \O} (:type point))
-      (when area?
-        (set-color c color)
-        (pfn c (conj (vec (conj p [0.0 0.0])) [w 0.0]) true false))
-      (-> c
-          (set-color lcolor)
-          (set-stroke-custom stroke)
-          (pfn p))
-      (when-let [point-type (:type point)]
-        (let [size-fn (:size point)]
-          (doseq [[x y :as data] data
-                  :let [size (size-fn data conf)]]
-            (draw-shape c (scale-x x) (scale-y y) point-type (or (:color point) color) nil size)))))))
+    (do-graph (assoc chart-data :oversize 0) (#{\o \O} (:type point))
+              (when area?
+                (set-color c color)
+                (pfn c (conj (vec (conj p [0.0 0.0])) [w 0.0]) true false))
+              (-> c
+                  (set-color lcolor)
+                  (set-stroke-custom stroke)
+                  (pfn p))
+              (when-let [point-type (:type point)]
+                (let [size-fn (:size point)]
+                  (doseq [[x y :as data] data
+                          :let [size (size-fn data conf)]]
+                    (draw-shape c (scale-x x) (scale-y y) point-type (or (:color point) color) nil size)))))))
 
 ;;
 

@@ -73,13 +73,11 @@
         (assoc :bins (map :bins hs)))))
 
 (defmethod data-extent :histogram [_ data _]
-  (println data)
   (let [d (map (partial map second) (:bins data))        
         max-bin (reduce fast-max (flatten d))
         ^double mn (:min data)
         ^double mx (:max data)
         diff (- mx mn)]
-    (println max-bin)
     {:x [:numerical [(if (< diff 2.0) mn (m/floor mn))
                      (if (< diff 2.0) mx (m/ceil mx))]]
      :y [:numerical [0 max-bin]]}))
@@ -128,7 +126,6 @@
   (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
         d (map (partial map (fn [[^double x y]] [(scale-x x) (scale-x (+ x step)) (scale-y y)])) bins)]
-    (println scale-y 0.0)
     (do-graph chart-data false
-      (draw-series c d (assoc conf :zero (scale-y 0.0))))))
+              (draw-series c d (assoc conf :zero (scale-y 0.0))))))
 
