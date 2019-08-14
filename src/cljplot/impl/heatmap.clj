@@ -51,17 +51,11 @@
                    (fn [v] (gradient (m/norm v mnz mxz))))]
     (do-graph (assoc chart-data :oversize 0) false
 
-      (doseq [[[x y] v] data]
-        (set-color c (gradient v))
-        (grid-cell c grid x y)))))
+              (doseq [[[x y] v] data]
+                (set-color c (gradient v))
+                (grid-cell c grid x y)))))
 
 ;;
-
-(defmacro ^:private distinct-categorical
-  [data which]
-  `(-> (map ~which ~data)
-       (distinct)
-       (sort)))
 
 (defmethod prepare-data :heatmap [_ data _]
   (if (map? data)
@@ -77,7 +71,7 @@
 (defn- pos->rect
   [{:keys [^double start ^double end ^double point]} ^long size]
   (let [s (* start size)]
-    [(m/floor s) (m/ceil (- (* end size) s)) (m/round (* point size))]))
+    [s (- (* end size) s) (m/round (* point size))]))
 
 (defmethod render-graph :heatmap [_ data {:keys [gradient extent annotate? annotate-fmt] :as cfg} {:keys [x y ^int w ^int h] :as chart-data}]
   (let [scale-x (:scale x)
@@ -86,17 +80,16 @@
         grad (comp gradient #(m/norm % mnz mxz))
         fmt (coerce-format-fn annotate-fmt)]
     (do-graph chart-data false
-      (doseq [x (:domain scale-x)
-              :let [[xx wx px] (pos->rect (scale-x x) w)]]
-        (doseq [y (:domain scale-y)
-                :let [[yy hy py] (pos->rect (scale-y y) h)]]
-          (let [v (data [x y])
-                col (grad v)]
-            (-> c
-                (set-color col)
-                (rect xx yy wx hy))
-            (when annotate?
-              (let [^double l (c/luma col)]
+              (set-font-attributes c 8)
+              (doseq [[[x y] v] data
+                      :let [[xx wx px] (pos->rect (scale-x x) w)
+                            [yy hy py] (pos->rect (scale-y y) h)
+                            col (grad v)]]
                 (-> c
-                    (set-color (if (> l 0.5) :black :white))
-                    (transformed-text (fmt v) px py :center))))))))))
+                    (set-color col)
+                    (rect xx yy wx hy)) 
+                (when annotate?
+                  (let [^double l (c/luma col)]
+                    (-> c
+                        (set-color (if (> l 50) :black :gray))
+                        (transformed-text (fmt v) px py :center))))))))
