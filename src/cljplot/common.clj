@@ -98,7 +98,9 @@
 
 (defn extent
   [data]
-  (let [data (remove nil? data)
+  (let [data (remove #(or (nil? %)
+                          (and (number? %)
+                               (m/invalid-double? %))) data)
         v (first data)]
     (cond
       (date-time? v) [:temporal [(reduce dt/min data) (reduce dt/max data)]]

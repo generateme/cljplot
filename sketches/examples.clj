@@ -561,3 +561,6 @@
               (b/add-axes :left))
     (save "results/examples/lines.jpg")
     (show))
+
+;;=> (:round :butt :square) cap
+;;=> (:bevel :miter :round) join
