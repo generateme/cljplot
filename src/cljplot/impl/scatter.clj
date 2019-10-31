@@ -3,7 +3,7 @@
             [cljplot.common :refer :all]
             [cljplot.scale :as s]
             [fastmath.random :as r]
-            [fastmath.protocols.random :as pr]
+            [fastmath.protocols :as pr]
             [fastmath.core :as m]
             [clojure2d.pixels :as p]
             [clojure2d.color :as c])

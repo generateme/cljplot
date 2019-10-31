@@ -7,7 +7,7 @@
             [fastmath.stats :as stats]
             [fastmath.kernel :as k]
             [fastmath.random :as r]
-            [fastmath.protocols.random :as pr]))
+            [fastmath.protocols :as pr]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
