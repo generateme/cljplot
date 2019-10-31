@@ -58,7 +58,7 @@
                   (let [size-fn (:size point)]
                     (doseq [[x y :as dta] p
                             :let [size (size-fn dta conf)]]
-                      (draw-shape c (scale-x x) (scale-y y) point-type (or (:color point) color) nil size))))))))
+                      (draw-shape c x y point-type (or (:color point) color) nil size))))))))
 
 ;;
 

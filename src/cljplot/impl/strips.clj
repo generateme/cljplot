@@ -87,21 +87,20 @@
         [median ^double q1 ^double q3 lav uav] (map scale-x (map data [:Median :Q1 :Q3 :LAV :UAV :LIF :UIF]))
         h2 (* 0.5 h)
         [^double hl ^double hh ^double hlm ^double hhm] (map #(+ h2 (* ^double % h2)) [-0.5 0.5 -0.25 0.25])]
-
     (do-graph chart-data (and outliers? (#{\o \O} shape))
-      (-> c
-          (set-color dcolor)
-          (set-stroke size)
-          (line lav h2 uav h2)
-          (line lav hlm lav hhm)
-          (line uav hlm uav hhm)
-          (set-color dcolor 200)
-          (filled-with-stroke color dcolor rect (dec q1) hl (inc (- q3 q1)) (- hh hl))
-          (set-color line-cl 200)
-          (line median (inc hl) median (dec hh)))
-      (when outliers?
-        (doseq [o (map scale-x (:Outliers data))]
-          (draw-shape c o (+ h2 (r/grand)) shape (c/color color 200) nil (max 3.0 (* 0.7 size (- hhm hlm)))))))))
+              (-> c
+                  (set-color dcolor)
+                  (set-stroke size)
+                  (line lav h2 uav h2)
+                  (line lav hlm lav hhm)
+                  (line uav hlm uav hhm)
+                  (set-color dcolor 200)
+                  (filled-with-stroke color dcolor rect (dec q1) hl (inc (- q3 q1)) (- hh hl))
+                  (set-color line-cl 200)
+                  (line median (inc hl) median (dec hh)))
+              (when outliers?
+                (doseq [o (map scale-x (:Outliers data))]
+                  (draw-shape c o (+ h2 (r/grand)) shape (c/color color 200) nil (max 3.0 (* 0.7 size (- hhm hlm)))))))))
 
 ;;
 
@@ -352,13 +351,13 @@
                  [k (render-graph t d cc
                                   (assoc chart-data-inner :h (second (sizes k))))])]
     (do-graph (assoc chart-data :orientation og) false
-      (doseq [[k v] (reverse charts)
-              :let [[^double p] (sizes k)]]
-        (-> c
-            (push-matrix)
-            (translate (:anchor v)))
-        (if h? (image c (:canvas v) 0 p) (image c (:canvas v) p -2))
-        (pop-matrix c)))))
+              (doseq [[k v] (reverse charts)
+                      :let [[^double p] (sizes k)]]
+                (-> c
+                    (push-matrix)
+                    (translate (:anchor v)))
+                (if h? (image c (:canvas v) 0 p) (image c (:canvas v) p -2))
+                (pop-matrix c)))))
 
 ;; delegates
 
