@@ -7,7 +7,8 @@
             [fastmath.stats :as stats]
             [fastmath.kernel :as k]
             [fastmath.random :as r]
-            [fastmath.protocols :as pr]))
+            ;; [fastmath.protocols :as pr]
+            ))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -52,10 +53,11 @@
                     (set-color lcolor)
                     (set-stroke-custom stroke)
                     (pfn p))
+
                 (when-let [point-type (:type point)]
                   (let [size-fn (:size point)]
-                    (doseq [[x y :as data] data
-                            :let [size (size-fn data conf)]]
+                    (doseq [[x y :as dta] p
+                            :let [size (size-fn dta conf)]]
                       (draw-shape c (scale-x x) (scale-y y) point-type (or (:color point) color) nil size))))))))
 
 ;;
@@ -114,7 +116,7 @@
 ;;
 
 (defmethod prepare-data :cdf [_ data conf]
-  (if (satisfies? pr/DistributionProto data)
+  (if (satisfies? r/DistributionProto data)
     [conf (prepare-data :function (partial r/cdf data) conf)]
     (let [data (extract-first data)
           domain (take 2 (stats/extent data))
