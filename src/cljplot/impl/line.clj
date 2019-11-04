@@ -7,8 +7,7 @@
             [fastmath.stats :as stats]
             [fastmath.kernel :as k]
             [fastmath.random :as r]
-            ;; [fastmath.protocols :as pr]
-            ))
+            [fastmath.protocols :as pr]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -116,7 +115,7 @@
 ;;
 
 (defmethod prepare-data :cdf [_ data conf]
-  (if (satisfies? r/DistributionProto data)
+  (if (satisfies? pr/DistributionProto data)
     [conf (prepare-data :function (partial r/cdf data) conf)]
     (let [data (extract-first data)
           domain (take 2 (stats/extent data))
