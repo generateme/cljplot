@@ -10,56 +10,57 @@
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
 
-;; continuous -> continuous
-
-(defrecord ContinuousRange [start end type forward inverse info]
+(defrecord ContinuousScale [start end domain type forward inverse info]
   IFn
   (invoke [_ v] (forward v))
   (invoke [_ s e v] (m/mlerp ^double s ^double e ^double (forward v))))
 
-(defrecord DiscreteRange [start end cnt type forward inverse info]
+(defrecord DiscreteScale [start end domain range cnt type forward inverse info]
   IFn
   (invoke [_ v] (forward v))
   (invoke [_ xs v] (nth xs (forward v))))
 
-(defrecord OrdinalRange [domain range type forward inverse info]
+(defrecord OrdinalScale [domain range type forward inverse info]
   IFn
   (invoke [_] range)
-  (invoke [_ v] (forward v))
-  (invoke [_ s e v] (m/mlerp ^double s ^double e ^double ((:value info) (forward v)))))
+  (invoke [_ v] (forward v)))
 
 (defn splice-range 
   "Splice range to get `cnt` number of points."
-  ([^double cnt ^double start ^double end] (map #(m/norm % 0.0 (dec cnt) start end) (range cnt)))
-  ([cnt] (splice-range cnt 0.0 1.0)))
+  ([^long cnt ^double start ^double end] (if (= cnt 1)
+                                           (list (* 0.5 (- end start)))
+                                           (map #(m/mnorm % 0.0 (dec cnt) start end) (range cnt))))
+  ([^long cnt] (splice-range cnt 0.0 1.0)))
 
 (defn- interpolated-range
   "Interpolate for ranges"
   [interpolator type xs]
-  (let [target (splice-range (count xs))]
-    (->ContinuousRange (first xs) (last xs) type (interpolator xs target) (interpolator target xs) nil)))
+  (let [target (splice-range (count xs))
+        f (first xs)
+        l (last xs)]
+    (->ContinuousScale f l [f l] type (interpolator xs target) (interpolator target xs) nil)))
 
 (defn linear
   "Linear mapping function"
-  ([] (->ContinuousRange 0.0 1.0 :linear identity identity nil))
+  ([] (->ContinuousScale 0.0 1.0 [0.0 1.0] :linear identity identity nil))
   ([xs] (if-not (sequential? xs)
           (linear [0.0 xs])
           (condp #(== ^int %1 ^int %2) (count xs)
             0 (linear)
             1 (linear [0.0 (first xs)])
             2 (let [[start end] xs]
-                (->ContinuousRange start end :linear
+                (->ContinuousScale start end xs :linear
                                    (m/make-norm start end 0.0 1.0) (partial m/lerp start end) nil))
             (interpolated-range i/linear-smile :linear xs)))))
 
 (defn spline
-  "Spline mapping function"
+  "Spline (monotone) mapping function"
   ([] (linear))
   ([xs] (if-not (sequential? xs)
           (linear [0.0 xs])
           (if (<= (count xs) 2)
             (linear xs)
-            (interpolated-range i/cubic-spline :spline xs)))))
+            (interpolated-range i/monotone :spline xs)))))
 
 ;;
 
@@ -82,18 +83,18 @@
 
 (defn log
   "Log mapping function"
-  ([] (log 10.0 [1.0 10.0]))
-  ([domain] (log 10.0 domain))
-  ([base [start end]] (->ContinuousRange start end :log (log-forward start end) (log-inverse start end) {:base base})))
+  ([] (log [1.0 10.0]))
+  ([domain] (log domain 10.0))
+  ([[start end :as domain] base] (->ContinuousScale start end domain :log (log-forward start end) (log-inverse start end) {:base base})))
 
 (defn log1p
   "Add 1 to the values"
-  ([] (log1p 10.0 [1.0 10.0]))
-  ([domain] (log1p 10.0 domain))
-  ([base [^double start ^double end]]
+  ([] (log1p [1.0 10.0]))
+  ([domain] (log1p domain 10.0))
+  ([[^double start ^double end] base]
    (let [start (inc start)
          end (inc end)]
-     (->ContinuousRange start end :log (comp (log-forward start end) #(inc ^double %)) (comp #(dec ^double %) (log-inverse start end)) {:base base}))))
+     (->ContinuousScale start end [start end] :log (comp (log-forward start end) #(inc ^double %)) (comp #(dec ^double %) (log-inverse start end)) {:base base}))))
 
 ;;
 
@@ -119,41 +120,42 @@
 
 (defn pow
   "Power scale"
-  ([] (pow 0.5 [0.0 1.0]))
-  ([domain] (pow 0.5 domain))
-  ([exponent [start end]] (->ContinuousRange start end :pow (pow-forward start end exponent) (pow-inverse start end exponent) {:exponent exponent})))
+  ([] (pow [0.0 1.0]))
+  ([domain] (pow domain 0.5))
+  ([[start end :as domain] exponent] (->ContinuousScale start end domain :pow (pow-forward start end exponent) (pow-inverse start end exponent) {:exponent exponent})))
 
-;;
+;; time for time!
 
 (defn- ld->ldt
   "Convert local-date to local-date-time"
   [ld]
   (cond
     (dt/local-date? ld) (dt/truncate-to (dt/local-date-time ld) :days)
-    (dt/local-time ld) (dt/local-date-time ld)
+    (dt/local-time? ld) (dt/local-date-time ld)
     :else ld))
 
 (defn- time-diff-millis
   "Calculate time duration in milliseconds.nanoseconds."
-  ^double [start end]
-  (let [dur (dt/duration (ld->ldt start) (ld->ldt end))
-        seconds (double (dt/value (dt/property dur :seconds)))
-        nanos (/ (double (dt/value (dt/property dur :nanos))) 1000000.0)]
-    (+ nanos (* 1000.0 seconds))))
+  ^BigDecimal [start end]
+  (let [dur (dt/duration start end)
+        seconds (BigDecimal. ^long (dt/value (dt/property dur :seconds)))
+        nanos (.divide (BigDecimal. ^long (dt/value (dt/property dur :nanos))) 1000000.0M)]
+    (.add nanos (.multiply seconds 1000.0M))))
 
 (defn- time-forward
   "Create function which returns offset from starting date for given temporal value."
-  [start ^double total]
-  (fn [tm]
-    (/ (time-diff-millis start tm)
-       total)))
+  [start ^BigDecimal total]
+  (fn ^double [tm]
+    (-> (time-diff-millis start (ld->ldt tm))
+        (.divide total java.math.MathContext/DECIMAL128)
+        (.doubleValue))))
 
 (defn- time-inverse
   "Create function which returns date-time for given offset from start."
-  [start ^double total]
+  [start ^BigDecimal total]
   (fn [^double t]
-    (->> t
-         (* total)
+    (->> (BigDecimal. t)
+         (.multiply total)
          (m/round)
          (dt/millis)
          (dt/plus start))))
@@ -161,15 +163,10 @@
 (defn time-interval
   "Create time interval, works for any `java.time.temporal.Temporal` instance."
   [[start end]]
-  (let [total (time-diff-millis start end)]
-    (->ContinuousRange start end :time (time-forward (dt/local-date-time start) total) (time-inverse (dt/local-date-time start) total) {:time-diff-millis total})))
-
-(defn- truncate-ym
-  "Create truncating function for year and month"
-  [f pos]
-  (let [step (f 1)]
-    (fn [d]
-      (dt/truncate-to (dt/plus (dt/adjust d pos) step) :days))))
+  (let [start (ld->ldt start)
+        end (ld->ldt end)
+        total (time-diff-millis start end)]
+    (->ContinuousScale start end [start end] :time (time-forward start total) (time-inverse start total) {:time-diff-millis total})))
 
 ;; How much millis per each duration
 (def ^:private ^:const ^long duration-second 1000)
@@ -186,61 +183,81 @@
         m1 (dt/minutes 1)
         s1 (dt/seconds 1)
         ml1 (dt/millis 1)]
-    {:years {:property :year :duration duration-year :stepfn dt/years :round (truncate-ym dt/years :first-day-of-year)}
-     :months {:property :month-of-year :duration duration-month :stepfn dt/months :round (truncate-ym dt/months :first-day-of-month)}
-     :days {:property :day-of-month :duration duration-day :stepfn dt/days :round #(dt/truncate-to (dt/plus % d1) :days)}
-     :hours {:property :hour-of-day :duration duration-hour :stepfn dt/hours :round #(-> ^LocalDateTime (dt/plus % h1)
-                                                                                         (.withNano 0)
-                                                                                         (.withMinute 0)
-                                                                                         (.withSecond 0))}
-     :minutes {:property :minute-of-hour :duration duration-minute :stepfn dt/minutes :round #(-> ^LocalDateTime (dt/plus % m1)
-                                                                                                  (.withNano 0)
-                                                                                                  (.withSecond 0))}
-     :seconds {:property :second-of-minute :duration duration-second :stepfn dt/seconds :round #(-> ^LocalDateTime (dt/plus % s1)
-                                                                                                    (.withNano 0))}
-     :millis {:property :millis-of-second :duration 1 :stepfn dt/millis :round #(dt/plus % ml1)}}))
+    {:years {:property :year
+             :duration duration-year
+             :stepfn dt/years
+             :truncate #(dt/truncate-to (dt/adjust % :first-day-of-year) :days)}
+     :months {:property :month-of-year
+              :duration duration-month
+              :stepfn dt/months
+              :truncate #(dt/truncate-to (dt/adjust % :first-day-of-month) :days)}
+     :days {:property :day-of-month
+            :duration duration-day
+            :stepfn dt/days
+            :truncate #(dt/truncate-to % :days)}
+     :hours {:property :hour-of-day
+             :duration duration-hour
+             :stepfn dt/hours
+             :truncate #(-> ^LocalDateTime %
+                            (.withNano 0)
+                            (.withMinute 0)
+                            (.withSecond 0))}
+     :minutes {:property :minute-of-hour
+               :duration duration-minute
+               :stepfn dt/minutes
+               :truncate #(-> ^LocalDateTime %
+                              (.withNano 0)
+                              (.withSecond 0))}
+     :seconds {:property :second-of-minute
+               :duration duration-second
+               :stepfn dt/seconds
+               :truncate #(-> ^LocalDateTime %
+                              (.withNano 0))}
+     :millis {:property :millis-of-second
+              :duration 1
+              :stepfn dt/millis
+              :truncate identity}}))
 
 (defn- same-properties?
   "Compare given properties"
   [start end k]
   (let [prop (:property (dt-data k))]
-    (== (double (dt/value (dt/property start prop)))
-        (double (dt/value (dt/property end prop))))))
+    (= (dt/value (dt/property start prop))
+       (dt/value (dt/property end prop)))))
 
-(defn- format-dt
+(defn- format-dt-str
   "Infer format"
   [steps k]
-  (if (<= (count steps) 1) str
-      (let [s (first steps)
-            e (last steps)
-            same? (partial same-properties? s e)]
-        (partial dt/format (cond
-                             (= :years k) "y"
-                             (= :months k) (if-not (same? :years) "y-MM" "MMM")
-                             (= :days k) (if-not (same? :years)
-                                           "y-MM-dd" (if-not (same? :months) "MMM-dd" "dd"))
-                             (= :hours k) (if-not (and (same? :years)
-                                                       (same? :months)
-                                                       (same? :days))
-                                            "E HH:mm" "HH:mm")
-                             (= :minutes k) "HH:mm"
-                             (= :seconds k) (if-not (same? :minutes) "HH:mm:ss" "ss")
-                             (= :millis k) (if-not (same? :seconds) "ss.S" "S"))))))
+  (let [s (first steps)
+        e (last steps)
+        same? (partial same-properties? s e)]
+    (cond
+      (= :years k) "y"
+      (= :months k) (if-not (same? :years) "y-MM" "MMM")
+      (= :days k) (if-not (same? :years)
+                    "y-MM-dd" (if-not (same? :months) "MMM-dd" "dd"))
+      (= :hours k) (if-not (and (same? :years)
+                                (same? :months)
+                                (same? :days))
+                     "E HH:mm" "HH:mm")
+      (= :minutes k) "HH:mm"
+      (= :seconds k) (if-not (same? :minutes) "HH:mm:ss" "ss")
+      (= :millis k) (if-not (same? :seconds) "ss.S" "S"))))
 
+(defn- format-dt
+  [steps k]
+  (if (<= (count steps) 1) str (partial dt/format (format-dt-str steps k))))
 
 (defn- calc-dt-ticks
   "Calculate ticks"
   [start end ^double step k]
-  (let [start (ld->ldt start)
-        end (ld->ldt end)
-        {:keys [^double duration stepfn round]} (dt-data k)
+  (let [{:keys [^double duration stepfn truncate]} (dt-data k)
         step (stepfn (m/ceil (/ step duration)))
-        steps (loop [s (round start)
-                     v [s]]
-                (let [ns (dt/plus s step)]
-                  (if (dt/before? ns end)
-                    (recur ns (conj v ns))
-                    v)))]
+        steps (loop [s (truncate start)
+                     v []]
+                (if (dt/before? s end)
+                  (recur (dt/plus s step) (if (dt/after? s start) (conj v s) v))
+                  v))]
     {:ticks steps
      :fmt (format-dt steps k)}))
 
@@ -261,8 +278,10 @@
   "Date time ticks."
   ([start end] (ticks-dt start end 10))
   ([start end ^long ticks]
-   (let [diff (time-diff-millis start end)
-         step (/ diff ticks)]
+   (let [start (ld->ldt start)
+         end (ld->ldt end)
+         diff (time-diff-millis start end)
+         step (.doubleValue (.divide diff (BigDecimal. ticks) java.math.MathContext/DECIMAL128))]
      (infer-dt-ticks start end step))))
 
 ;; continuous->discrete
@@ -272,44 +291,38 @@
   [steps]
   (comp int (i/step-before steps (range (count steps)))))
 
-(defn- interval-steps-after
-  "Maps `steps` values into ordinal values (0,1,2...)."
-  [steps]
-  (comp int (i/step-after steps (range (count steps)))))
-
 (defn quantile
-  ""
-  ([xs] (quantile 10 xs))
-  ([steps-no xs] (quantile steps-no :legacy xs))
-  ([^long steps-no estimation-strategy xs]
+  "Returns discrete range for evenly distributed quantiles."
+  ([xs] (quantile xs 10))
+  ([xs steps-no] (quantile xs steps-no :legacy))
+  ([xs ^long steps-no estimation-strategy]
    (let [xs (m/seq->double-array xs)
          [mn mx] (s/extent xs)
-         steps (map #(s/quantile xs % estimation-strategy)
-                    (rest (splice-range (inc steps-no))))]
-     (->DiscreteRange mn mx steps-no :quantile (interval-steps-before steps) nil {:quantiles steps}))))
+         steps (s/quantiles xs (rest (splice-range (inc steps-no))) estimation-strategy)]
+     (->DiscreteScale mn mx steps-no :quantile (interval-steps-before steps) nil {:quantiles steps}))))
 
 (defn- threshold-from-steps
   [steps]
   (if-not (sequential? steps)
     (threshold-from-steps (splice-range (inc ^long steps)))
     (let [[mn mx] (s/extent steps)]
-      (->DiscreteRange mn mx (dec (count steps)) :threshold (interval-steps-before (rest steps)) nil {:steps steps}))))
+      (->DiscreteScale mn mx (dec (count steps)) :threshold (interval-steps-before (rest steps)) nil {:steps steps}))))
 
 (defn threshold
-  ""
-  ([^long steps-no [start end]] (threshold-from-steps (splice-range (inc steps-no) start end)))
-  ([steps] (threshold-from-steps steps)))
+  "Returns discrete range for given steps or evenly spliced range."
+  ([steps] (threshold-from-steps steps))
+  ([[start end] ^long steps-no] (threshold-from-steps (splice-range (inc steps-no) start end))))
 
 ;; ordinal
 
 (defn ordinal
   ""
-  ([xs] (ordinal :ordinal xs))
-  ([type xs] (ordinal type nil xs))
-  ([type info xs]
+  ([xs] (ordinal xs :ordinal))
+  ([xs type] (ordinal xs type nil))
+  ([xs type info]
    (let [d (range (count xs))
          r (vec xs)]
-     (->OrdinalRange d r type r (zipmap xs d) info))))
+     (->OrdinalScale d r type r (zipmap xs d) info))))
 
 (defn- bands-inverse-fn
   "Inverse function for bands."
@@ -341,11 +354,11 @@
   Padding is calculated the same way as in `d3`. It's a proportion of the step."
   ([] (bands 1))
   ([b] (bands {} b))
-  ([{:keys [^double padding-in ^double padding-out ^double align]
-     :or {padding-in 0.0 padding-out 0.0 align 0.5}} bands]
-   (let [[bands-no bands] (if (sequential? bands)
-                            [(count bands) bands]
-                            [bands (range bands)])
+  ([b {:keys [^double padding-in ^double padding-out ^double align]
+       :or {padding-in 0.0 padding-out 0.0 align 0.5}}]
+   (let [[bands-no bands] (if (sequential? b)
+                            [(count b) b]
+                            [b (range b)])
          bands-no (int bands-no)
          padding-in (m/constrain ^double padding-in 0.0 1.0)
          align (m/constrain ^double align 0.0 1.0)
@@ -361,19 +374,17 @@
                {:start lstart
                 :end lend
                 :point (m/lerp lstart lend align)})]
-     (->OrdinalRange bands lst :bands
+     (->OrdinalScale bands lst :bands
                      (zipmap bands lst)
                      (bands-inverse-fn bands lst) {:bandwidth (m/abs size)
-                                                   :step (m/abs step)
-                                                   :value :point}))))
+                                                   :step (m/abs step)}))))
 
 ;; inverse
 
 (defn inverse
   "Return inverse scaling function [0,1]->domain value. If not available, return `nil`."
   [s v]
-  (when-let [inv (:inverse s)]
-    (inv v)))
+  (when-let [inv (:inverse s)] (inv v)))
 
 ;;
 
@@ -471,34 +482,38 @@
   {:ticks (if c
             (take-nth (max 1 (int (m/floor (/ ^int (count (:domain s)) (double c))))) (:domain s))
             (:domain s))})
-(defmethod ticks- :time [s c] (ticks-dt (:start s) (:end s) (or c 10.0)))
 
+(defmethod ticks- :time [s c] (ticks-dt (:start s) (:end s) (or c 10.0)))
 
 ;; scale/ticks factory
 
 (def ^:private scale-names
-  {:time time-interval
-   :linear linear
+  {:linear linear
    :log log
    :log1p log1p
    :pow pow
+   :time time-interval
    :bands bands
    :ordinal ordinal
+   :quantile quantile
    :threshold threshold})
 
 (def ^:private default-domain
-  {:log [1.0 10.0]
+  {:linear [0 1]
+   :pow [0 1]
+   :log [1.0 10.0]
    :log1p [0.0 9.0]
    :time [(dt/local-date-time) (dt/plus (dt/local-date-time) (dt/years 1))]
    :bands 1
    :ordinal [0]
+   :quantile [0]
    :threshold 10})
 
 (defn- make-scale
   ([scale-def] (make-scale scale-def nil))
   ([[scale-name & r] domain]
-   (let [domain (or domain (get default-domain scale-name [0.0 1.0]))
-         r (conj (vec r) domain)]
+   (let [domain (or domain (default-domain scale-name))
+         r (conj r domain)]
      {:scale (apply (scale-names scale-name) r)
       :domain domain})))
 
@@ -540,8 +555,10 @@
   [sc field value]
   (case field
     :domain (-> (scale-map (:scale-def sc) {:domain value})
-               (assoc :fmt (:fmt sc))) ;; recalculate everything, keep format
+                (assoc :fmt (:fmt sc))) ;; recalculate everything, keep format
     :fmt (assoc sc :fmt (coerce-format-fn (scale-type-from-map sc) value))
     :scale (scale-map value (dissoc sc :ticks)) ;; recalculate ticks
     :ticks (merge sc (make-ticks (:scale sc) value))
     sc))
+
+

@@ -80,7 +80,7 @@
             (p/gradient-renderer w h))]
 
     (doseq [[x y] data]
-      (p/add-pixel g (* w ^double (scale-x x)) (* h ^double (scale-y y))))
+      (p/add-pixel! g (* w ^double (scale-x x)) (* h ^double (scale-y y))))
 
     (let [g (->> (p/to-pixels g {:logarithmic? logarithmic? :gradient bw-gradient})
                  (map c/luma)
@@ -93,14 +93,14 @@
       (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
             steps (rest (s/splice-range (inc contours) (.-min algo) (.-max algo)))]
         (do-graph chart-data true
-          (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
-                  :let [col (nth palette id)]]
-            (if fill?
-              (do
-                (set-color c col)
-                (.fill ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)
-                (set-color c (c/darken col))
-                (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p))
-              (do
-                (set-color c :black 200)
-                (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)))))))))
+                  (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
+                          :let [col (nth palette id)]]
+                    (if fill?
+                      (do
+                        (set-color c col)
+                        (.fill ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)
+                        (set-color c (c/darken col))
+                        (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p))
+                      (do
+                        (set-color c :black 200)
+                        (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)))))))))

@@ -22,11 +22,11 @@
         scale-y (:scale y)]
     (do-graph chart-data false
 
-      (doseq [[x y] data]
-        (p/add-pixel grad (* w ^double (scale-x x)) (* h ^double (scale-y y))))
+              (doseq [[x y] data]
+                (p/add-pixel! grad (* w ^double (scale-x x)) (* h ^double (scale-y y))))
 
-      (let [p (p/to-pixels grad conf)]        
-        (image c (get-image p) 0 0)))))
+              (let [p (p/to-pixels grad conf)]        
+                (image c (get-image p) 0 0)))))
 
 (defn- calc-bheatmap
   [data g sx sy]
@@ -89,7 +89,7 @@
                     (set-color col)
                     (rect xx yy wx hy)) 
                 (when annotate?
-                  (let [^double l (c/luma col)]
+                  (let [l (c/luma col)]
                     (-> c
                         (set-color (if (> l 50) :black :gray))
                         (transformed-text (fmt v) px py :center))))))))

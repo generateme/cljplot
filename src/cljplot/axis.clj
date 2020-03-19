@@ -81,7 +81,7 @@
   "Draw axis and ticks"
   [length scale-info config]
   (let [canvas (axis-canvas length) ;; create canvas
-        mid (/ ^int (width canvas) 2)] ;; calc mid point
+        mid (/ (width canvas) 2)] ;; calc mid point
     (with-canvas [c canvas]
       (-> c
           (translate mid mid) ;; go to mid

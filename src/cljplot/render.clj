@@ -2,7 +2,8 @@
   (:require [cljplot.scale :as s]
             [cljplot.common :refer :all]
             [cljplot.axis :as ax]
-            [clojure2d.core :refer :all] 
+            [clojure2d.core :refer :all]
+            [clojure2d.protocols :as prot]
             [fastmath.core :as m]
             [fastmath.vector :as v]))
 
@@ -62,8 +63,8 @@
         ww (- width l r)
         hh (- height t b)
         bands-conf {:padding-in padding-in :padding-out padding-out}
-        bands-x (bands->positions-size (s/bands bands-conf cols) ww)
-        bands-y-raw (s/bands bands-conf (reverse (range rows)))
+        bands-x (bands->positions-size (s/bands cols bands-conf) ww)
+        bands-y-raw (s/bands (reverse (range rows)) bands-conf)
         bands-y (bands->positions-size bands-y-raw hh)
         scale-x (:x scales)
         scale-y (:y scales)] 
@@ -136,7 +137,7 @@
          hh (- height tt b border)]
      (with-canvas [c (canvas width height)]
        
-       (if (satisfies? ImageProto background)
+       (if (satisfies? prot/ImageProto background)
          (image c background)
          (set-background c background))
 
