@@ -55,10 +55,11 @@
                     (pfn p))
 
                 (when-let [point-type (:type point)]
-                  (let [size-fn (:size point)]
+                  (let [size-fn (:size point)
+                        stroke (:stroke point)]
                     (doseq [[x y :as dta] p
                             :let [size (size-fn dta conf)]]
-                      (draw-shape c x y point-type (or (:color point) color) nil size))))))))
+                      (draw-shape c x y point-type (or (:color point) color) stroke size))))))))
 
 ;;
 
