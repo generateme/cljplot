@@ -74,7 +74,7 @@
 
 ;;
 
-(defmethod prepare-data :box [_ data _] (stats/stats-map (extract-first data)))
+(defmethod prepare-data :box [_ data _] (stats-map (extract-first data)))
 
 (defmethod data-extent :box [_ data _]
   {:x [:numerical [(:Min data) (:Max data)]]})
@@ -88,25 +88,25 @@
         h2 (* 0.5 h)
         [^double hl ^double hh ^double hlm ^double hhm] (map #(+ h2 (* ^double % h2)) [-0.5 0.5 -0.25 0.25])]
     (do-graph chart-data (and outliers? (#{\o \O} shape))
-              (-> c
-                  (set-color dcolor)
-                  (set-stroke size)
-                  (line lav h2 uav h2)
-                  (line lav hlm lav hhm)
-                  (line uav hlm uav hhm)
-                  (set-color dcolor 200)
-                  (filled-with-stroke color dcolor rect (dec q1) hl (inc (- q3 q1)) (- hh hl))
-                  (set-color line-cl 200)
-                  (line median (inc hl) median (dec hh)))
-              (when outliers?
-                (doseq [o (map scale-x (:Outliers data))]
-                  (draw-shape c o (+ h2 (r/grand)) shape (c/color color 200) nil (max 3.0 (* 0.7 size (- hhm hlm)))))))))
+      (-> c
+          (set-color dcolor)
+          (set-stroke size)
+          (line lav h2 uav h2)
+          (line lav hlm lav hhm)
+          (line uav hlm uav hhm)
+          (set-color dcolor 200)
+          (filled-with-stroke color dcolor rect (dec q1) hl (inc (- q3 q1)) (- hh hl))
+          (set-color line-cl 200)
+          (line median (inc hl) median (dec hh)))
+      (when outliers?
+        (doseq [o (map scale-x (:Outliers data))]
+          (draw-shape c o (+ h2 (r/grand)) shape (c/color color 200) nil (max 3.0 (* 0.7 size (- hhm hlm)))))))))
 
 ;;
 
 (defmethod prepare-data :violin [_ data {:keys [kernel-bandwidth samples margins kernel-type] :as conf}]
   (let [dens-data (extract-first data)
-        stats (stats/stats-map dens-data)
+        stats (stats-map dens-data)
         [mn mx] (extend-domain-numerical [(:Min stats) (:Max stats)] (or (:x margins) [0.0 0.0]))
         density (m/sample (if kernel-bandwidth
                             (k/kernel-density kernel-type dens-data kernel-bandwidth)
