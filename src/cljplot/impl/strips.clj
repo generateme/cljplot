@@ -1,6 +1,6 @@
 (ns cljplot.impl.strips
   (:require [cljplot.common :refer :all]
-            [cljplot.config :refer :all]
+            [cljplot.config :as cfg]
             [fastmath.random :as r]
             [clojure2d.core :refer :all]
             [fastmath.stats :as stats]
@@ -328,7 +328,7 @@
 ;;;;;;;;;;;;;;;;;;;;
 
 (defmethod prepare-data :stack [_ [h? t data c] _]
-  (let [c (merge-configuration t (or c {}))]
+  (let [c (cfg/merge-configuration t (or c {}))]
     [h? t (map-indexed (fn [iter [k v]]
                          (let [cc (assoc c :id k :series-id iter :chart-type t)
                                dd (prepare-data t v cc)
