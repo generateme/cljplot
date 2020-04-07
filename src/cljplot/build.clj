@@ -3,7 +3,6 @@
             [cljplot.config :as cfg]
             [cljplot.axis :as axis]
             [cljplot.scale :as s]
-            [cljplot.build :as b]
             [fastmath.core :as m]))
 
 (set! *warn-on-reflection* true)
