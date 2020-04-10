@@ -1,4 +1,4 @@
-(defproject cljplot "0.0.3-SNAPSHOT"
+(defproject cljplot :lein-v
   :description "JVM chart library"
   :url "https://github.com/generateme/cljplot"
   :license {:name "Eclipse Public License"
@@ -9,6 +9,11 @@
                  [clojure.java-time "0.3.2"]
                  [org.clojure/data.csv "1.0.0"]
                  [org.clojure/data.json "1.0.0"]]
+  :plugins
+  [
+   ;; Drive leiningen project version from git instead of the other way around
+   [com.roomkey/lein-v "7.2.0"]
+   ]
   :repl-options {:timeout 120000}
   :java-source-paths ["src"]
   :javac-options ["-target" "1.8" "-source" "1.8"]
