@@ -175,12 +175,23 @@ Each continuous scale by default maps domain to `[0.0 1.0]` range. Scale can be 
 (s/inverse (s/log [1 10]) 0.5)
 ;; => 3.1622776601683804
 
-(s/time-interval [(dt/local-date) (dt/local-date 2019 03 30)])
-;; => #charts.scale.ContinuousRange{:start #object[java.time.LocalDate 0x6025234c "2019-03-28"], :end #object[java.time.LocalDate 0x60e60a32 "2019-03-30"], :type :time, :forward #function[charts.scale/time-forward/fn--23480], :inverse #function[charts.scale/time-inverse/fn--23483], :info {:time-diff-millis 1.728E8}}
-((s/time-interval [(dt/local-date-time "2019-03-01T00:00:00") (dt/local-date-time "2019-03-03T00:00:00")]) (dt/local-date "2019-03-02"))
-;; => 0.5
-(s/inverse (s/time-interval [(dt/local-date-time "2019-03-01T00:00:00") (dt/local-date-time "2019-03-03T00:00:00")]) 0.1)
-;; => #object[java.time.LocalDateTime 0x5e3ff815 "2019-03-01T04:48"]
+(t/time-scale [(dt/local-date) (dt/local-date 2019 03 30)])
+;; =>
+{:start #object[java.time.LocalDateTime 0x21613dd9 "2020-04-09T00:00"],
+ :end #object[java.time.LocalDateTime 0x5c9ee492 "2019-03-30T00:00"],
+ :domain
+ [#object[java.time.LocalDateTime 0x21613dd9 "2020-04-09T00:00"]
+  #object[java.time.LocalDateTime 0x5c9ee492 "2019-03-30T00:00"]],
+ :type :time,
+ :forward #function[cljplot.scale.time/time-forward/fn--14021],
+ :inverse #function[cljplot.scale.time/time-inverse/fn--14024],
+ :info {:time-diff-millis -32486400000.0M}}
+((t/time-scale [(dt/local-date-time "2019-03-01T00:00:00") (dt/local-date-time "2019-03-03T00:00:00")]) (dt/local-date "2019-03-02"))
+;; =>
+0.5
+(s/inverse (t/time-scale [(dt/local-date-time "2019-03-01T00:00:00") (dt/local-date-time "2019-03-03T00:00:00")]) 0.1)
+;; =>
+#object[java.time.LocalDateTime 0x5e3ff815 "2019-03-01T04:48"]
 ```
 
 #### Bands
@@ -195,12 +206,26 @@ Parameters are:
 * align - position of the selected point (0.0 - left, 1.0 - right, 0.5 - midpoint, default)
 
 ```
-(s/bands [:a :b])
-;; => #charts.scale.OrdinalRange{:domain [:a :b], :range ({:start 0.0, :end 0.5, :point 0.25} {:start 0.5, :end 1.0, :point 0.75}), :type :bands, :forward {:a {:start 0.0, :end 0.5, :point 0.25}, :b {:start 0.5, :end 1.0, :point 0.75}}, :inverse #function[charts.scale/bands-inverse-fn/fn--23540], :info {:bandwidth 0.5, :step 0.5, :value :point}}
-((s/bands [:a :b]) :a)
-;; => {:start 0.0, :end 0.5, :point 0.25}
-((s/bands {:padding-in 0.2 :padding-out 0.2 :align 0.25} [:a :b]) :a)
-;; => {:start 0.09090909090909091, :end 0.4545454545454546, :point 0.18181818181818182}
+(b/bands [:a :b])
+;; =>
+{:domain [:a :b],
+ :range
+ ({:start 0.0, :end 0.5, :point 0.25} {:start 0.5, :end 1.0, :point 0.75}),
+ :cnt 2,
+ :type :bands,
+ :forward
+ {:a {:start 0.0, :end 0.5, :point 0.25},
+  :b {:start 0.5, :end 1.0, :point 0.75}},
+ :inverse #function[cljplot.scale.bands/bands-inverse-fn/fn--33870],
+ :info {:bandwidth 0.5, :step 0.5}}
+((b/bands [:a :b]) :a)
+;; =>
+{:start 0.0, :end 0.5, :point 0.25}
+((b/bands [:a :b] {:padding-in 0.2 :padding-out 0.2 :align 0.25}) :a)
+;; =>
+{:start 0.09090909090909091,
+ :end 0.4545454545454546,
+ :point 0.18181818181818182}
 ```
 
 #### Scale map

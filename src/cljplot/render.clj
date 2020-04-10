@@ -1,5 +1,6 @@
 (ns cljplot.render
   (:require [cljplot.scale :as s]
+            [cljplot.scale.bands :as b]
             [cljplot.common :refer :all]
             [cljplot.axis :as ax]
             [clojure2d.core :refer :all]
@@ -63,8 +64,8 @@
         ww (- width l r)
         hh (- height t b)
         bands-conf {:padding-in padding-in :padding-out padding-out}
-        bands-x (bands->positions-size (s/bands cols bands-conf) ww)
-        bands-y-raw (s/bands (reverse (range rows)) bands-conf)
+        bands-x (bands->positions-size (b/bands cols bands-conf) ww)
+        bands-y-raw (b/bands (reverse (range rows)) bands-conf)
         bands-y (bands->positions-size bands-y-raw hh)
         scale-x (:x scales)
         scale-y (:y scales)] 

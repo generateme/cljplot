@@ -74,7 +74,7 @@
                           (linear-search r) {:steps steps}))))
 
 (defn threshold
-  "Returns discrete scale for given steps or evenly spliced domain."
+  "Returns discrete scale for given steps or evenly sliced domain."
   ([] (threshold-from-steps 10))
   ([steps] (if (sequential? steps)
              (threshold steps 10)

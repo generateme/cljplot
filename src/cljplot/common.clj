@@ -9,17 +9,27 @@
             [clojure.data.json :as json]
             [clojure.java.io :as io]
             [java-time :as dt]
+            [cljplot.scale.time :as t]
             [cljplot.scale :as s]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
 
-(defn fast+ {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (+ a b))
-(defn fast- {:inline (fn [^double x ^double y] `(- ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (- a b))
-(defn fast* {:inline (fn [^double x ^double y] `(* ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (* a b))
-(defn fast-max {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (max a b))
-(defn fast-min {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (min a b))
+(defn fast+ {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}}
+  ^double [^double a ^double b] (+ a b))
+
+(defn fast- {:inline (fn [^double x ^double y] `(- ~x ~y)) :inline-arities #{2}}
+  ^double [^double a ^double b] (- a b))
+
+(defn fast* {:inline (fn [^double x ^double y] `(* ~x ~y)) :inline-arities #{2}}
+  ^double [^double a ^double b] (* a b))
+
+(defn fast-max {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}}
+  ^double [^double a ^double b] (max a b))
+
+(defn fast-min {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}}
+  ^double [^double a ^double b] (min a b))
 
 (defn graph-canvas
   "Create canvas to draw a chart on"
@@ -63,8 +73,8 @@
 (defn wrap-interpolator-for-dt
   "Wrap interpolator to work with date/time values."
   [interpolator domain x y]
-  (if (date-time? (first x)) 
-    (let [scale (s/time-interval domain)
+  (if (date-time? (first x))
+    (let [scale (t/time-scale domain)
           interp (interpolator (mapv scale x) y)]
       (fn [v]
         (interp (scale v))))
@@ -160,7 +170,7 @@
     data))
 
 (defn coerce-format-fn
-  "Find formating funciton."
+  "Find formatting function."
   [fmt]
   (cond
     (string? fmt) (partial format fmt)

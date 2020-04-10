@@ -1,5 +1,6 @@
 (ns cljplot.impl.histogram
   (:require [cljplot.common :refer :all]
+            [cljplot.scale.bands :as b]
             [cljplot.scale :as s]
             [fastmath.core :as m]
             [fastmath.stats :as stats]
@@ -85,7 +86,7 @@
 (defn- draw-series
   [canvas data {:keys [palette stroke stroke? type padding-in padding-out ^double zero]
                 :or {type :bars}}]
-  (let [bands (s/bands {:padding-out padding-out :padding-in padding-in} (count data))
+  (let [bands (b/bands {:padding-out padding-out :padding-in padding-in} (count data))
         zero (+ zero 3)]
     (doseq [[idx d] (map-indexed vector data)]
       (let [{:keys [^double start ^double end ^double point]} (bands idx)

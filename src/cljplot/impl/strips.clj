@@ -5,6 +5,7 @@
             [clojure2d.core :refer :all]
             [fastmath.stats :as stats]
             [fastmath.kernel :as k]
+            [cljplot.scale.bands :as b]
             [cljplot.scale :as s]
             [clojure2d.color :as c]
             [fastmath.core :as m]))
@@ -215,7 +216,7 @@
 (defmethod render-graph :bar [_ data {:keys [palette color stroke stroke? padding-in padding-out] :as conf}
                               {:keys [w ^int h x] :as chart-data}]
   (let [cnt (count data)
-        bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
+        bands (b/bands {:padding-out padding-out :padding-in padding-in} cnt)
         scale-x (partial (:scale x) 0 w)
         ^double zero (scale-x 0)
         pal (if (seq palette) (cycle palette) (repeat color))
@@ -243,7 +244,7 @@
                                            :or {size 0.3} :as conf}
                                    {:keys [^int w ^int h x] :as chart-data}]
   (let [cnt (count data)
-        bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
+        bands (b/bands {:padding-out padding-out :padding-in padding-in} cnt)
         scale-x (partial (:scale x) 0 w)
         ^double zero (scale-x 0)
         pal (if (seq palette) (cycle palette) (repeat color))
@@ -269,7 +270,7 @@
 
 (defmethod render-graph :rbar [_ data {:keys [color stroke stroke? padding] :as conf}
                                {:keys [w ^int h x] :as chart-data}]
-  (let [{:keys [^double start ^double end]} ((s/bands {:padding-out padding} 1) 0)
+  (let [{:keys [^double start ^double end]} ((b/bands {:padding-out padding} 1) 0)
         st (* start h)
         hh (* (- end start) h)
         scale-x (partial (:scale x) 0 w)]
@@ -304,7 +305,7 @@
 
 (defmethod render-graph :sbar [_ {:keys [sum data]} {:keys [method palette stroke stroke? padding] :as conf}
                                {:keys [w ^int h x] :as chart-data}]
-  (let [{:keys [^double start ^double end]} ((s/bands {:padding-out padding} 1) 0)
+  (let [{:keys [^double start ^double end]} ((b/bands {:padding-out padding} 1) 0)
         scale-x (partial (:scale x) 0 w)
         zero (scale-x 0)
         pal (cycle palette)

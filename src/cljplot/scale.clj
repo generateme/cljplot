@@ -68,13 +68,14 @@
      {:ticks ticks})))
 
 (defn- coerce-format-fn
-  "Find formating funciton."
-  [scale ticks fmt]
-  (cond
-    (string? fmt) (partial (if (= (:type scale) :time) dt/format format) fmt)
-    (fn? fmt) fmt
-    (= (:type scale) :time) (time-format scale ticks)
-    :else str))
+  "Find formatting function."
+  ([scale fmt] (coerce-format-fn scale nil fmt))
+  ([scale ticks fmt]
+   (cond
+     (string? fmt) (partial (if (= (:type scale) :time) dt/format format) fmt)
+     (fn? fmt) fmt
+     (= (:type scale) :time) (time-format scale ticks)
+     :else str)))
 
 (defn scale-map
   "Create scale data from definition"

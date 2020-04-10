@@ -2,6 +2,7 @@
   (:require [clojure2d.core :refer :all]
             [cljplot.common :refer :all]
             [cljplot.scale :as s]
+            [cljplot.utils :as u]
             [fastmath.random :as r]
             [fastmath.protocols :as pr]
             [fastmath.core :as m]
@@ -91,7 +92,7 @@
         (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* 0.1 blur-kernel-size (max w h)) blur-kernel-size)))
 
       (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
-            steps (rest (s/splice-range (inc contours) (.-min algo) (.-max algo)))]
+            steps (rest (u/slice-range (inc contours) (.-min algo) (.-max algo)))]
         (do-graph chart-data true
                   (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
                           :let [col (nth palette id)]]
