@@ -9,6 +9,7 @@
             [clojure2d.core :refer :all]
             [fastmath.grid :as grid]
             [fastmath.stats :as stats]
+            [cljplot.utils :as u]
             [cljplot.scale :as s])
   (:import [marchingsquares Algorithm]))
 
@@ -133,7 +134,7 @@
                  (f (iscale-x xx) (iscale-y yy)))]
 
     (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) values)))            
-          steps (s/splice-range (inc contours) (.-min algo) (.-max algo))]
+          steps (u/slice-range (inc contours) (.-min algo) (.-max algo))]
       (do-graph chart-data true
         (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
                 :let [col (nth palette id)]]

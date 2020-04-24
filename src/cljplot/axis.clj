@@ -98,7 +98,7 @@
 
 (defn- find-max-tick-size
   "Find maximum tick size."
-  [{:keys [ticks]} config]
+  [scale {:keys [ticks] :as config}]
   (let [size-fn (-> config :ticks :size)]
     (max 0.0 (inc (double (-> config :line :stroke :size)))
          ^double (reduce fast-max (map #(size-fn % config) ticks)))))
