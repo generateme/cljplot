@@ -1,117 +1,34 @@
-(ns cljplot-new
-  (:require [clojure.data.csv :as csv]
-            [clojure.data.json :as json]
-            [clojure.java.io :as io]
-            [fastmath.core :as m]
-            [fastmath.random :as r]
-            [tech.ml.dataset :as ds]
+(ns testing.dataset
+  (:require [tech.ml.dataset :as ds]
             [tech.ml.dataset.column :as col]
             [tech.v2.datatype.functional :as dfn]))
 
+;; Working thrugh R `data.table` type and confronting with tech.ml.dataset
+;; https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html
 
-(defn read-json [f] (with-open [reader (io/reader f)]
-                      (doall (json/read-json reader true))))
+;; # Read data from URL
 
-
-(defn read-csv [f] (rest (with-open [reader (io/reader f)]
-                           (doall (csv/read-csv reader)))))
-
-(defn map-kv [f coll]
-  (reduce-kv (fn [m k v] (assoc m k (f v))) (empty coll) coll))
-
-
-(def chem97 (ds/->dataset "data/chem97.json"))
-
-(def lat1 (ds/group-by-column :score chem97))
-(def lat2 (map-kv #(ds/select-columns % [:gcsescore]) lat1))
-
-(def oats (ds/->dataset "data/oats.json"))
-
-(ds/column-names oats)
-
-(def lat1 (ds/group-by (juxt :Block :Variety) oats))
-(def lat2 (map-kv #(ds/select-columns % [:nitro :yield]) lat1))
-
-(def barley (ds/->dataset "data/barley.json"))
-
-(def lat1 (ds/group-by-column :site barley))
-(def lat2 (map-kv #(ds/group-by-column :year %) lat1))
-
-(ds/mapseq-reader barley)
-
-
-(get (get lat2 "Waseca") 1931)
-
-(second lat2)
-
-(keys lat1)
-
-(ds/column chem97 :score)
-
-(ds/column-names chem97)
-
-(ds/->dataset (ds/mapseq-reader {:abba (repeatedly 100 rand)}))
-
-(ds/name-values-seq->dataset {:abba (repeatedly 100 rand)
-                              :df (repeat 100 10)
-                              "sdf" (repeat 100 "s")})
-
-(ds/group-by )
-
-(seq (col/ (ds/column chem97 :score)))
-
-(sort (distinct (map :score chem97)))
-
-(keys (into (sorted-map) (group-by :score chem97)))
-
-(def data (repeatedly 100 (comp m/approx r/grand)))
-
-(m/co-intervals data 2 0.0)
-
-
-(m/co-intervals [1 2 3 4 5 1 2 3 4] 4 0.0)
-
-
-(defprotocol MyProtocol
-  (callme [_]))
-
-(defrecord TestMe [a b c]
-  clojure.lang.IFn
-  (invoke [_] a))
-
-(extend-type TestMe
-  MyProtocol
-  (callme [t] (select-keys t [:a :b])))
-
-(def test-me (->TestMe 11 "abc" :kkk))
-
-(test-me);; => 11
-
-(callme test-me)
-;; => {:a 11, :b "abc"}
-
-
-;;
-
-;; TODO: read from URL
+;; TODO: add support for loading from the net (issue: #33)
 
 (def flights (ds/->dataset (.openStream (java.net.URL. "https://raw.githubusercontent.com/Rdatatable/data.table/master/vignettes/flights14.csv"))))
 
-;; TODO: set ds name as filename
-
-(meta flights) ;; => {:name nil}
-
-;; TODO: add dim (or put dimensions into metadata
+;; # Taking the shape of loaded data
 
 (ds/column-count flights) ;; => 11
 (ds/row-count flights) ;; => 253316
+
+;; TODO: maybe add those numbers to a metadata? Like in `column` case?
+;; TODO: also, maybe add automatically name from filename when file/URL was used to create dataset
+;; TODO: column names as keywords during loading dataset.
+
+(meta flights) ;; => {:name nil}
+
+;; # Basics
 
 (def DT (ds/name-values-seq->dataset {:ID [:b :b :b :c :c :a]
                                       :a (range 1 7)
                                       :b (range 7 13)
                                       :c (range 13 19)}))
-
-
 
 (meta (DT :a))
 ;; => {:name :a, :size 6, :datatype :int64}
@@ -119,7 +36,9 @@
 (:datatype (meta (ds/column DT :a)))
 ;; => :int64
 
-;; TODO: head/tail for rows
+;; # Subset rows
+
+;; TODO: maybe add head/tail for rows instead of calling `select-rows`
 
 (-> (ds/filter #(and (= (get % "origin") "JFK")
                      (= (get % "month") 6)) flights)
@@ -144,7 +63,10 @@
 | 2014 |     1 |   1 |        -3 |        13 |      AA |    JFK |  LAX |      363 |     2475 |   11 |
 
 
-;; TODO: sort by columns and order 
+;; # Sort by 2 columns and given order
+
+;; TODO: below I want to sort dataset by origin ascending and dest descending. Maybe such case should be
+;;       wrapped into the function? Writing comparators is not convinient in this quite common case.
 
 (-> (ds/sort-by #(vector (get % "origin")
                          (get % "dest"))
@@ -165,12 +87,16 @@
 | 2014 |     4 |  25 |        -8 |       -32 |      EV |    EWR |  XNA |      159 |     1131 |    6 |
 | 2014 |     2 |  19 |        21 |        10 |      EV |    EWR |  XNA |      176 |     1131 |    8 |
 
+;; # Select column
 
+
+;; returns column
 (flights "arr_delay")
 ;; => #tech.ml.dataset.column<int16>[253316]
 arr_delay
 [13, 13, 9, -26, 1, 0, -18, -14, -17, -14, -17, -5, 1, 133, -26, 69, 36, 1, 185, -6, ...]
 
+;; returns dataset
 (ds/select flights ["arr_delay"] (range 6))
 ;; => null [6 1]:
 
@@ -183,8 +109,10 @@ arr_delay
 |         1 |
 |         0 |
 
-
-;; TODO: consider to add more columns or a map to select and rename columns at the same time
+;; TODO: question: consider IFn returns dataset by default. Arguments:
+;; * column name - returns dataset with single column
+;; * sequence of columns - returns dataset with selected columns
+;; * map - returns dataset with selected and renamed columns
 
 (-> (ds/select-columns flights ["arr_delay" "dep_delay"])
     (ds/rename-columns  {"arr_delay" "delay_arr"
@@ -201,14 +129,16 @@ arr_delay
 |         1 |         2 |
 |         0 |         4 |
 
-;;
+;; TODO: maybe ds should be also countable?
 
 (-> (ds/filter #(neg? (+ (get % "arr_delay")
                          (get % "dep_delay"))) flights)
     (ds/row-count))
 ;; => 141814
 
-;; TODO: how to get ds instead of simple values?
+;; # Functions on columns
+
+;; TODO: I would prefer to get dataset here
 
 (->> (-> (ds/filter #(and (= (get % "origin") "JFK")
                           (= (get % "month") 6)) flights)
@@ -216,19 +146,12 @@ arr_delay
      (map dfn/mean))
 ;; => (5.839349323200929 9.807884113037279)
 
-
-(ds/row-count (ds/filter #(and (= (get % "origin") "JFK")
-                               (= (get % "month") 6)) flights))
-;; => 8422
+;; # Aggregation
 
 (defn map-kv [f coll]
   (reduce-kv (fn [m k v] (assoc m k (f v))) (empty coll) coll))
 
-;; TODO: select all columns but not provided
-
-;; Aggregation
-
-;; TODO: would be great to get dataset
+;; TODO: maybe add `group-by-and-aggregate` which returns dataset after group-by and aggregation?
 
 (->> flights
      (ds/group-by-column "origin")
@@ -246,7 +169,7 @@ arr_delay
 | 8.740E+04 | 8.443E+04 | 8.148E+04 |
 
 
-;; TODO: fix notation maybe?
+;; TODO: Scientific notation should be used for bigger numbers
 
 (->> flights
      (ds/filter #(= "AA" (get % "carrier")))
@@ -262,13 +185,22 @@ arr_delay
 
 ;; TODO: how to convert it back to dataset?
 
+;; below: select, group by more than one column and aggregate (row-count)
+
 (->> flights
      (ds/filter #(= "AA" (get % "carrier")))
      (ds/group-by (fn [r] (vector (get r "origin")
                                  (get r "dest"))))
-     (map-kv ds/row-count))
+     (map-kv ds/row-count)
+     (take 6))
+;; => ([["JFK" "BOS"] 1173]
+;;     [["JFK" "DCA"] 172]
+;;     [["EWR" "PHX"] 121]
+;;     [["LGA" "PBI"] 245]
+;;     [["EWR" "LAX"] 62]
+;;     [["JFK" "SJU"] 690])
 
-;; 
+;; below: select, group-by 3 columns and aggregate 2 columns
 
 (->> flights
      (ds/filter #(= "AA" (get % "carrier")))
@@ -276,5 +208,15 @@ arr_delay
                                  (get r "dest")
                                  (get r "month"))))
      (map-kv #(->> (ds/select-columns % ["arr_delay" "dep_delay"])
-                   (map dfn/mean))))
+                   (map dfn/mean)))
+     (take 6))
+;; => ([["LGA" "ORD" 10] (15.46611909650922 12.911704312114958)]
+;;     [["EWR" "PHX" 9] (-4.2333333333333325 -1.6666666666666665)]
+;;     [["JFK" "AUS" 3] (8.193548387096774 2.70967741935484)]
+;;     [["JFK" "BOS" 2] (11.179999999999996 11.760000000000005)]
+;;     [["LGA" "DFW" 10] (3.5 4.5527638190954605)]
+;;     [["JFK" "BOS" 10] (11.5 10.2704918032787)])
+
+
+(ds/->dataset "https://raw.githubusercontent.com/Rdatatable/data.table/master/vignettes/flights14.csv")
 
