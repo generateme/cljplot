@@ -1,9 +1,8 @@
 (ns cljplot.build
   (:require [cljplot.common :refer :all]
-            [cljplot.config :refer :all]
+            [cljplot.config :as cfg]
             [cljplot.axis :as axis]
             [cljplot.scale :as s]
-            [cljplot.build :as b]
             [fastmath.core :as m]))
 
 (set! *warn-on-reflection* true)
@@ -97,7 +96,7 @@
 
 (defn- add-series-info
   "Add series id and chart type to configuration"
-  [id [t d c]] [t d (-> (merge-configuration t (or c {}))
+  [id [t d c]] [t d (-> (cfg/merge-configuration t (or c {}))
                         (assoc :series-id id :chart-type t))])
 
 (defn- chart-process-data
@@ -207,7 +206,7 @@
   ([series side] (add-axes series side {}))
   ([series side config]
    (let [conf-name (keyword (str "axis-" (name side)))
-         config (merge-configuration conf-name config)
+         config (cfg/merge-configuration conf-name config)
          scale-id (position->scale-id side)]
      (reduce (fn [s [pos scale]]
                (let [size (axis/axis-size scale scale-id config)]
@@ -222,7 +221,7 @@
 (defn add-label
   ([series side label] (add-label series side label {}))
   ([series side label conf]
-   (let [conf (merge-configuration :label conf)
+   (let [conf (cfg/merge-configuration :label conf)
          data (prepare-data :label label conf)]
      (assoc-in series [:labels side] data))))
 

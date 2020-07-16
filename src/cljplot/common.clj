@@ -317,6 +317,55 @@
         :pos [x (m/floor (- y))]}))))
 
 
+;;;
+
+(defn stats-map
+  "Calculate several statistics of `vs` and return as map.
+
+  Optional `estimation-strategy` argument can be set to change quantile calculations estimation type. See [[estimation-strategies]]."
+  {:metadoc/categories #{:stat}}
+  ([vs] (stats-map vs :legacy))
+  ([vs estimation-strategy]
+   (let [avs (m/seq->double-array vs)
+         sz (alength avs)
+         mn (smile.math.MathEx/min avs)
+         mx (smile.math.MathEx/max avs)
+         sm (smile.math.MathEx/sum avs)
+         u (/ sm sz)
+         mdn (stats/median avs)
+         q1 (stats/percentile avs 25.0 estimation-strategy)
+         q3 (stats/percentile avs 75.0 estimation-strategy)
+         iqr (- q3 q1)
+         sd (stats/stddev avs)
+         [lav uav] (stats/adjacent-values avs q1 q3)
+         mad (stats/median-absolute-deviation avs)]
+     {:Size sz
+      :Min mn
+      :Max mx
+      :Range (- mx mn)
+      :Mean u
+      :Median mdn
+      :Mode (stats/mode avs)
+      :Q1 q1
+      :Q3 q3
+      :Total sm
+      :SD sd
+      :Variance (* sd sd)
+      :MAD mad
+      :SEM (/ sd (m/sqrt sz))
+      :LAV lav
+      :UAV uav
+      :IQR iqr
+      :LOF (- q1 (* 3.0 iqr))
+      :UOF (+ q3 (* 3.0 iqr))
+      :LIF (- q1 (* 1.5 iqr))
+      :UIF (+ q3 (* 1.5 iqr))
+      :Outliers (stats/outliers avs q1 q3)
+      :Kurtosis (stats/kurtosis avs)
+      :Skewness (stats/skewness avs)
+      :SecMoment (stats/second-moment avs)})))
+
+
 ;; ;;;;;;;;;;
 
 (defonce configuration (atom {}))
