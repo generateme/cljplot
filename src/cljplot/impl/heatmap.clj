@@ -23,7 +23,7 @@
     (do-graph chart-data false
 
       (doseq [[x y] data]
-        (p/add-pixel grad (* w ^double (scale-x x)) (* h ^double (scale-y y))))
+        (p/add-pixel! grad (* w ^double (scale-x x)) (* h ^double (scale-y y))))
 
       (let [p (p/to-pixels grad conf)]        
         (image c (get-image p) 0 0)))))
@@ -80,16 +80,15 @@
         grad (comp gradient #(m/norm % mnz mxz))
         fmt (coerce-format-fn annotate-fmt)]
     (do-graph chart-data false
-              (set-font-attributes c 8)
-              (doseq [[[x y] v] data
-                      :let [[xx wx px] (pos->rect (scale-x x) w)
-                            [yy hy py] (pos->rect (scale-y y) h)
-                            col (grad v)]]
-                (-> c
-                    (set-color col)
-                    (rect xx yy wx hy)) 
-                (when annotate?
-                  (let [^double l (c/luma col)]
-                    (-> c
-                        (set-color (if (> l 50) :black :gray))
-                        (transformed-text (fmt v) px py :center))))))))
+      (set-font-attributes c 8)
+      (doseq [[[x y] v] data
+              :let [[xx wx px] (pos->rect (scale-x x) w)
+                    [yy hy py] (pos->rect (scale-y y) h)
+                    col (grad v)]]
+        (-> c
+            (set-color col)
+            (rect xx yy wx hy)) 
+        (when annotate?
+          (-> c
+              (set-color (if (> (c/luma col) 50) :black :gray))
+              (transformed-text (fmt v) px py :center)))))))

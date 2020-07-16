@@ -328,9 +328,9 @@
   ([vs estimation-strategy]
    (let [avs (m/seq->double-array vs)
          sz (alength avs)
-         mn (smile.math.Math/min avs)
-         mx (smile.math.Math/max avs)
-         sm (smile.math.Math/sum avs)
+         mn (smile.math.MathEx/min avs)
+         mx (smile.math.MathEx/max avs)
+         sm (smile.math.MathEx/sum avs)
          u (/ sm sz)
          mdn (stats/median avs)
          q1 (stats/percentile avs 25.0 estimation-strategy)
