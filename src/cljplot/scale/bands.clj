@@ -1,6 +1,5 @@
 (ns cljplot.scale.bands
   (:require [fastmath.core :as m]
-            [fastmath.stats :as s]
             [cljplot.scale.common :as sc]))
 
 (set! *warn-on-reflection* true)

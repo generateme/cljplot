@@ -3,7 +3,7 @@
             [fastmath.interpolation :as i]
             [fastmath.stats :as stats]
             [cljplot.scale.common :as sc]
-            [cljplot.utils :as u]))
+            [clojure.set :refer [difference]]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -14,15 +14,11 @@
   [steps]
   (comp int (i/step-before steps (range (count steps)))))
 
-(defn- percentile
-  ^double [^double q]
-  (m/approx (* q 100.0) 2))
-
 (defn- quantile-inverse
   [xs r]
   (fn [^double q]
     (reduce (fn [prev {:keys [^double start ^double end ^double quantile]}]
-              (let [vs (clojure.set/difference
+              (let [vs (difference
                         (set (filter (fn [^double v]
                                        (<= start v end)) xs)) prev)]
                 (if (<= q quantile)
@@ -36,7 +32,7 @@
   ([xs ^long steps-no estimation-strategy]
    (let [xs (m/seq->double-array xs)
          [start end] (stats/extent xs)
-         quantiles (rest (u/slice-range (inc steps-no)))
+         quantiles (rest (m/slice-range (inc steps-no)))
          steps (stats/quantiles xs quantiles estimation-strategy)
          steps-corr (conj (seq steps) start)
          r (mapv (fn [[^double x1 ^double x2] q id]
@@ -61,7 +57,7 @@
 (defn- threshold-from-steps
   [steps]
   (if-not (sequential? steps)
-    (threshold-from-steps (u/slice-range (inc ^long steps)))
+    (threshold-from-steps (m/slice-range (inc ^long steps)))
     (let [[mn mx] (stats/extent steps)
           cnt (dec (count steps))
           r (mapv (fn [[^double x1 ^double x2] id]
@@ -79,7 +75,7 @@
   ([steps] (if (sequential? steps)
              (threshold steps 10)
              (threshold-from-steps steps)))
-  ([[start end] ^long steps-no] (threshold-from-steps (u/slice-range (inc steps-no) start end))))
+  ([[start end] ^long steps-no] (threshold-from-steps (m/slice-range (inc steps-no) start end))))
 
 (defmethod sc/ticks :quantile [s & [_]]
   (map :point (:range s)))

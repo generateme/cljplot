@@ -35,22 +35,6 @@
                            (log-forward negative? ls le)
                            (log-inverse negative? ls le) {:base base}))))
 
-#_(defn log1p
-    "Add 1 to the values"
-    ([] (log1p [0.0 1.0]))
-    ([domain] (log1p domain 10.0))
-    ([[^double start ^double end :as domain] base]
-     (let [scale (log [(inc start) (inc end)] base)
-           f (:forward scale)
-           i (:inverse scale)]
-       (assoc scale
-              :start start
-              :end end
-              :domain domain
-              :type :log1p
-              :forward (fn ^double [^double x] (f (inc x)))
-              :inverse (fn ^double [^double x] (dec ^double (i x)))))))
-
 ;; ticks
 
 (defn- logp 
@@ -78,11 +62,7 @@
         pows (powp base)
         ^double lstart (logs (m/abs start))
         ^double lend (logs (m/abs end))
-        ^long c (or c (max 1 (- lend lstart)))
-        accuracy (sc/tick-accuracy start end c)]
+        ^long c (or c (max 1 (- lend lstart)))]
     (map (fn [^double v]
-           (let [pv (-> v
-                        pows
-                        (m/approx accuracy)
-                        (+ 0.0))]
+           (let [^double pv (pows v)]
              (if negative? (- pv) pv))) (sl/ticks-linear lstart lend c))))

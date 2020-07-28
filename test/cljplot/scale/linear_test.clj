@@ -1,8 +1,7 @@
 (ns cljplot.scale.linear-test
-  (:require [cljplot.scale.linear :refer :all]
+  (:require [cljplot.scale.linear :refer [linear ticks-linear]]
             [cljplot.scale :refer [inverse]]
-            [clojure.test :refer :all]
-            [fastmath.core :as m]))
+            [clojure.test :refer [deftest is]]))
 
 (deftest linear-basic-test
   (let [l (linear)]

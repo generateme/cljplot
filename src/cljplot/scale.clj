@@ -2,6 +2,7 @@
   (:require [fastmath.core :as m]
             [java-time :as dt]
             [cljplot.scale.common :as sc]
+            [cljplot.scale.format-sequence :refer [formatter]]
 
             [cljplot.scale.linear :refer [linear]]
             [cljplot.scale.log :refer [log]]
@@ -32,7 +33,6 @@
   {:linear linear
    :smooth smooth
    :log log
-   ;; :log1p log1p
    :pow pow
    :time time-scale
    :bands bands
@@ -45,7 +45,6 @@
    :smooth [0.0 1.0]
    :pow [0.0 1.0]
    :log [1.0 10.0]
-   ;; :log1p [0.0 9.0]
    :time [(dt/minus (dt/local-date-time) (dt/years 1))
           (dt/local-date-time)]
    :bands 1
@@ -64,8 +63,8 @@
   ([scale] (scale->ticks scale nil))
   ([scale ticks]
    (if-not (sequential? ticks)
-     {:ticks (sc/ticks scale ticks)}
-     {:ticks ticks})))
+     (sc/ticks scale ticks)
+     ticks)))
 
 (defn- coerce-format-fn
   "Find formating funciton."
@@ -74,6 +73,8 @@
     (string? fmt) (partial (if (= (:type scale) :time) dt/format format) fmt)
     (fn? fmt) fmt
     (= (:type scale) :time) (time-format scale ticks)
+    (number? fmt) (formatter ticks fmt 6 false)
+    (every? number? ticks) (formatter ticks 6 6 false)
     :else str))
 
 (defn scale-map
@@ -81,26 +82,22 @@
   ([scale-def] (scale-map scale-def nil))
   ([scale-def {tick-values :ticks
                domain :domain
-               ofmt :fmt}]
+               fmt :fmt}]
    (let [{:keys [domain scale]} (scale-def->scale scale-def domain)
-         {:keys [ticks]} (scale->ticks scale tick-values)]
+         ticks (scale->ticks scale tick-values)]
      {:domain domain
-      :fmt (coerce-format-fn scale ticks ofmt)
+      :fmt (coerce-format-fn scale ticks fmt)
       :ticks ticks
       :scale scale
       :scale-def scale-def})))
-
-(defn- scale-type-from-map
-  [scale-map]
-  (:type (:scale scale-map)))
 
 (defn update-scale
   [sc & [field value & r]]
   (let [new-sc (case field
                  :domain (-> (scale-map (:scale-def sc) {:domain value})
                              (assoc :fmt (:fmt sc))) ;; recalculate everything, keep format
-                 :fmt (assoc sc :fmt (coerce-format-fn (scale-type-from-map sc) value))
+                 :fmt (assoc sc :fmt (coerce-format-fn (:scale sc) (:ticks sc) value))
                  :scale (scale-map value (dissoc sc :ticks)) ;; recalculate ticks
-                 :ticks (merge sc (scale->ticks (:scale sc) value))
+                 :ticks (assoc sc :ticks (scale->ticks (:scale sc) value))
                  sc)]
     (if (seq r) (apply update-scale new-sc r) new-sc)))

@@ -1,6 +1,6 @@
 (ns cljplot.scale.linear
   (:require [fastmath.core :as m]
-            [fastmath.interpolation :as i]
+            [fastmath.interpolation :refer [linear-smile]]
             [cljplot.scale.common :as sc]))
 
 (set! *warn-on-reflection* true)
@@ -19,7 +19,22 @@
             2 (let [[start end] xs]
                 (sc/->ContinuousScale start end xs :linear
                                       (m/make-norm start end 0.0 1.0) (partial m/lerp start end) nil))
-            (sc/interpolated-range i/linear-smile :linear xs {:steps xs})))))
+            (sc/interpolated-range linear-smile :linear xs {:steps xs})))))
+
+;; ticks
+
+(def ^:const ^:private ^double e10 (m/sqrt 50.0))
+(def ^:const ^:private ^double e5 (m/sqrt 10.0))
+(def ^:const ^:private ^double e2 m/SQRT2)
+
+(defn step-mult
+  "Step multiplier"
+  ^double [^double error]
+  (cond
+    (>= error e10) 10.0
+    (>= error e5) 5.0
+    (>= error e2) 2.0
+    :else 1.0))
 
 (defn- tick-increment
   ^double [^double start ^double end ^long count]
@@ -28,8 +43,8 @@
         p10 (m/pow 10.0 power)
         error (/ step p10)]
     (if (>= power 0.0)
-      (* p10 (sc/step-mult error))
-      (/ (- (m/pow 10.0 (- power))) (sc/step-mult error)))))
+      (* p10 (step-mult error))
+      (/ (- (m/pow 10.0 (- power))) (step-mult error)))))
 
 (defn ticks-linear
   [^double start ^double end ^long count]
@@ -54,6 +69,5 @@
 (defmethod sc/ticks :default [s & [c]]
   (let [start (:start s)
         end (:end s)
-        c (or c 10)
-        accuracy (sc/tick-accuracy start end c)]
-    (map #(+ 0.0 (m/approx % accuracy)) (ticks-linear start end c))))
+        c (or c 10)]
+    (ticks-linear start end c)))
