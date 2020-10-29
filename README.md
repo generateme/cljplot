@@ -1,3 +1,7 @@
+# CLJPLOT
+
+> **_INFO (2020-08-17):_** I'm preparing new version based on tech.ml.dataset as data input which is going to solve issues with data processing and labels. Also rethinking the way of better management of data dimensions and their representation through trellis/colors/axes etc. It happens very slowly, but happens. Stay tuned.
+
 <p align="center">
   <img src="results/examples/logo.jpg" alt="logo"/>
 </p>
