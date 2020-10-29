@@ -25,8 +25,8 @@ public class Algorithm
         super();
         double min = data[0][0];
         double max = min;
-        int rowCount = data.length;
-        int colCount = data[0].length;
+        final int rowCount = data.length;
+        final int colCount = data[0].length;
         double here;
         for (int i = 0; i < rowCount; i++) {
             for (int j = 0; j < colCount; j++) {
@@ -46,7 +46,7 @@ public class Algorithm
                 
     }
 
-   private static Grid contour(double[][] data, double isovalue) {
+   private static Grid contour(final double[][] data, final double isovalue) {
       final int rowCount = data.length;
       final int colCount = data[0].length;
 
@@ -54,7 +54,7 @@ public class Algorithm
       // so the whole image is represented by a grid of such cells. Note that
       // this contouring grid is one cell smaller in each direction than the
       // original 2D field.
-      Cell[][] cells = new Cell[rowCount - 1][colCount - 1];
+      final Cell[][] cells = new Cell[rowCount - 1][colCount - 1];
       for (int r = 0; r < rowCount - 1; r++) {
          for (int c = 0; c < colCount - 1; c++) {
             // Compose the 4 bits at the corners of the cell to build a binary
@@ -77,7 +77,7 @@ public class Algorithm
                // resolve the ambiguity by using the average data value for the
                // center of the cell to choose between different connections of
                // the interpolated points.
-               double center = (tl + tr + br + bl) / 4.0;
+               final double center = (tl + tr + br + bl) / 4.0;
                if (ndx == 5 && center < isovalue) {
                   flipped = true;
                } else if (ndx == 10 && center < isovalue) {
@@ -177,10 +177,10 @@ public class Algorithm
     * @return the resulting padded matrix which will be larger by 2 in both
     * directions.
     */
-   private static double[][] pad(double[][] data, double guard) {
+   private static double[][] pad(final double[][] data, final double guard) {
       final int rowCount = data.length;
       final int colCount = data[0].length;
-      double[][] result = new double[rowCount + 2][colCount + 2];
+      final double[][] result = new double[rowCount + 2][colCount + 2];
 
       // top and bottom rows
       for (int j = 0; j < colCount + 2; j++) {
@@ -267,7 +267,7 @@ public class Algorithm
          GeneralPath path = null;
          try {
             path = new PathGenerator().generate(contour(data, level));
-         } catch (Exception x) {
+         } catch (final Exception x) {
             final String m = "Failed making contour at index #" + ndx
                   + " for level " + level + ": " + x.getLocalizedMessage();
             System.err.println("Task.call: " + m + ". Rethrow");

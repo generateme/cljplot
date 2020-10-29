@@ -11,7 +11,7 @@ class Cell
    private final float left, top, right, bottom;
 
 
-   Cell(int ndx, boolean flipped, float left, float top, float right, float bottom) {
+   Cell(final int ndx, final boolean flipped, final float left, final float top, final float right, final float bottom) {
       super();
       this.cellNdx = (byte) ndx;
       if (flipped && ndx != 5 && ndx != 10) {
@@ -57,7 +57,7 @@ class Cell
     * @param edge which side crossing is wanted.
     * @return crossing coordinates (already) normalized to [0.0..1.0].
     */
-   float[] getXY(Side edge) {
+   float[] getXY(final Side edge) {
       switch (edge) {
       case BOTTOM: return new float[] { bottom, 0.0F };
       case LEFT: return new float[] { 0.0F, left };

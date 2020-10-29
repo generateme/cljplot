@@ -1,6 +1,10 @@
 (ns cljplot.data
   (:require [tablecloth.api :as api]))
 
+(keys (api/group-by chem97 [:age :sex] {:result-type :as-map}))
+
+
+
 (defn data->dataset
   "Ensure dataset and pack into a map"
   [ds]

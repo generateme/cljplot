@@ -38,7 +38,7 @@ public class PathGenerator
     * areas and holes.
     */
    GeneralPath generate(final Grid grid) {
-      GeneralPath result = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
+      final GeneralPath result = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
       for (int r = 0; r < grid.rowCount; r++) {
          for (int c = 0; c < grid.colCount; c++) {
             // find a start node...
@@ -187,10 +187,10 @@ public class PathGenerator
     * @param c column index of the start Cell.
     * @param path a non-null GeneralPath instance to update.
     */
-   private void update(Grid grid, int r, int c, GeneralPath path) {
+   private void update(final Grid grid, int r, int c, final GeneralPath path) {
       Side prevSide = NONE;
 
-      Cell start = grid.getCellAt(r, c);
+      final Cell start = grid.getCellAt(r, c);
       float[] pt = start.getXY(firstSide(start, prevSide));
       float x = c + pt[0]; // may throw NPE
       float y = r + pt[1]; // likewise

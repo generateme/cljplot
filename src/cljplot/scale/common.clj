@@ -1,5 +1,6 @@
 (ns cljplot.scale.common
-  (:require [fastmath.core :as m])
+  (:require [fastmath.core :as m]
+            [cljplot.scale :as s])
   (:import [clojure.lang IFn]))
 
 (set! *warn-on-reflection* true)
