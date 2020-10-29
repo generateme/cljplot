@@ -13,7 +13,7 @@ A "no web-based" pure JVM Clojure library for 2d charts, inspired by D3, Vega an
 
 ## Current version
 
-`[cljplot "0.0.2-SNAPSHOT"]`
+`[cljplot "0.0.2a-SNAPSHOT"]`
 
 ## NOTE about API
 
