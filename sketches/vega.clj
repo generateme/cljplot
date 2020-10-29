@@ -26,12 +26,12 @@
   (def population (read-json "data/population.json"))
 
   (def population-male-female (->> (filter #(= (:year %) 2000) population)
-                                 (group-by :age)
-                                 (map-kv (fn [v]
-                                           (let [m (group-by :sex v)]
-                                             [(reduce + (map :people (m 2)))
-                                              (reduce + (map :people (m 1)))])))
-                                 (into (sorted-map))))
+                                   (group-by :age)
+                                   (map-kv (fn [v]
+                                             (let [m (group-by :sex v)]
+                                               [(reduce + (map :people (m 2)))
+                                                (reduce + (map :people (m 1)))])))
+                                   (into (sorted-map))))
 
   (def seattle-weather (map (partial parse-line [(partial dt/local-date "yyyy/MM/dd")
                                                  read-string read-string read-string read-string keyword])
@@ -40,10 +40,10 @@
   (def barley (read-json "data/barley.json"))
 
   (def barley-variety-yield (->> barley
-                               (group-by :variety)
-                               (map-kv #(map :yield %))
-                               (sort-by first)
-                               (reverse)))
+                                 (group-by :variety)
+                                 (map-kv #(map :yield %))
+                                 (sort-by first)
+                                 (reverse)))
   
   (def cars (read-json "data/cars.json"))
 
@@ -54,8 +54,8 @@
                       (read-csv "data/disasters.csv")))
 
   (def dt-stocks-fmt (-> (java.time.format.DateTimeFormatterBuilder.)
-                        (.appendPattern "MMM d yyyy")
-                        (.toFormatter (java.util.Locale/ENGLISH))))
+                         (.appendPattern "MMM d yyyy")
+                         (.toFormatter (java.util.Locale/ENGLISH))))
 
   (def stocks (map (partial parse-line [keyword (partial dt/local-date dt-stocks-fmt) read-string])
                    (read-csv "data/stocks.csv")))
@@ -68,12 +68,12 @@
   (def unemployment (read-json "data/unemployment-across-industries.json"))
 
   (def unemployment-area (->> unemployment
-                            (group-by :series)
-                            (map-kv #(map (fn [{:keys [year month count]}]
-                                            [(dt/local-date year month) count]) %))
-                            (sort-by first (comp - compare))))
+                              (group-by :series)
+                              (map-kv #(map (fn [{:keys [year month count]}]
+                                              [(dt/local-date year month) count]) %))
+                              (sort-by first (comp - compare))))
   
-  (def blue (last (:rdylbu-9 c/palette-presets))))
+  (def blue (last (c/palette :rdylbu-9))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; BARS
@@ -194,7 +194,7 @@
                           (selector (reduce (fn [m {:keys [site yield]}] 
                                               (update m (keyword site) + yield)) m v))))
                 (sort-by (comp int first first) >))
-      pal (reverse (take 6 (c/palette-presets :tableau-10-2)))
+      pal (reverse (take 6 (c/palette :tableau-10-2)))
       legend (map #(vector :rect (name %2) {:color %1}) pal varietes)]
   
   (-> (b/series
@@ -334,7 +334,7 @@
 
 (let [countries (sort (distinct (map :Origin cars)))
       markers [\o \s \^]
-      pal (c/palette-presets :tableau-10-2)
+      pal (c/palette :tableau-10-2)
       origins (apply assoc {} (interleave countries markers))
       colors (apply assoc {} (interleave countries pal))
       legend (map #(vector :shape %1 {:color %2 :shape %3 :size 8 :stroke {:size 2}}) countries pal markers)
@@ -433,7 +433,7 @@
 (first disasters)
 ;; => ["All natural disasters" 1900 1267360]
 
-(let [pal (cycle (reverse (c/palette-presets :tableau-10-2)))
+(let [pal (cycle (reverse (c/palette :tableau-10-2)))
       filtered-disasters (filter #(not= "All natural disasters" (first %)) disasters)
       deaths (s/pow 0.5 (stats/extent (map #(nth % 2) filtered-disasters)))
       data (->> filtered-disasters
@@ -456,7 +456,7 @@
 
 (let [countries (sort (distinct (map :Origin cars)))
       markers ["E" "J" "U"]
-      pal (c/palette-presets :tableau-10-2)
+      pal (c/palette :tableau-10-2)
       origins (apply assoc {} (interleave countries markers))
       colors (apply assoc {} (interleave countries pal))
       legend (map #(vector :shape %1 {:color %2 :shape %3 :size 18 :stroke {:size 2}}) countries pal markers)
@@ -503,7 +503,7 @@
                                          (stats/mean (map last v))))
                                (into [])
                                (sort-by first)))))
-      pal (c/palette-presets :tableau-10-2)
+      pal (c/palette :tableau-10-2)
       legend (map #(vector :line (name %2) {:color %1 :shape \O}) pal (keys data))]
   (-> (b/series [:grid])
       (b/add-multi :line data {:stroke {:size 2} :point {:type \O}} {:color pal})
@@ -523,7 +523,7 @@
 (let [data (->> stocks
                 (group-by first)
                 (map-kv (fn [v] (sort-by first (map rest v)))))
-      pal (c/palette-presets :tableau-10-2)
+      pal (c/palette :tableau-10-2)
       legend (map #(vector :line (name %2) {:color %1 :stroke {:size 2}}) pal (keys data))]
   (-> (b/series [:grid])
       (b/add-multi :line data {:stroke {:size 2}} {:color pal})
@@ -541,7 +541,7 @@
 
 (let [data (->> (filter #(= :GOOG (first %)) stocks)
                 (map rest))]
-  (-> (b/series [:grid] [:line data {:stroke {:size 2} :interpolation in/step-before}])
+  (-> (b/series [:grid] [:line data {:stroke {:size 2} :interpolation in/step}])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
@@ -584,7 +584,7 @@
 (let [data (->> stocks
                 (group-by first)
                 (map-kv (fn [v] (sort-by first (map rest v)))))
-      pal (c/palette-presets :tableau-10-2)
+      pal (c/palette :tableau-10-2)
       legend (map #(vector :line (name %2) {:color %1 :stroke {:size 2}}) pal (keys data))]
   (-> (b/series [:grid])
       (b/add-multi :line data {:point {:type \O :size (fn [[_ size] _] (/ size 50.0))}} {:color pal})
@@ -612,7 +612,7 @@
                 (map (fn [[k v]] [k (sort-by first (map (fn [[d co2]] [(co2-date->number d) co2]) v))]))
                 (into (sorted-map)))]
   (-> (b/series [:grid])
-      (b/add-multi :line data {:stroke {:size 2}} {:color (c/resample (inc (count data)) (c/palette-presets :viridis-magma))})
+      (b/add-multi :line data {:stroke {:size 2}} {:color (c/resample (c/palette :viridis-magma) (inc (count data)))})
       (b/preprocess-series)
       (b/update-scale :x :fmt int)
       (b/add-axes :bottom)
@@ -657,7 +657,7 @@
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area.html
 
-(let [pal (cycle (c/palette-presets :category20b))
+(let [pal (cycle (c/palette :category20b))
       legend (reverse (map #(vector :rect %2 {:color %1}) pal (keys unemployment-area)))]
   (-> (b/series [:grid] [:sarea unemployment-area])
       (b/preprocess-series)
@@ -673,7 +673,7 @@
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area_normalize.html
 
-(let [pal (cycle (c/palette-presets :category20b))
+(let [pal (cycle (c/palette :category20b))
       legend (reverse (map #(vector :rect %2 {:color %1}) pal (keys unemployment-area)))]
   (-> (b/series [:grid] [:sarea unemployment-area {:method :normalized}])
       (b/preprocess-series)
@@ -686,7 +686,7 @@
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area_stream.html
 
-(let [pal (cycle (c/palette-presets :category20b))
+(let [pal (cycle (c/palette :category20b))
       legend (reverse (map #(vector :rect %2 {:color %1}) pal (keys unemployment-area)))]
   (-> (b/series [:grid] [:sarea unemployment-area {:method :stream}])
       (b/preprocess-series)
@@ -748,7 +748,7 @@
 ;; https://vega.github.io/vega-lite/examples/rect_binned_heatmap.html
 
 (let [data (map (juxt :IMDB_Rating :Rotten_Tomatoes_Rating) movies)]
-  (-> (b/series [:binned-heatmap data {:grid :square :size 10 :gradient (c/gradient (c/palette-presets :ylgnbu-9))}])
+  (-> (b/series [:binned-heatmap data {:grid :square :size 10 :gradient (c/gradient (c/palette :ylgnbu-9))}])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
@@ -761,7 +761,7 @@
 ;; https://vega.github.io/vega-lite/examples/concat_marginal_histograms.html
 
 (let [data (map (juxt :IMDB_Rating :Rotten_Tomatoes_Rating) movies)]
-  (-> (b/series [:binned-heatmap data {:grid :square :size 20 :gradient (c/gradient (c/palette-presets :ylgnbu-9))}])
+  (-> (b/series [:binned-heatmap data {:grid :square :size 20 :gradient (c/gradient (c/palette :ylgnbu-9))}])
       (b/preprocess-series)
       (b/add-side :right (b/series [:histogram (remove nil? (map second data)) {:bins 10}]))
       (b/add-side :top (b/series [:histogram (remove nil? (map first data)) {:bins 10}]))

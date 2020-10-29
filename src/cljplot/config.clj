@@ -2,8 +2,8 @@
   (:require [clojure2d.color :as c]
             [cljplot.common :refer [deep-merge]]))
 
-(def ^:private blue (last (:rdylbu-9 c/palette-presets)))
-(def ^:private red (first (:rdylbu-9 c/palette-presets)))
+(def ^:private blue (last (c/palette :rdylbu-9)))
+(def ^:private red (first (c/palette :rdylbu-9)))
 (def ^:private dblue (c/darken blue))
 (def ^:private dred (c/darken red))
 
@@ -71,7 +71,7 @@
                                     :font-size 12
                                     :font-style :bold
                                     :margin 8}
-                            :density-2d {:palette (c/palette-presets :gnbu-9)
+                            :density-2d {:palette (c/palette :gnbu-9)
                                          :kernel :gaussian
                                          :kernel-params nil
                                          :logarithmic? true
@@ -84,8 +84,8 @@
                             :binned-heatmap {:grid :pointy-hex
                                              :alpha-factor 0.0
                                              :size 20
-                                             :gradient (comp (c/gradient-presets :k2) #(- 1.0 %))}
-                            :heatmap {:gradient (comp (c/gradient-presets :k2) #(- 1.0 %))
+                                             :gradient (comp (c/gradient (c/palette :k2)) #(- 1.0 %))}
+                            :heatmap {:gradient (comp (c/gradient (c/palette :k2)) #(- 1.0 %))
                                       :annotate? false
                                       :annotate-fmt str}
                             :complex {:colorspace :HSB
@@ -109,7 +109,7 @@
                                     :generator :r2
                                     :jitter 0.1}
                             :histogram {:color blue
-                                        :palette (cycle (c/palette-presets :category20))
+                                        :palette (cycle (c/palette :category20))
                                         :stroke stroke-common
                                         :percents? true
                                         :stroke? true
@@ -184,7 +184,7 @@
                                    :smooth? false
                                    :margins {:x [0.05 0.05] :y [0.05 0.05]}
                                    :point {:type nil :size 6}}
-                            :sarea {:palette (cycle (c/palette-presets :category20b))}
+                            :sarea {:palette (cycle (c/palette :category20b))}
                             :function {:domain [0 1]
                                        :samples nil
                                        :color blue
@@ -208,7 +208,7 @@
                                   :padding-in 0.1
                                   :padding-out 0.2
                                   :margin 0.0
-                                  :palette (c/palette-presets :category20)}
+                                  :palette (c/palette :category20)}
                             :rbar {:color blue
                                    :stroke? true
                                    :stroke {:size 1.0}
@@ -218,7 +218,7 @@
                                    :padding 0.1
                                    :margin 0.0
                                    :method :stacked
-                                   :palette (c/palette-presets :category20)}
+                                   :palette (c/palette :category20)}
                             :stack {:padding-in 0.0
                                     :padding-out 0.0}})))
 

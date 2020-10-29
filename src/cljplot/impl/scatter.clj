@@ -3,7 +3,7 @@
             [cljplot.common :refer :all]
             [cljplot.scale :as s]
             [fastmath.random :as r]
-            ;; [fastmath.protocols :as pr]
+            [fastmath.protocols :as pr]
             [fastmath.core :as m]
             [clojure2d.pixels :as p]
             [clojure2d.color :as c])
@@ -42,9 +42,9 @@
 ;;
 
 (defmethod prepare-data :qqplot [_ [d1 d2] {:keys [points] :or {points 100}}]
-  (let [d1 (if (satisfies? r/DistributionProto d1) d1
+  (let [d1 (if (satisfies? pr/DistributionProto d1) d1
                (r/distribution :empirical {:data (extract-first d1)}))
-        d2 (if (satisfies? r/DistributionProto d2) d2
+        d2 (if (satisfies? pr/DistributionProto d2) d2
                (r/distribution :empirical {:data (extract-first d2)}))]
     (map #(let [v (m/norm % 0 points)]
             (vector (r/icdf d1 v) (r/icdf d2 v))) (range 1 points))))
@@ -56,9 +56,9 @@
 
 (defmethod prepare-data :ppplot [_ [d1 d2] {:keys [^int points domain] :or {points 100}}]
   (let [[dx dy] (or domain [-1.0 1.0])
-        d1 (if (satisfies? r/DistributionProto d1) d1
+        d1 (if (satisfies? pr/DistributionProto d1) d1
                (r/distribution :enumerated-real {:data (sort (extract-first d1))}))
-        d2 (if (satisfies? r/DistributionProto d2) d2
+        d2 (if (satisfies? pr/DistributionProto d2) d2
                (r/distribution :enumerated-real {:data (sort (extract-first d2))}))]
     (map #(let [v (m/norm % 0 points dx dy)]
             (vector (r/cdf d1 v) (r/cdf d2 v))) (range 0 (inc points)))))
@@ -70,7 +70,7 @@
 (defonce ^:private bw-gradient (c/gradient [:black :white]))
 
 (defmethod render-graph :density-2d [_ data {:keys [palette kernel kernel-params logarithmic? ^double blur-kernel-size ^int contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
-  (let [palette (c/resample contours palette)
+  (let [palette (c/resample palette contours)
         scale-x (:scale x)
         scale-y (:scale y)
         g (if kernel
@@ -80,7 +80,7 @@
             (p/gradient-renderer w h))]
 
     (doseq [[x y] data]
-      (p/add-pixel g (* w ^double (scale-x x)) (* h ^double (scale-y y))))
+      (p/add-pixel! g (* w ^double (scale-x x)) (* h ^double (scale-y y))))
 
     (let [g (->> (p/to-pixels g {:logarithmic? logarithmic? :gradient bw-gradient})
                  (map c/luma)

@@ -74,7 +74,7 @@
 
 ;;
 
-(defmethod prepare-data :box [_ data _] (stats-map (extract-first data)))
+(defmethod prepare-data :box [_ data _] (stats/stats-map (extract-first data)))
 
 (defmethod data-extent :box [_ data _]
   {:x [:numerical [(:Min data) (:Max data)]]})
@@ -106,7 +106,7 @@
 
 (defmethod prepare-data :violin [_ data {:keys [kernel-bandwidth samples margins kernel-type] :as conf}]
   (let [dens-data (extract-first data)
-        stats (stats-map dens-data)
+        stats (stats/stats-map dens-data)
         [mn mx] (extend-domain-numerical [(:Min stats) (:Max stats)] (or (:x margins) [0.0 0.0]))
         density (m/sample (if kernel-bandwidth
                             (k/kernel-density kernel-type dens-data kernel-bandwidth)

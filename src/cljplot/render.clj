@@ -2,7 +2,8 @@
   (:require [cljplot.scale :as s]
             [cljplot.common :refer :all]
             [cljplot.axis :as ax]
-            [clojure2d.core :refer :all] 
+            [clojure2d.core :refer :all]
+            [clojure2d.protocols :as p]
             [fastmath.core :as m]
             [fastmath.vector :as v]))
 
@@ -136,7 +137,7 @@
          hh (- height tt b border)]
      (with-canvas [c (canvas width height)]
        
-       (if (satisfies? ImageProto background)
+       (if (satisfies? p/ImageProto background)
          (image c background)
          (set-background c background))
 

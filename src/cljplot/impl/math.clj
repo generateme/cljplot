@@ -121,7 +121,7 @@
 (defmethod data-extent :contour-2d [_ d c] (data-extent :complex d c))
 
 (defmethod render-graph :contour-2d [_ f {:keys [palette ^int contours fill?]} {:keys [^int w ^int h x y] :as chart-data}]
-  (let [palette (c/resample (inc contours) palette)
+  (let [palette (c/resample palette (inc contours))
         iscale-x (:inverse (:scale x))
         iscale-y (:inverse (:scale y))
         dw (double w)

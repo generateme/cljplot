@@ -71,8 +71,8 @@
   
   (def hnanes (read-json "data/nhanes.json"))
   
-  (def blue (c/set-alpha (last (:rdylbu-9 c/palette-presets)) 200))
-  (def lblue (c/set-alpha (nth (:rdylbu-9 c/palette-presets) 7) 200)))
+  (def blue (c/set-alpha (last (c/palette :rdylbu-9)) 200))
+  (def lblue (c/set-alpha (nth (c/palette :rdylbu-9) 7) 200)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -113,7 +113,7 @@
 ;; figure 1.3
 
 (-> (b/series [:grid])
-    (b/add-multi :density score-gcsescore {:stroke {:size 2}} {:color (c/palette-presets :category10)
+    (b/add-multi :density score-gcsescore {:stroke {:size 2}} {:color (c/palette :category10)
                                                                :stroke (map #(hash-map :size 2 :dash %) line-dash-styles)})
     (b/preprocess-series)
     (b/add-axes :bottom)
@@ -468,7 +468,7 @@
                 (group-by :gender)
                 (map-kv #(sort-by first (map-kv (fn [v] (filter pos? (map :gcsescore  v))) (group-by :score %)))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
-  (-> (mapcat (fn [[k col]] (b/lattice :cdf (data k) {:color col})) (map vector (keys data) (c/palette-presets :category10)))
+  (-> (mapcat (fn [[k col]] (b/lattice :cdf (data k) {:color col})) (map vector (keys data) (c/palette :category10)))
       (b/add-series labels)
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -488,7 +488,7 @@
                 (group-by :gender)
                 (map-kv #(sort-by first (map-kv (fn [v] [uniform (filter pos? (map :gcsescore v))]) (group-by :score %)))))
       labels (b/lattice :empty (second (first data)) {} {:label str :shape [1 6]})]
-  (-> (mapcat (fn [[k col]] (b/lattice :qqplot (data k) {:size 2 :color col} {:shape [1 6]})) (map vector (keys data) (c/palette-presets :category10)))
+  (-> (mapcat (fn [[k col]] (b/lattice :qqplot (data k) {:size 2 :color col} {:shape [1 6]})) (map vector (keys data) (c/palette :category10)))
       (b/add-series labels)
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -660,7 +660,7 @@
                 (map-kv (fn [g] (map-indexed #(vector (:freq %2) %1) (sort-by :age g)))))]
   (-> (b/series [:grid])
       (b/add-multi :line data {:stroke {:size 2}} {[:stroke :dash] line-dash-styles
-                                                   :color (c/palette-presets :category10)
+                                                   :color (c/palette :category10)
                                                    [:point :type] [\o \^ \v \s]})
       (b/preprocess-series)
       (b/update-scale :y :fmt (comp ys int))
@@ -700,7 +700,7 @@
                           (selector (reduce (fn [m {:keys [Reason Freq]}] 
                                               (update m Reason + Freq)) m v))))
                 (sort-by (comp int first first) >))
-      pal (reverse (take 6 (c/palette-presets :tableau-10-2)))
+      pal (reverse (take 6 (c/palette :tableau-10-2)))
       legend (map #(vector :rect (name %2) {:color %1}) pal varietes)]
   
   (-> (b/series

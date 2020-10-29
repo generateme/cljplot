@@ -17,8 +17,8 @@
             [fastmath.fields :as f]
             [fastmath.vector :as v]
             [fastmath.optimization :as opt]
+            [fastmath.gp :as gp]
             [fastmath.distance :as dist]
-            [fastmath.regression :as reg]
             [fastmath.kernel :as k]))
 
 ;; logo
@@ -32,8 +32,8 @@
                          (c2d/set-font-attributes 60)
                          (c2d/text "cljplot" 20 70))))
 
-(let [gradient (c/gradient-presets :two-heads-filonov)
-      side-conf {:color (nth (iterate c/brighten (gradient 0.1)) 3) :area? true :margins {:x [0.02 0.02]}}
+(let [gradient (c/gradient (c/palette :two-heads-filonov))
+      side-conf {:color (c/set-alpha (gradient 0.3) 200) :area? true :margins {:x [0.02 0.02]}}
       pairs (->> (repeatedly #(v/vec2 (rnd/irand 200) (rnd/irand 100)))
                  (filter #(pos? (c/luma (apply p/get-color logo %))))
                  (map #(v/add % (v/generate-vec2 rnd/grand)))
@@ -55,8 +55,8 @@
 
 ;; single line charts
 
-(let [blue (last (:rdylbu-9 c/palette-presets))
-      red (first (:rdylbu-9 c/palette-presets))
+(let [blue (last (c/palette :rdylbu-9))
+      red (first (c/palette :rdylbu-9))
       data (repeatedly 2000 (fn [] (rnd/randval (rnd/grand) (rnd/randval 0.3 (rnd/grand -10 2) (rnd/grand 10 2)))))
       g [:grid nil {:y nil}]]
   (-> (b/series [:grid] [:violin data])
@@ -93,7 +93,7 @@
 ;;
 
 (let [data (repeatedly 600000 #(vector (rnd/grand) (rnd/grand)))]
-  (-> (b/series [:cloud data {:kernel :gaussian :logarithmic? false :gradient (c/gradient-presets :tornyai)}]
+  (-> (b/series [:cloud data {:kernel :gaussian :logarithmic? false :gradient (c/gradient (c/palette :tornyai))}]
                 [:grid])
       (b/preprocess-series)
       (b/add-axes :bottom)
@@ -104,7 +104,7 @@
 
 (let [data (repeatedly 10000 #(rnd/randval [(rnd/grand) (rnd/grand)]
                                            [(rnd/grand -10 1) (rnd/grand -10 1)]))]
-  (-> (b/series [:grid] [:binned-heatmap data {:grid :flat-hex :alpha-factor 0 :size 20 :gradient (c/gradient-presets :prl-2)}])
+  (-> (b/series [:grid] [:binned-heatmap data {:grid :flat-hex :alpha-factor 0 :size 20 :gradient (c/gradient (c/palette :prl-2))}])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
@@ -306,7 +306,7 @@
   (-> (xy-chart {:width 600 :height 600}
                 (-> (b/series [:grid] )
                     (b/add-multi :function kdes
-                                 {:points 600 :domain [1.0 6.0] :stroke {:size 1.5}} {:color (cycle (map #(c/set-alpha % 200) (c/palette-presets :category10)))}))
+                                 {:points 600 :domain [1.0 6.0] :stroke {:size 1.5}} {:color (cycle (map #(c/set-alpha % 200) (c/palette :category10)))}))
                 (b/add-axes :bottom)
                 (b/add-axes :left)
                 (b/add-label :bottom "Various kernel densities"))
@@ -322,11 +322,11 @@
             n 10
             xs (repeatedly n #(rnd/drand -5 5))
             ys (map sinf xs)
-            gp (reg/gaussian-process+ {:normalize? true :kernel
-                                       (k/kernel :gaussian 0.8)
-                                       :noise 0.0005} xs ys)
+            gp (gp/gaussian-process xs ys {:normalize? true :kernel
+                                           (k/kernel :gaussian 0.8)
+                                           :noise 0.0005})
             xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-            pairs (reg/predict-all gp xtest true)
+            pairs (gp/predict-all gp xtest true)
             mu (map first pairs)
             stddev (map second pairs)
             s95 (map (partial * 1.96) stddev)
@@ -349,8 +349,8 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gp (reg/gaussian-process+ {:kernel (k/kernel :gaussian 0.8) :noise 0.0001} xs ys)
-      pairs (reg/posterior-samples gp xtest true)
+      gp (gp/gaussian-process xs ys {:kernel (k/kernel :gaussian 0.8) :noise 0.0001})
+      pairs (gp/posterior-samples gp xtest true)
       mu (map first pairs)
       stddev (map second pairs)
       s95 (map #(* 1.96 %) stddev)]
@@ -370,8 +370,8 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gps (repeatedly posterior-cnt #(reg/gaussian-process+ {:kernel (k/kernel :periodic 0.5 8.0) :noise 0.0001} xs ys))
-      pairs (map #(reg/posterior-samples % xtest true) gps)
+      gps (repeatedly posterior-cnt #(gp/gaussian-process xs ys {:kernel (k/kernel :periodic 0.5 8.0) :noise 0.0001}))
+      pairs (map #(gp/posterior-samples % xtest true) gps)
       lines (map #(vector :line (map vector xtest (map first %)) {:color (c/color :black 100)}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
                 (-> (b/series [:grid])
@@ -389,8 +389,8 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gps (repeatedly prior-cnt #(reg/gaussian-process+ {:kernel (k/kernel :gaussian) :noise 0.0000001} xs ys))
-      pairs (map #(reg/prior-samples % xtest) gps)
+      gps (repeatedly prior-cnt #(gp/gaussian-process xs ys {:kernel (k/kernel :gaussian) :noise 0.0000001}))
+      pairs (map #(gp/prior-samples % xtest) gps)
       lines (map #(vector :line (map vector xtest %) {:color (c/color :black 100)}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
                 (-> (b/series [:grid])
@@ -450,7 +450,7 @@
       wind-map (s/linear [min-wind max-wind]) ;; create linear scale for wind (just lerp)
       grad (comp #(c/set-alpha % 200)
                  c/darken
-                 (c/gradient (:gnbu-9 c/palette-presets))
+                 (c/gradient (c/palette :gnbu-9))
                  wind-map)] ;; create gradient from green-blue palette, darkened
   (-> (xy-chart {:width 600 :height 600}
                 (b/series
@@ -484,7 +484,7 @@
                  y (range 15)]
              [[x y] (rnd/drand x y)])]
   (-> (xy-chart {:width 600 :height 600}
-                (b/series [:heatmap data {:gradient (c/gradient-presets :yellow-red)
+                (b/series [:heatmap data {:gradient (c/gradient :yellow-red)
                                           :annotate? true
                                           :annotate-fmt "%.1f"}])
                 (b/add-axes :bottom)
