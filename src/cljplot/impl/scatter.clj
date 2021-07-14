@@ -91,16 +91,16 @@
         (Blur/gaussianBlur g target w h (if (< blur-kernel-size 1.0) (* 0.1 blur-kernel-size (max w h)) blur-kernel-size)))
 
       (let [^Algorithm algo (Algorithm. (m/seq->double-double-array (partition (int w) target)))            
-            steps (rest (s/splice-range (inc contours) (.-min algo) (.-max algo)))]
+            steps (rest (m/slice-range (inc contours) (.-min algo) (.-max algo)))]
         (do-graph chart-data true
-                  (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
-                          :let [col (nth palette id)]]
-                    (if fill?
-                      (do
-                        (set-color c col)
-                        (.fill ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)
-                        (set-color c (c/darken col))
-                        (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p))
-                      (do
-                        (set-color c :black 200)
-                        (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)))))))))
+          (doseq [[id p] (map-indexed vector (.buildContours algo (double-array steps)))
+                  :let [col (nth palette id)]]
+            (if fill?
+              (do
+                (set-color c col)
+                (.fill ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)
+                (set-color c (c/darken col))
+                (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p))
+              (do
+                (set-color c :black 200)
+                (.draw ^java.awt.Graphics2D (.graphics ^clojure2d.core.Canvas c) p)))))))))

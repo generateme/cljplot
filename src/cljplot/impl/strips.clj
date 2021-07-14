@@ -7,6 +7,7 @@
             [fastmath.kernel :as k]
             [cljplot.scale :as s]
             [clojure2d.color :as c]
+            [cljplot.scale.bands :refer [bands]]
             [fastmath.core :as m]))
 
 (set! *warn-on-reflection* true)
@@ -215,27 +216,27 @@
 (defmethod render-graph :bar [_ data {:keys [palette color stroke stroke? padding-in padding-out] :as conf}
                               {:keys [w ^int h x] :as chart-data}]
   (let [cnt (count data)
-        bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
+        bands (bands cnt {:padding-out padding-out :padding-in padding-in})
         scale-x (partial (:scale x) 0 w)
         ^double zero (scale-x 0)
         pal (if (seq palette) (cycle palette) (repeat color))
         col? (and color (= cnt 1))]
     (do-graph chart-data false
-      (set-stroke-custom c stroke)
-      (doseq [[^long id ^double v] (map-indexed vector data)
-              :let [{:keys [^double start ^double end]} (bands (- cnt id 1))
-                    st (* start h)
-                    hh (* (- end start) h) 
-                    col (if col? (color v conf) (nth pal id))
-                    ^double sv (scale-x v)
-                    [x w] (if (neg? v) [sv (- zero sv)] [zero (- sv zero)])]]
-        (if stroke?
-          (-> c
-              (set-stroke-custom stroke)
-              (filled-with-stroke col (c/darken col) rect x st w hh))
-          (-> c
-              (set-color col) 
-              (rect x st w hh)))))))
+              (set-stroke-custom c stroke)
+              (doseq [[^long id ^double v] (map-indexed vector data)
+                      :let [{:keys [^double start ^double end]} (bands (- cnt id 1))
+                            st (* start h)
+                            hh (* (- end start) h) 
+                            col (if col? (color v conf) (nth pal id))
+                            ^double sv (scale-x v)
+                            [x w] (if (neg? v) [sv (- zero sv)] [zero (- sv zero)])]]
+                (if stroke?
+                  (-> c
+                      (set-stroke-custom stroke)
+                      (filled-with-stroke col (c/darken col) rect x st w hh))
+                  (-> c
+                      (set-color col) 
+                      (rect x st w hh)))))))
 
 (defmethod prepare-data :lollipop [_ data conf] (prepare-data :bar data conf))
 (defmethod data-extent :lollipop [_ data conf] (data-extent :bar data conf))
@@ -243,23 +244,23 @@
                                            :or {size 0.3} :as conf}
                                    {:keys [^int w ^int h x] :as chart-data}]
   (let [cnt (count data)
-        bands (s/bands {:padding-out padding-out :padding-in padding-in} cnt)
+        bands (bands cnt {:padding-out padding-out :padding-in padding-in})
         scale-x (partial (:scale x) 0 w)
         ^double zero (scale-x 0)
         pal (if (seq palette) (cycle palette) (repeat color))
         col? (and color (= cnt 1))]
     (do-graph chart-data false
-      (doseq [[^long id ^double v] (map-indexed vector data)
-              :let [{:keys [^double start ^double end ^double point]} (bands (- cnt id 1))
-                    hh (* point h)
-                    col (if col? (color v conf) (nth pal id))
-                    ^double sv (scale-x v)
-                    size (* h size (- end start))
-                    [x w] (if (neg? v) [sv (- zero sv)] [zero (- sv zero)])]]
-        (-> (set-color c col)
-            (set-stroke-custom stroke)
-            (line x hh w hh)
-            (ellipse w hh size size))))))
+              (doseq [[^long id ^double v] (map-indexed vector data)
+                      :let [{:keys [^double start ^double end ^double point]} (bands (- cnt id 1))
+                            hh (* point h)
+                            col (if col? (color v conf) (nth pal id))
+                            ^double sv (scale-x v)
+                            size (* h size (- end start))
+                            [x w] (if (neg? v) [sv (- zero sv)] [zero (- sv zero)])]]
+                (-> (set-color c col)
+                    (set-stroke-custom stroke)
+                    (line x hh w hh)
+                    (ellipse w hh size size))))))
 
 
 
@@ -269,7 +270,7 @@
 
 (defmethod render-graph :rbar [_ data {:keys [color stroke stroke? padding] :as conf}
                                {:keys [w ^int h x] :as chart-data}]
-  (let [{:keys [^double start ^double end]} ((s/bands {:padding-out padding} 1) 0)
+  (let [{:keys [^double start ^double end]} ((bands 1 {:padding-out padding}) 0)
         st (* start h)
         hh (* (- end start) h)
         scale-x (partial (:scale x) 0 w)]
@@ -304,7 +305,7 @@
 
 (defmethod render-graph :sbar [_ {:keys [sum data]} {:keys [method palette stroke stroke? padding] :as conf}
                                {:keys [w ^int h x] :as chart-data}]
-  (let [{:keys [^double start ^double end]} ((s/bands {:padding-out padding} 1) 0)
+  (let [{:keys [^double start ^double end]} ((bands 1 {:padding-out padding}) 0)
         scale-x (partial (:scale x) 0 w)
         zero (scale-x 0)
         pal (cycle palette)

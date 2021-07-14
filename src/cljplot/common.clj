@@ -9,6 +9,7 @@
             [clojure.data.json :as json]
             [clojure.java.io :as io]
             [java-time :as dt]
+            [cljplot.scale.time :refer [time-scale]]
             [cljplot.scale :as s]))
 
 (set! *warn-on-reflection* true)
@@ -64,7 +65,7 @@
   "Wrap interpolator to work with date/time values."
   [interpolator domain x y]
   (if (date-time? (first x)) 
-    (let [scale (s/time-interval domain)
+    (let [scale (time-scale domain)
           interp (interpolator (mapv scale x) y)]
       (fn [v]
         (interp (scale v))))

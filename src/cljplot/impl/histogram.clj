@@ -4,6 +4,7 @@
             [fastmath.core :as m]
             [fastmath.stats :as stats]
             [clojure2d.core :refer :all]
+            [cljplot.scale.bands :refer [bands]]
             [clojure2d.color :as c]))
 
 (set! *warn-on-reflection* true)
@@ -85,7 +86,7 @@
 (defn- draw-series
   [canvas data {:keys [palette stroke stroke? type padding-in padding-out ^double zero]
                 :or {type :bars}}]
-  (let [bands (s/bands {:padding-out padding-out :padding-in padding-in} (count data))
+  (let [bands (bands (count data) {:padding-out padding-out :padding-in padding-in})
         zero (+ zero 3)]
     (doseq [[idx d] (map-indexed vector data)]
       (let [{:keys [^double start ^double end ^double point]} (bands idx)
