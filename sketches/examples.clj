@@ -26,11 +26,11 @@
 (rnd/set-seed! rnd/default-rng 2)
 
 (def logo (p/to-pixels (c2d/with-oriented-canvas-> :bottom-left+ (c2d/canvas 200 100)
-                         (c2d/set-font "Raleway Thin")
-                         (c2d/set-background :black)
-                         (c2d/set-color :white)
-                         (c2d/set-font-attributes 60)
-                         (c2d/text "cljplot" 20 70))))
+                       (c2d/set-font "Raleway Thin")
+                       (c2d/set-background :black)
+                       (c2d/set-color :white)
+                       (c2d/set-font-attributes 60)
+                       (c2d/text "cljplot" 20 70))))
 
 (let [gradient (c/gradient (c/palette :two-heads-filonov))
       side-conf {:color (c/set-alpha (gradient 0.3) 200) :area? true :margins {:x [0.02 0.02]}}
@@ -501,7 +501,7 @@
 
 (let [fk (fn [f] #(f [0] [%]))
       make-data #(map (fn [k] [(str k)
-                              (fk (k/kernel k %))]) kernels)
+                               (fk (k/kernel k %))]) kernels)
       cfg {:domain [-3 3] :samples 200 :stroke {:size 2}}]
   (-> (xy-chart {:width 700 :height 500}
                 (-> (b/lattice :function (make-data 1) cfg {:label name :grid true})
@@ -515,8 +515,8 @@
 (let [fk (fn [f] #(f [0] [%]))
       r (range -1 1 0.025)
       data (map (fn [k] [(str k)
-                        (let [kernel (k/kernel k)]
-                          (for [x r y r] [[x y] (kernel [x] [y])]))]) kernels)]
+                         (let [kernel (k/kernel k)]
+                           (for [x r y r] [[x y] (kernel [x] [y])]))]) kernels)]
   (-> (xy-chart {:width 700 :height 500}
                 (-> (b/lattice :heatmap data {} {:label name :grid true}))
                 (b/add-label :top "Covariance matrices"))
@@ -564,3 +564,51 @@
 
 ;;=> (:round :butt :square) cap
 ;;=> (:bevel :miter :round) join
+
+(def boundary-left -200.0)
+(def boundary-right 200.0)
+(def width (- boundary-right boundary-left))
+
+(defn correct-path
+  [path]
+  (first (reduce (fn [[new-path shift-x shift-y] [[curr-x curr-y] [next-x next-y]]]
+                   (let [s-curr-x (+ shift-x curr-x)
+                         s-curr-y (+ shift-y curr-y)
+                         s-next-x (+ shift-x next-x)
+                         s-next-y (+ shift-y next-y)
+                         new-shift-x (cond
+                                       (< s-next-x boundary-left) (+ shift-x width)
+                                       (> s-next-x boundary-right) (- shift-x width)
+                                       :else shift-x)
+                         new-shift-y (cond
+                                       (< s-next-y boundary-left) (+ shift-y width)
+                                       (> s-next-y boundary-right) (- shift-y width)
+                                       :else shift-y)]
+                     [(if (and (== new-shift-x shift-x)
+                               (== new-shift-y shift-y))
+                        (conj new-path [s-curr-x s-curr-y])
+                        (conj new-path
+                              [s-curr-x s-curr-y] [s-next-x s-next-y]
+                              [##NaN ##NaN] ;; new chunk separator
+                              [(+ curr-x new-shift-x) (+ curr-y new-shift-y)]))
+                      new-shift-x
+                      new-shift-y]))
+                 [[] 0.0 0.0] (partition 2 1 path))))
+
+(defn walk-step
+  [[x y]]
+  [(+ x 2.0 (rnd/grand 2.0))
+   (+ y 0.5 (rnd/grand 2.0))])
+
+(def some-walk (iterate walk-step [0.0 0.0]))
+
+(-> (b/series [:grid] [:line (correct-path (take 3000 some-walk))
+                       {:color [0 50 255 150] :margins nil}])
+    (b/preprocess-series)
+    (b/update-scale :x :domain [-200 200])
+    (b/update-scale :y :domain [-200 200])
+    (b/add-axes :bottom)
+    (b/add-axes :left)
+    (r/render-lattice {:width 800 :height 800})
+    (save "results/examples/random-walk-wrapped.jpg")
+    (show))
