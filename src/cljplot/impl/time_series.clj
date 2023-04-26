@@ -1,6 +1,6 @@
 (ns cljplot.impl.time-series
-  (:require [clojure2d.core :refer :all]
-            [cljplot.common :refer :all]
+  (:require [clojure2d.core :as c2d]
+            [cljplot.common :as common]
             [fastmath.stats :as stats]
             [fastmath.core :as m]
             [fastmath.random :as rnd]))
@@ -10,8 +10,8 @@
 (m/use-primitive-operators)
 
 
-(defmethod prepare-data :lag [_ data {:keys [lag]}] (map vector data (drop (or lag 1) data)))
-(defmethod render-graph :lag [_ data conf chart-data] (render-graph :scatter data conf chart-data))
+(defmethod common/prepare-data :lag [_ data {:keys [lag]}] (map vector data (drop (or lag 1) data)))
+(defmethod common/render-graph :lag [_ data conf chart-data] (common/render-graph :scatter data conf chart-data))
 
 (defn- ensure-vec
   [data]
@@ -33,8 +33,8 @@
   [data ^long lags]
   (let [acf (acf data lags)
         phis (reductions (fn [curr ^long id]
-                           (let [phi (/ (- ^double (acf id) ^double (reduce fast+ (map-indexed #(* ^double (acf (dec (- id ^int %1))) ^double %2) curr)))
-                                        (- 1.0 ^double (reduce fast+ (map-indexed #(* ^double (acf (inc ^int %1)) ^double %2) curr))))]
+                           (let [phi (/ (- ^double (acf id) ^double (reduce m/fast+ (map-indexed #(* ^double (acf (dec (- id ^int %1))) ^double %2) curr)))
+                                        (- 1.0 ^double (reduce m/fast+ (map-indexed #(* ^double (acf (inc ^int %1)) ^double %2) curr))))]
                              (conj (mapv #(- ^double %1 (* phi ^double %2)) curr (reverse curr)) phi))) [(acf 1)] (range 2 (inc lags)))]
     (vec (conj (map last phis) 0.0))))
 
@@ -85,47 +85,47 @@
 #_ (mapv second (first (p-acf-data :pacf ma2 5)))
 
 
-(defmethod prepare-data :acf [_ data {:keys [lags]}] (p-acf-data :acf data lags))
+(defmethod common/prepare-data :acf [_ data {:keys [lags]}] (p-acf-data :acf data lags))
 
-(defmethod data-extent :acf [_ data _]
-  (let [e (common-extent (first data))
+(defmethod common/data-extent :acf [_ data _]
+  (let [e (common/common-extent (first data))
         [_ [^double mn mx]] (:y e)]
     (assoc-in e [:y 1] [(min 0.0 mn) mx])))
 
 ;; pars: ci 0.95, color :red
-(defmethod render-graph :acf [_ [data ^double rsqrt ^double ci0 cis] conf {:keys [^int w ^int h x y] :as chart-data}]
+(defmethod common/render-graph :acf [_ [data ^double _rsqrt ^double ci0 cis] _conf {:keys [^int w ^int h x y] :as chart-data}]
   (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
         zero (scale-y 0.0)
         w- (dec w)
         ^double ci- (scale-y (- ci0))
         ^double ci (scale-y ci0)]
-    (do-graph (assoc chart-data :oversize 0) false
+    (common/do-graph (assoc chart-data :oversize 0) false
 
-      (set-color c :grey 80)
+      (c2d/set-color c :grey 80)
 
       (if cis
         (let [p1 (map-indexed #(vector (scale-x %1) (scale-y %2)) cis)
               p2 (reverse (map-indexed #(vector (scale-x %1) (scale-y (- ^double %2))) cis))] 
-          (path c (concat p2 p1) true false))
+          (c2d/path c (concat p2 p1) true false))
         
-        (rect c 0 ci- w (- ci ci-)))
+        (c2d/rect c 0 ci- w (- ci ci-)))
       
       (-> c
-          (set-color :black)
-          (line 0 zero w- zero)) 
+          (c2d/set-color :black)
+          (c2d/line 0 zero w- zero)) 
       (doseq [[id [x y]] (map-indexed vector data)
               :let [xx (scale-x x)
                     yy (scale-y y)]]
-        (set-color c :black)
-        (line c xx zero xx yy)
+        (c2d/set-color c :black)
+        (c2d/line c xx zero xx yy)
         (when (or (and (not cis) (> (m/abs y) ci0))
                   (and cis (> (m/abs y) ^double (cis id))))
-          (set-color c :red))
-        (ellipse c xx yy 4 4)))))
+          (c2d/set-color c :red))
+        (c2d/ellipse c xx yy 4 4)))))
 
 ;; pacf
 
-(defmethod prepare-data :pacf [_ data {:keys [lags]}] (p-acf-data :pacf data lags))
-(defmethod data-extent :pacf [_ data conf] (data-extent :acf data conf))
-(defmethod render-graph :pacf [_ data conf chart-data] (render-graph :acf data conf chart-data))
+(defmethod common/prepare-data :pacf [_ data {:keys [lags]}] (p-acf-data :pacf data lags))
+(defmethod common/data-extent :pacf [_ data conf] (common/data-extent :acf data conf))
+(defmethod common/render-graph :pacf [_ data conf chart-data] (common/render-graph :acf data conf chart-data))

@@ -1,18 +1,17 @@
 (ns cljplot.core
   (:require [clojure2d.core :refer [next-filename]]
-            [cljplot.common :refer :all]
             [clojure2d.extra.utils :as utils]
-            [cljplot.impl.histogram :refer :all]
+            [cljplot.impl.histogram]
             [cljplot.build :as b]
             [cljplot.render :as r]
-            [cljplot.impl.strips :refer :all]
-            [cljplot.impl.scatter :refer :all]
-            [cljplot.impl.line :refer :all]
-            [cljplot.impl.heatmap :refer :all]
-            [cljplot.impl.label :refer :all]
-            [cljplot.impl.math :refer :all]
-            [cljplot.impl.free :refer :all]
-            [cljplot.impl.time-series :refer :all]))
+            [cljplot.impl.strips]
+            [cljplot.impl.scatter]
+            [cljplot.impl.line]
+            [cljplot.impl.heatmap]
+            [cljplot.impl.label]
+            [cljplot.impl.math]
+            [cljplot.impl.free]
+            [cljplot.impl.time-series]))
 
 (defn save
   "Save `chart`."

@@ -1,13 +1,13 @@
 (ns cljplot.sketches.vega
   (:require [cljplot.render :as r]
             [cljplot.build :as b]
-            [cljplot.common :refer :all]
+            [cljplot.common :as common]
             [fastmath.interpolation :as in]
             [fastmath.stats :as stats]
             [clojure2d.color :as c]
             [cljplot.scale :as s]
             [fastmath.core :as m]
-            [cljplot.core :refer :all]
+            [cljplot.core :refer [save show]]
             [java-time :as dt]
             [fastmath.random :as rnd]))
 
@@ -22,56 +22,56 @@
 ;; load all data
 
 (do
-  (def movies (read-json "data/movies.json"))
-  (def population (read-json "data/population.json"))
+  (def movies (common/read-json "data/movies.json"))
+  (def population (common/read-json "data/population.json"))
 
   (def population-male-female (->> (filter #(= (:year %) 2000) population)
-                                   (group-by :age)
-                                   (map-kv (fn [v]
-                                             (let [m (group-by :sex v)]
-                                               [(reduce + (map :people (m 2)))
-                                                (reduce + (map :people (m 1)))])))
-                                   (into (sorted-map))))
+                                 (group-by :age)
+                                 (common/map-kv (fn [v]
+                                                  (let [m (group-by :sex v)]
+                                                    [(reduce + (map :people (m 2)))
+                                                     (reduce + (map :people (m 1)))])))
+                                 (into (sorted-map))))
 
   (def seattle-weather (map (partial parse-line [(partial dt/local-date "yyyy/MM/dd")
-                                                 read-string read-string read-string read-string keyword])
-                            (read-csv "data/seattle-weather.csv")))
+                                               read-string read-string read-string read-string keyword])
+                          (common/read-csv "data/seattle-weather.csv")))
 
-  (def barley (read-json "data/barley.json"))
+  (def barley (common/read-json "data/barley.json"))
 
   (def barley-variety-yield (->> barley
-                                 (group-by :variety)
-                                 (map-kv #(map :yield %))
-                                 (sort-by first)
-                                 (reverse)))
+                               (group-by :variety)
+                               (common/map-kv #(map :yield %))
+                               (sort-by first)
+                               (reverse)))
   
-  (def cars (read-json "data/cars.json"))
+  (def cars (common/read-json "data/cars.json"))
 
   (def gapminder-health (map #(map read-string %)
-                             (read-csv "data/gapminder-health-income.csv")))
+                           (common/read-csv "data/gapminder-health-income.csv")))
 
   (def disasters (map (partial parse-line [identity read-string read-string])
-                      (read-csv "data/disasters.csv")))
+                    (common/read-csv "data/disasters.csv")))
 
   (def dt-stocks-fmt (-> (java.time.format.DateTimeFormatterBuilder.)
-                         (.appendPattern "MMM d yyyy")
-                         (.toFormatter (java.util.Locale/ENGLISH))))
+                       (.appendPattern "MMM d yyyy")
+                       (.toFormatter (java.util.Locale/ENGLISH))))
 
   (def stocks (map (partial parse-line [keyword (partial dt/local-date dt-stocks-fmt) read-string])
-                   (read-csv "data/stocks.csv")))
+                 (common/read-csv "data/stocks.csv")))
 
-  (def driving (read-json "data/driving.json"))
+  (def driving (common/read-json "data/driving.json"))
 
   (def co2-concentration (map (partial parse-line [(partial dt/local-date "yyyy-MM-dd") read-string])
-                              (read-csv "data/co2-concentration.csv")))
+                            (common/read-csv "data/co2-concentration.csv")))
 
-  (def unemployment (read-json "data/unemployment-across-industries.json"))
+  (def unemployment (common/read-json "data/unemployment-across-industries.json"))
 
   (def unemployment-area (->> unemployment
-                              (group-by :series)
-                              (map-kv #(map (fn [{:keys [year month count]}]
-                                              [(dt/local-date year month) count]) %))
-                              (sort-by first (comp - compare))))
+                            (group-by :series)
+                            (common/map-kv #(map (fn [{:keys [year month count]}]
+                                                   [(dt/local-date year month) count]) %))
+                            (sort-by first (comp - compare))))
   
   (def blue (last (c/palette :rdylbu-9))))
 
@@ -118,7 +118,7 @@
 (let [data (->> (filter #(= (:year %) 2000) population)
                 (map #(vector (:age %) (:people %)))
                 (group-by first)
-                (map-kv (fn [v] (reduce + (map second v))))
+                (common/map-kv (fn [v] (reduce + (map second v))))
                 (into (sorted-map-by >)))]
   
   (-> (b/series
@@ -159,9 +159,9 @@
                 (map #(vector (dt/format "MM" (first %)) (last %)))
                 (frequencies)
                 (group-by ffirst)
-                (map-kv (fn [v]
-                          (let [mm (into {} (map (fn [[[_ w] cnt]] [w cnt]) v))]
-                            (map #(or % 0) (selector mm)))))
+                (common/map-kv (fn [v]
+                                 (let [mm (into {} (map (fn [[[_ w] cnt]] [w cnt]) v))]
+                                   (map #(or % 0) (selector mm)))))
                 (into (sorted-map)))
       legend (reverse (map #(vector :rect (name %2) {:color %1})
                            ["#e7ba52" "#9467bd" "#1f77b4" "#c7c7c7" "#aec7e8"]
@@ -190,9 +190,9 @@
       m (apply assoc {} (interleave varietes (repeat 0)))
       data (->> barley
                 (group-by :variety)
-                (map-kv (fn [v]
-                          (selector (reduce (fn [m {:keys [site yield]}] 
-                                              (update m (keyword site) + yield)) m v))))
+                (common/map-kv (fn [v]
+                                 (selector (reduce (fn [m {:keys [site yield]}] 
+                                                     (update m (keyword site) + yield)) m v))))
                 (sort-by (comp int first first) >))
       pal (reverse (take 6 (c/palette :tableau-10-2)))
       legend (map #(vector :rect (name %2) {:color %1}) pal varietes)]
@@ -213,7 +213,7 @@
 
 ;; https://vega.github.io/vega-lite/examples/stacked_bar_normalize.html
 
-(let [data (map-kv (fn [[x y]] [y x]) population-male-female)]
+(let [data (common/map-kv (fn [[x y]] [y x]) population-male-female)]
   (-> (b/series [:stack-vertical [:sbar data {:method :normalized :palette ["#659CCA" "#EA98D2"] :stroke? false}]])
       (b/preprocess-series)
       (b/add-axes :left)
@@ -245,8 +245,7 @@
 
 ;; https://vega.github.io/vega-lite/examples/bar_color_disabled_scale.html
 
-(let [data [[:red 28] [:green 55] [:blue 43]]
-      colors (map first data)]
+(let [data [[:red 28] [:green 55] [:blue 43]]]
   (-> (b/series [:stack-vertical [:bar data {:color (fn [_ {:keys [id]}] id)}]])
       (b/preprocess-series)
       (b/update-scale :x :fmt name)
@@ -260,7 +259,7 @@
 
 ;; https://vega.github.io/vega-lite/examples/bar_layered_transparent.html
 
-(let [data (map-kv (fn [[x y]] [y x]) population-male-female)]
+(let [data (common/map-kv (fn [[x y]] [y x]) population-male-female)]
   (-> (b/series
        [:grid nil {:x nil}]
        [:stack-vertical [:sbar data {:method :layered :palette (map #(c/color % 175) ["#659CCA" "#EA98D2"]) :stroke? false}]])
@@ -316,7 +315,7 @@
 (let [data (->> (map (juxt :Cylinders :Horsepower) cars)
                 (filter (partial every? identity))
                 (group-by first)
-                (map-kv (fn [v] (map second v)))
+                (common/map-kv (fn [v] (map second v)))
                 (into (sorted-map-by >)))]
   
   (-> (b/series [:grid] [:stack-horizontal [:rug data {:size 1 :color (c/color blue 250)}]])
@@ -438,7 +437,7 @@
       deaths (s/pow 0.5 (stats/extent (map #(nth % 2) filtered-disasters)))
       data (->> filtered-disasters
                 (group-by first)
-                (map-kv (fn [v] (map rest v)))
+                (common/map-kv (fn [v] (map rest v)))
                 (into (sorted-map-by (comp - compare))))]
   
   (-> (b/series [:stack [true :strip data {:color (fn [_ {:keys [series-id]}] (c/set-alpha (nth pal series-id) 200))
@@ -497,12 +496,12 @@
 
 (let [data (->> stocks
                 (group-by first)
-                (map-kv (fn [v]
-                          (->> (group-by (comp #(dt/as % :year) second) v)
-                               (map-kv (fn [v]
-                                         (stats/mean (map last v))))
-                               (into [])
-                               (sort-by first)))))
+                (common/map-kv (fn [v]
+                                 (->> (group-by (comp #(dt/as % :year) second) v)
+                                      (common/map-kv (fn [v]
+                                                       (stats/mean (map last v))))
+                                      (into [])
+                                      (sort-by first)))))
       pal (c/palette :tableau-10-2)
       legend (map #(vector :line (name %2) {:color %1 :shape \O}) pal (keys data))]
   (-> (b/series [:grid])
@@ -522,7 +521,7 @@
 
 (let [data (->> stocks
                 (group-by first)
-                (map-kv (fn [v] (sort-by first (map rest v)))))
+                (common/map-kv (fn [v] (sort-by first (map rest v)))))
       pal (c/palette :tableau-10-2)
       legend (map #(vector :line (name %2) {:color %1 :stroke {:size 2}}) pal (keys data))]
   (-> (b/series [:grid])
@@ -583,11 +582,11 @@
 
 (let [data (->> stocks
                 (group-by first)
-                (map-kv (fn [v] (sort-by first (map rest v)))))
+                (common/map-kv (fn [v] (sort-by first (map rest v)))))
       pal (c/palette :tableau-10-2)
       legend (map #(vector :line (name %2) {:color %1 :stroke {:size 2}}) pal (keys data))]
   (-> (b/series [:grid])
-      (b/add-multi :line data {:point {:type \O :size (fn [[_ size] _] (/ size 50.0))}} {:color pal})
+      (b/add-multi :line data {:point {:type \O :size (fn [[_ ^double size] _] (/ size 50.0))}} {:color pal})
       (b/preprocess-series)
       (b/update-scale :x :ticks 4)
       (b/add-axes :bottom)
@@ -628,8 +627,8 @@
 (let [data (->> unemployment
                 (group-by (fn [v]
                             (dt/local-date (:year v) (:month v))))
-                (map-kv (fn [v]
-                          (reduce + (map :count v))))
+                (common/map-kv (fn [v]
+                                 (reduce + (map :count v))))
                 (sort-by first))]
   (-> (b/series [:grid] [:area data])
       (b/preprocess-series)
@@ -732,7 +731,7 @@
 
 (let [data (->> population
                 (group-by :age)
-                (map-kv #(map :people %))
+                (common/map-kv #(map :people %))
                 (sort-by first))]
   (-> (b/series [:grid nil {:x nil}] [:stack [false :box data {:outliers? true :shape \O}]])
       (b/preprocess-series)

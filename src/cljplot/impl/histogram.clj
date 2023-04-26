@@ -1,9 +1,9 @@
 (ns cljplot.impl.histogram
-  (:require [cljplot.common :refer :all]
+  (:require [cljplot.common :as common]
             [cljplot.scale :as s]
             [fastmath.core :as m]
             [fastmath.stats :as stats]
-            [clojure2d.core :refer :all]
+            [clojure2d.core :as c2d]
             [clojure2d.color :as c]))
 
 (set! *warn-on-reflection* true)
@@ -22,29 +22,29 @@
                                        :margins {:x [0.05 0.05] :y [0.0 0.01]}})
 
 
-(defmethod prepare-data :frequencies [_ data {:keys [pmf?]}]
+(defmethod common/prepare-data :frequencies [_ data {:keys [pmf?]}]
   (let [s? (sequential? (first data))
         data (if s? data [data])
         freqs (mapv frequencies data)]
     (if-not pmf?
       freqs
-      (let [sums (mapv #(reduce fast+ 0.0 (vals %)) freqs)]
+      (let [sums (mapv #(reduce m/fast+ 0.0 (vals %)) freqs)]
         (map (fn [freq ^double s]
-               (map-kv #(/ ^double % s) freq)) freqs sums)))))
+               (common/map-kv #(/ ^double % s) freq)) freqs sums)))))
 
-(defmethod data-extent :frequencies [_ data {:keys [range? sort?]}]
+(defmethod common/data-extent :frequencies [_ data {:keys [range? sort?]}]
   (let [ks (->> data
                 (map keys)
                 (flatten)
                 (distinct))
         n? (every? integer? ks)]
     {:x [:categorical (if (and n? range?)
-                        (map int (range (reduce fast-min ks) (inc ^int (reduce fast-max ks))))
+                        (map int (range (reduce m/fast-min ks) (inc ^int (reduce m/fast-max ks))))
                         (if sort? (sort ks) ks))]
      :y [:numerical [0 (->> data
                             (map vals)
                             (flatten)
-                            (reduce fast-max))]]}))
+                            (reduce m/fast-max))]]}))
 
 (defn- histogram-density
   [{:keys [^long samples ^double step] :as h} density?]
@@ -56,11 +56,11 @@
 
 (defn- cumulate
   [{:keys [bins ^double step] :as h} density?]
-  (let [b (reductions fast+ (map second bins))
+  (let [b (reductions m/fast+ (map second bins))
         step (if (or (not density?) (= :pmf density?)) 1.0 step)]
     (update h :bins (partial map (fn [^double c [x _]] [x (* step c)]) b))))
 
-(defmethod prepare-data :histogram [_ data {:keys [bins density? cumulative?]}]
+(defmethod common/prepare-data :histogram [_ data {:keys [bins density? cumulative?]}]
   (let [s? (sequential? (first data))
         fd (if s? (flatten data) data)
         b (stats/estimate-bins fd bins)
@@ -72,9 +72,9 @@
     (-> (select-keys (first hs) [:min :max :step])
         (assoc :bins (map :bins hs)))))
 
-(defmethod data-extent :histogram [_ data _]
+(defmethod common/data-extent :histogram [_ data _]
   (let [d (map (partial map second) (:bins data))        
-        max-bin (reduce fast-max (flatten d))
+        max-bin (reduce m/fast-max (flatten d))
         ^double mn (:min data)
         ^double mx (:max data)
         diff (- mx mn)]
@@ -99,33 +99,33 @@
                       diffy (max 0.0 (- y zero))]]
           (case type
             :lollipops (-> canvas
-                           (set-color col)
-                           (set-stroke-custom stroke)
-                           (line pointx zero pointx y)
-                           (ellipse pointx y diffx diffx))
+                           (c2d/set-color col)
+                           (c2d/set-stroke-custom stroke)
+                           (c2d/line pointx zero pointx y)
+                           (c2d/ellipse pointx y diffx diffx))
             (if stroke?
               (-> canvas
-                  (set-stroke-custom stroke)
-                  (filled-with-stroke col (c/darken col) rect startx zero diffx diffy))
+                  (c2d/set-stroke-custom stroke)
+                  (c2d/filled-with-stroke col (c/darken col) c2d/rect startx zero diffx diffy))
               (-> canvas
-                  (set-color col)
-                  (rect startx zero diffx diffy)))))))))
+                  (c2d/set-color col)
+                  (c2d/rect startx zero diffx diffy)))))))))
 
-(defmethod render-graph :frequencies [_ data conf {:keys [^int w h x y] :as chart-data}]
+(defmethod common/render-graph :frequencies [_ data conf {:keys [^int w h x y] :as chart-data}]
   (let [sx (:scale x)
         scale-y (partial (:scale y) 0 h)
         d (map (partial map (fn [[x y]]
                               (let [{:keys [^double start ^double end]} (sx x)
                                     s (* start w)
                                     e (* end w)]
-                                [(* start w) (* end w) (scale-y y)]))) data)]
-    (do-graph chart-data false
+                                [s e (scale-y y)]))) data)]
+    (common/do-graph chart-data false
       (draw-series c d (assoc conf :zero (scale-y 0.0))))))
 
-(defmethod render-graph :histogram [_ {:keys [^double step bins]} conf {:keys [w h x y] :as chart-data}]
+(defmethod common/render-graph :histogram [_ {:keys [^double step bins]} conf {:keys [w h x y] :as chart-data}]
   (let [scale-x (partial (:scale x) 0 w)
         scale-y (partial (:scale y) 0 h)
         d (map (partial map (fn [[^double x y]] [(scale-x x) (scale-x (+ x step)) (scale-y y)])) bins)]
-    (do-graph chart-data false
-              (draw-series c d (assoc conf :zero (scale-y 0.0))))))
+    (common/do-graph chart-data false
+      (draw-series c d (assoc conf :zero (scale-y 0.0))))))
 

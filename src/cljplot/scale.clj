@@ -272,13 +272,7 @@
   [steps]
   (comp int (i/step-before steps (range (count steps)))))
 
-(defn- interval-steps-after
-  "Maps `steps` values into ordinal values (0,1,2...)."
-  [steps]
-  (comp int (i/step-after steps (range (count steps)))))
-
 (defn quantile
-  ""
   ([xs] (quantile 10 xs))
   ([steps-no xs] (quantile steps-no :legacy xs))
   ([^long steps-no estimation-strategy xs]
@@ -296,14 +290,12 @@
       (->DiscreteRange mn mx (dec (count steps)) :threshold (interval-steps-before (rest steps)) nil {:steps steps}))))
 
 (defn threshold
-  ""
   ([^long steps-no [start end]] (threshold-from-steps (splice-range (inc steps-no) start end)))
   ([steps] (threshold-from-steps steps)))
 
 ;; ordinal
 
 (defn ordinal
-  ""
   ([xs] (ordinal :ordinal xs))
   ([type xs] (ordinal type nil xs))
   ([type info xs]
@@ -385,7 +377,6 @@
 (def ^:const ^:private ^double e2 m/SQRT2)
 
 (defn- step-mult
-  ""
   ^double [^double error]
   (cond
     (>= error e10) 10.0
@@ -393,17 +384,7 @@
     (>= error e2) 2.0
     :else 1.0))
 
-(defn- tick-step
-  ""
-  ^double [^double start ^double stop ^long count]
-  (let [step0 (/ (m/abs (- stop start)) (max 0 count))
-        step1 (m/pow 10 (m/floor (m/log10 step0)))
-        error (/ step0 step1)
-        ret (* step1 (step-mult error))]
-    (if (< stop start) (- ret) ret)))
-
 (defn- tick-increment
-  ""
   ^double [^double start ^double stop ^long count]
   (let [step (/ (- stop start) (max 0 count))
         power (m/floor (m/log10 step))
@@ -414,7 +395,6 @@
       (/ (- (m/pow 10.0 (- power))) (step-mult error)))))
 
 (defn- ticks-linear
-  ""
   [^double start ^double stop ^long count]
   (if (and (== start stop) (pos? count))
     [start]
@@ -440,7 +420,6 @@
   {:ticks (map #(+ 0.0 (m/approx % 4)) (ticks-linear (:start s) (:end s) (or c 10)))})
 
 (defn- logp 
-  ""
   [^double base]
   (condp #(== ^double %1 ^double %2) base
     m/E (fn [x] (m/log x))
@@ -449,7 +428,6 @@
     (fn [x] (m/logb base x))))
 
 (defn- powp
-  ""
   [base]
   (condp #(== ^double %1 ^double %2) base
     m/E (fn [x] (m/exp x))

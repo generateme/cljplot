@@ -1,18 +1,15 @@
 (ns cljplot.sketches.lattice
   (:require [cljplot.render :as r]
             [cljplot.build :as b]
-            [cljplot.common :refer :all]
-            [fastmath.interpolation :as in]
+            [cljplot.common :as common]
             [fastmath.stats :as stats]
             [clojure2d.color :as c]
             [clojure2d.core :as c2d]
-            [cljplot.scale :as s]
             [fastmath.core :as m]
             [fastmath.random :as rnd]
-            [cljplot.core :refer :all]
+            [cljplot.core :refer [save show]]
             [java-time :as dt]
             [clojure.string :as str]
-            [clojure2d.core :as c2d]
             [fastmath.vector :as v]))
 
 (rnd/set-seed! rnd/default-rng 143)
@@ -26,50 +23,50 @@
 
 (do
 
-  (def chem97 (read-json "data/chem97.json"))
+  (def chem97 (common/read-json "data/chem97.json"))
   (def score-gcsescore (->> chem97
-                            (group-by :score)
-                            (map-kv #(map :gcsescore %))
-                            (into (sorted-map))))
+                          (group-by :score)
+                          (common/map-kv #(map :gcsescore %))
+                          (into (sorted-map))))
 
-  (def oats (read-json "data/oats.json"))
-  (def barley (read-json "data/barley.json"))
-  (def titanic (read-json "data/titanic.json"))
-  (def faithful (read-json "data/faithful.json"))
-  (def gvhd10 (read-json "data/gvhd10.json"))
-  (def chem97 (read-json "data/chem97.json"))
-  (def quakes (read-json "data/quakes.json"))
+  (def oats (common/read-json "data/oats.json"))
+  (def barley (common/read-json "data/barley.json"))
+  (def titanic (common/read-json "data/titanic.json"))
+  (def faithful (common/read-json "data/faithful.json"))
+  (def gvhd10 (common/read-json "data/gvhd10.json"))
+  (def chem97 (common/read-json "data/chem97.json"))
+  (def quakes (common/read-json "data/quakes.json"))
 
   ;; time goes from 1 to 61
-  (def ssd (data->timeseries (read-json "data/ssd.json") 1 61))
+  (def ssd (data->timeseries (common/read-json "data/ssd.json") 1 61))
 
   ;; time goes from 1700 1988
-  (def sunspot-year (data->timeseries (read-json "data/sunspot_year.json") 1700 1988))
+  (def sunspot-year (data->timeseries (common/read-json "data/sunspot_year.json") 1700 1988))
 
   ;; fsc-h from gvhd
   (def gvhd-fsc-h (for [patient [5 6 7 9 10]
-                        visit [1 2 3 4 5 6 7]
-                        :let [nm (str "data/GvHD-FSC-H/s" patient "a0" visit)]]
-                    {:patient patient
-                     :visit visit
-                     :data (map first (read-json nm))}))
+                      visit [1 2 3 4 5 6 7]
+                      :let [nm (str "data/GvHD-FSC-H/s" patient "a0" visit)]]
+                  {:patient patient
+                   :visit visit
+                   :data (map first (common/read-json nm))}))
 
   ;; VADeaths
   (def vadeaths (let [ks ["Rural Male" "Rural Female" "Urban Male" "Urban Female"]
-                      vs {"50-54" [11.7 8.7 15.4 8.4]
-                          "55-59" [18.1 11.7 24.3 13.6]
-                          "60-64" [26.9 20.3 37.0 19.3]
-                          "65-69" [41.0 30.9 54.6 35.1]
-                          "70-74" [66.0 54.3 71.1 50.0]}]
-                  (mapcat (fn [[age fqs]]
-                            (map (fn [fq k] {:age age :person k :freq fq}) fqs ks)) vs)))
+                    vs {"50-54" [11.7 8.7 15.4 8.4]
+                        "55-59" [18.1 11.7 24.3 13.6]
+                        "60-64" [26.9 20.3 37.0 19.3]
+                        "65-69" [41.0 30.9 54.6 35.1]
+                        "70-74" [66.0 54.3 71.1 50.0]}]
+                (mapcat (fn [[age fqs]]
+                          (map (fn [fq k] {:age age :person k :freq fq}) fqs ks)) vs)))
 
-  (def postdoc (read-json "data/postdoc.json"))
-  (def postdoc-scaled (let [margins (map-kv #(reduce + (map :Freq %)) (group-by :Field postdoc))]
-                        (map (fn [{:keys [Freq Field] :as all}]
-                               (assoc all :Freq (/ Freq (margins Field)))) postdoc)))
+  (def postdoc (common/read-json "data/postdoc.json"))
+  (def postdoc-scaled (let [margins (common/map-kv #(reduce + (map :Freq %)) (group-by :Field postdoc))]
+                      (map (fn [{:keys [Freq Field] :as all}]
+                             (assoc all :Freq (/ Freq (margins Field)))) postdoc)))
   
-  (def hnanes (read-json "data/nhanes.json"))
+  (def hnanes (common/read-json "data/nhanes.json"))
   
   (def blue (c/set-alpha (last (c/palette :rdylbu-9)) 200))
   (def lblue (c/set-alpha (nth (c/palette :rdylbu-9) 7) 200)))
@@ -87,7 +84,7 @@
 (-> (b/lattice :histogram score-gcsescore {:bins 10 :padding-out 0.0} {:grid true :label (partial str "Score: ")})
     (b/preprocess-series)
     (b/update-scales :x :ticks 5)
-    (b/update-scales :y :fmt #(str (int (* 100 %)) "%"))
+    (b/update-scales :y :fmt #(str % "%"))
     (b/add-axes :bottom)
     (b/add-axes :left)
     (b/add-label :bottom "gcsescore")
@@ -107,14 +104,14 @@
     (b/add-label :bottom "gcsescore")
     (b/add-label :left "Density")
     (r/render-lattice {:width 800 :height 600})
-    (save "results/lattice/figure_1.2.jpg")
+    #_ (save "results/lattice/figure_1.2.jpg")
     (show))
 
 ;; figure 1.3
 
 (-> (b/series [:grid])
     (b/add-multi :density score-gcsescore {:stroke {:size 2}} {:color (c/palette :category10)
-                                                               :stroke (map #(hash-map :size 2 :dash %) line-dash-styles)})
+                                                               :stroke (map #(hash-map :size 2 :dash %) common/line-dash-styles)})
     (b/preprocess-series)
     (b/add-axes :bottom)
     (b/add-axes :left)
@@ -134,7 +131,7 @@
 
 (let [data (->> oats
                 (group-by (juxt :Block :Variety))
-                (map-kv (partial map (juxt :nitro :yield)))
+                (common/map-kv (partial map (juxt :nitro :yield)))
                 (sort-by first))]
   (-> (b/lattice :line data {:point {:type \o}} {:grid true :label str :shape [nil 3]})
       (b/preprocess-series)
@@ -154,7 +151,7 @@
 (let [data (->> oats
                 (filter #(= (:Block %) "I"))
                 (group-by (juxt :Block :Variety))
-                (map-kv (partial map (juxt :nitro :yield)))
+                (common/map-kv (partial map (juxt :nitro :yield)))
                 (sort-by first))]
   (-> (b/lattice :line data {:point {:type \o}} {:grid true :label str :shape [nil 3]})
       (b/preprocess-series)
@@ -172,7 +169,7 @@
 
 (let [data (->> oats
                 (group-by (juxt :Block :Variety))
-                (map-kv (partial map (juxt :nitro :yield)))
+                (common/map-kv (partial map (juxt :nitro :yield)))
                 (sort-by first))]
   (-> (b/lattice :line data {:point {:type \o}} {:grid true :label (partial str/join \space) :shape [nil 3]})
       (b/preprocess-series)
@@ -192,7 +189,7 @@
 
 (let [data (->> oats
                 (group-by (juxt :Block :Variety))
-                (map-kv (partial map (juxt :nitro :yield)))
+                (common/map-kv (partial map (juxt :nitro :yield)))
                 (sort-by first))]
   (-> (b/lattice :line data {:point {:type \o}} {:grid true :label (partial str/join \space) :shape [nil 6]})
       (b/preprocess-series)
@@ -213,12 +210,12 @@
 
 (let [data (->> barley
                 (group-by :year) ;; group by year
-                (map-kv (fn [year]
-                          (let [sites (group-by :site year)] ;; for each year group by site (it will be block)
-                            (map-kv (fn [site]
-                                      (map-kv (partial map :yield) (group-by :variety site))) sites))))) ;; group by variety and list yield
+                (common/map-kv (fn [year]
+                                 (let [sites (group-by :site year)] ;; for each year group by site (it will be block)
+                                   (common/map-kv (fn [site]
+                                                    (common/map-kv (partial map :yield) (group-by :variety site))) sites))))) ;; group by variety and list yield
       
-      get-year (fn [year conf] (map-kv #(vector :strip % conf) (get data year)))] ;; manually select year
+      get-year (fn [year conf] (common/map-kv #(vector :strip % conf) (get data year)))] ;; manually select year
   (-> (b/lattice :stack-horizontal (get-year 1931 {:shape \x :size 6 :color blue}) {} {:shape [6 1] :grid true}) ;; first layer, with grid
       (b/add-series (b/lattice :stack-horizontal (get-year 1932 {:shape \o :size 6 :color blue}) {} {:shape [6 1] :label str})) ;; last layer with label
       (b/preprocess-series)
@@ -230,16 +227,16 @@
       (b/add-axes :left)
       (b/add-label :bottom "yield")
       (r/render-lattice {:width 300 :height 800 :padding-in 0.1})
-      (save "results/lattice/figure_2.6.jpg")
+      #_ (save "results/lattice/figure_2.6.jpg")
       (show)))
 
 ;; figure 2.7
 
 (let [data (->> oats
                 (group-by :Variety)
-                (map-kv (fn [variety]
-                          (let [blocks (group-by :Block variety)]
-                            (map-kv (fn [block] (map (juxt :nitro :yield) block)) blocks)))))
+                (common/map-kv (fn [variety]
+                                 (let [blocks (group-by :Block variety)]
+                                   (common/map-kv (fn [block] (map (juxt :nitro :yield) block)) blocks)))))
       grids-labels (b/lattice :grid (second (first data)) {} {:label str :shape [1 6]})]
   (-> grids-labels
       (b/add-series (mapcat (fn [[k shape]] (b/lattice :line (data k) {:point {:type shape}} {:shape [1 6]})) (map vector (keys data) [\o \+ \v])))
@@ -259,7 +256,7 @@
 
 (let [data (->> titanic
                 (group-by (juxt :Sex :Age))
-                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
+                (common/map-kv (fn [v] [:sbar (common/map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4]})
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -277,7 +274,7 @@
 
 (let [data (->> titanic
                 (group-by (juxt :Sex :Age))
-                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
+                (common/map-kv (fn [v] [:sbar (common/map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4]})
       (b/preprocess-series)
       (b/update-scales :x :fmt int)
@@ -294,7 +291,7 @@
 
 (let [data (->> titanic
                 (group-by (juxt :Sex :Age))
-                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
+                (common/map-kv (fn [v] [:sbar (common/map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v))])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4] :grid {:y nil}})
       (b/preprocess-series)
       (b/update-scales :x :fmt int)
@@ -311,7 +308,7 @@
 
 (let [data (->> titanic
                 (group-by (juxt :Sex :Age))
-                (map-kv (fn [v] [:sbar (map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v)) {:stroke? false}])))]
+                (common/map-kv (fn [v] [:sbar (common/map-kv (fn [c] (map :Freq (sort-by :Survived c))) (group-by :Class v)) {:stroke? false}])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :shape [1 4] :grid {:y nil}})
       (b/preprocess-series)
       (b/update-scales :x :fmt int)
@@ -376,7 +373,7 @@
 
 (let [data (->> gvhd10
                 (group-by :Days)
-                (map-kv (fn [vs] (map #(m/log (:FSC.H %)) vs))))]
+                (common/map-kv (fn [vs] (map #(m/log (:FSC.H %)) vs))))]
   (-> (b/lattice :density data {} {:label str :shape [4 2]})
       (b/preprocess-series)
       (b/tie-domains :x :y)
@@ -395,7 +392,7 @@
 
 (let [data (->> gvhd10
                 (group-by :Days)
-                (map-kv (fn [vs] (map #(m/log2 (:FSC.H %)) vs))))]
+                (common/map-kv (fn [vs] (map #(m/log2 (:FSC.H %)) vs))))]
   (-> (b/lattice :histogram data {:bins 50 :stroke? false :rendering-hint :highest} {:label str :shape [4 2] :grid true})
       (b/preprocess-series)
       (b/tie-domains :x :y)
@@ -412,7 +409,7 @@
 
 (let [data (->> chem97
                 (group-by :score)
-                (map-kv (fn [v] (map :gcsescore v)))
+                (common/map-kv (fn [v] (map :gcsescore v)))
                 (sort-by first))]
   (-> (b/lattice :normal-plot data {:shape \o} {:label str})
       (b/preprocess-series)
@@ -430,7 +427,7 @@
 
 (let [data (->> chem97
                 (group-by :score)
-                (map-kv #(map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))))
+                (common/map-kv #(common/map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
   (-> (mapcat (fn [[k shape]] (b/lattice :normal-plot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
       (b/add-series labels)
@@ -448,7 +445,7 @@
 
 (let [data (->> chem97
                 (group-by :score)
-                (map-kv #(map-kv (fn [v] (map (fn [rec] (m/pow (:gcsescore rec) 2.34)) v)) (group-by :gender %))))
+                (common/map-kv #(common/map-kv (fn [v] (map (fn [rec] (m/pow (:gcsescore rec) 2.34)) v)) (group-by :gender %))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
   (-> (mapcat (fn [[k shape]] (b/lattice :normal-plot (data k) {:shape shape})) (map vector (keys data) [\o \+ \v \s \x \O]))
       (b/add-series labels)
@@ -466,7 +463,7 @@
 
 (let [data (->> chem97
                 (group-by :gender)
-                (map-kv #(sort-by first (map-kv (fn [v] (filter pos? (map :gcsescore  v))) (group-by :score %)))))
+                (common/map-kv #(sort-by first (common/map-kv (fn [v] (filter pos? (map :gcsescore  v))) (group-by :score %)))))
       labels (b/lattice :empty (second (first data)) {} {:label str})]
   (-> (mapcat (fn [[k col]] (b/lattice :cdf (data k) {:color col})) (map vector (keys data) (c/palette :category10)))
       (b/add-series labels)
@@ -486,7 +483,7 @@
 (let [uniform (rnd/distribution :uniform-real)
       data (->> chem97
                 (group-by :gender)
-                (map-kv #(sort-by first (map-kv (fn [v] [uniform (filter pos? (map :gcsescore v))]) (group-by :score %)))))
+                (common/map-kv #(sort-by first (common/map-kv (fn [v] [uniform (filter pos? (map :gcsescore v))]) (group-by :score %)))))
       labels (b/lattice :empty (second (first data)) {} {:label str :shape [1 6]})]
   (-> (mapcat (fn [[k col]] (b/lattice :qqplot (data k) {:size 2 :color col} {:shape [1 6]})) (map vector (keys data) (c/palette :category10)))
       (b/add-series labels)
@@ -505,8 +502,8 @@
 
 (let [data (->> chem97
                 (group-by :score)
-                (map-kv #(let [data (map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))]
-                           [(data "M") (data "F")]))
+                (common/map-kv #(let [data (common/map-kv (fn [v] (map :gcsescore v)) (group-by :gender %))]
+                                  [(data "M") (data "F")]))
                 (sort-by first))
       labels (b/lattice :empty data {} {:label str})]
   (-> (b/lattice :qqplot data {} {:grid true})
@@ -527,7 +524,7 @@
 
 (let [data (->> chem97
                 (group-by :gender)
-                (map-kv (fn [g] [:box (sort-by first (map-kv (fn [v] (map :gcsescore v)) (group-by :score g)))])))]
+                (common/map-kv (fn [g] [:box (sort-by first (common/map-kv (fn [v] (map :gcsescore v)) (group-by :score g)))])))]
   (-> (b/lattice :stack-horizontal data {} {:label str})
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -542,7 +539,7 @@
 
 (let [data (->> chem97
                 (group-by :score)
-                (map-kv (fn [g] [:box (sort-by first (comp - compare) (map-kv (fn [v] (map (comp #(m/pow % 2.34)  :gcsescore) v)) (group-by :gender g)))]))
+                (common/map-kv (fn [g] [:box (sort-by first (comp - compare) (common/map-kv (fn [v] (map (comp #(m/pow % 2.34)  :gcsescore) v)) (group-by :gender g)))]))
                 (sort-by first))]
   (-> (b/lattice :stack-vertical data {} {:label str :shape [1 6]})
       (b/preprocess-series)
@@ -558,7 +555,7 @@
 
 (let [data (->> gvhd10
                 (group-by :Days)
-                (map-kv (partial map (comp #(m/log %) :FSC.H)))
+                (common/map-kv (partial map (comp #(m/log %) :FSC.H)))
                 (sort-by (comp read-string first)))]
   (-> (b/series [:stack-horizontal [:box data]])
       (b/preprocess-series)
@@ -574,7 +571,7 @@
 
 (let [data (->> gvhd10
                 (group-by :Days)
-                (map-kv (partial map (comp #(m/log %) :FSC.H)))
+                (common/map-kv (partial map (comp #(m/log %) :FSC.H)))
                 (sort-by (comp read-string first)))]
   (-> (b/series [:stack-horizontal [:violin data {:scale 1.1}]])
       (b/preprocess-series)
@@ -591,7 +588,7 @@
 
 (let [data (->> quakes
                 (group-by :mag)
-                (map-kv (partial map :depth))
+                (common/map-kv (partial map :depth))
                 (sort-by first))]
   (-> (b/series [:stack-horizontal [:strip data {:color blue :size 5 :distort 0.1 :shape \o}]])
       (b/preprocess-series)
@@ -606,7 +603,7 @@
 
 (let [data (->> quakes
                 (group-by :mag)
-                (map-kv (partial map :depth))
+                (common/map-kv (partial map :depth))
                 (sort-by first))]
   (-> (b/series [:stack-vertical [:strip data {:color blue :size 5 :distort 0.1 :shape \o}]])
       (b/preprocess-series)
@@ -625,8 +622,8 @@
 
 (let [data (->> vadeaths
                 (group-by :person)
-                (map-kv (fn [g] [:strip (sort-by first (map-kv (fn [v] (map :freq v)) (group-by :age g)))
-                                {:color :black :distort 0.0 :size 5}])))]
+                (common/map-kv (fn [g] [:strip (sort-by first (common/map-kv (fn [v] (map :freq v)) (group-by :age g)))
+                                       {:color :black :distort 0.0 :size 5}])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :grid {:x nil}})
       (b/preprocess-series)
       (b/add-axes :bottom)
@@ -641,7 +638,7 @@
 
 (let [data (->> vadeaths
                 (group-by :person)
-                (map-kv (fn [g] [:lollipop (sort-by first (map-kv (fn [v] (map :freq v)) (group-by :age g)))])))]
+                (common/map-kv (fn [g] [:lollipop (sort-by first (common/map-kv (fn [v] (map :freq v)) (group-by :age g)))])))]
   (-> (b/lattice :stack-horizontal data {} {:shape [4 1] :label str})
       (b/preprocess-series)
       (b/add-axes :bottom)
@@ -657,9 +654,9 @@
 (let [ys (zipmap (range 5) (sort (distinct (map :age vadeaths))))
       data (->> vadeaths
                 (group-by :person)
-                (map-kv (fn [g] (map-indexed #(vector (:freq %2) %1) (sort-by :age g)))))]
+                (common/map-kv (fn [g] (map-indexed #(vector (:freq %2) %1) (sort-by :age g)))))]
   (-> (b/series [:grid])
-      (b/add-multi :line data {:stroke {:size 2}} {[:stroke :dash] line-dash-styles
+      (b/add-multi :line data {:stroke {:size 2}} {[:stroke :dash] common/line-dash-styles
                                                    :color (c/palette :category10)
                                                    [:point :type] [\o \^ \v \s]})
       (b/preprocess-series)
@@ -678,7 +675,7 @@
 
 (let [data (->> vadeaths
                 (group-by :person)
-                (map-kv (fn [g] [:bar (sort-by first (map-kv (fn [v] (map :freq v)) (group-by :age g)))])))]
+                (common/map-kv (fn [g] [:bar (sort-by first (common/map-kv (fn [v] (map :freq v)) (group-by :age g)))])))]
   (-> (b/lattice :stack-horizontal data {} {:shape [4 1] :label str})
       (b/preprocess-series)
       (b/add-axes :bottom)
@@ -696,9 +693,9 @@
       m (apply assoc {} (interleave varietes (repeat 0)))
       data (->> postdoc-scaled
                 (group-by :Field)
-                (map-kv (fn [v]
-                          (selector (reduce (fn [m {:keys [Reason Freq]}] 
-                                              (update m Reason + Freq)) m v))))
+                (common/map-kv (fn [v]
+                                 (selector (reduce (fn [m {:keys [Reason Freq]}] 
+                                                     (update m Reason + Freq)) m v))))
                 (sort-by (comp int first first) >))
       pal (reverse (take 6 (c/palette :tableau-10-2)))
       legend (map #(vector :rect (name %2) {:color %1}) pal varietes)]
@@ -719,8 +716,8 @@
 
 (let [data (->> postdoc-scaled
                 (group-by :Reason)
-                (map-kv (fn [g] [:strip (sort-by first (map-kv (fn [v] (map :Freq v)) (group-by :Field g)))
-                                {:color :black :distort 0.0 :size 5}])))]
+                (common/map-kv (fn [g] [:strip (sort-by first (common/map-kv (fn [v] (map :Freq v)) (group-by :Field g)))
+                                       {:color :black :distort 0.0 :size 5}])))]
   (-> (b/lattice :stack-horizontal data {} {:label str :grid {:x nil}})
       (b/preprocess-series)
       (b/tie-domains :x)
@@ -736,8 +733,8 @@
 
 (let [data (->> postdoc-scaled
                 (group-by :Reason)
-                (map-kv (fn [g] [:strip (sort-by (comp first second) (map-kv (fn [v] (map :Freq v)) (group-by :Field g)))
-                                {:color :black :distort 0.0 :size 5}]))
+                (common/map-kv (fn [g] [:strip (sort-by (comp first second) (common/map-kv (fn [v] (map :Freq v)) (group-by :Field g)))
+                                       {:color :black :distort 0.0 :size 5}]))
                 (sort-by (comp stats/median (fn [vs] (map (comp first second) vs)) second second)))]
   (-> (b/lattice :stack-horizontal data {} {:label str :grid {:x nil} :shape [5 1]})
       (b/preprocess-series)
@@ -758,12 +755,12 @@
 
 (defn hypotrochoid
   ([] (hypotrochoid (rnd/drand 0.25 0.75)))
-  ([r] (hypotrochoid r (rnd/drand (* 0.25 r) r)))
+  ([^double r] (hypotrochoid r (rnd/drand (* 0.25 r) r)))
   ([r d] (hypotrochoid r d 10))
   ([r d cycles] (hypotrochoid r d cycles 30))
   ([^double r ^double d cycles density]
    (let [r- (- 1.0 r)]
-     (for [cycle (range 0 cycles (/ density))
+     (for [^double cycle (range 0 cycles (/ density))
            :let [t (* m/TWO_PI cycle)
                  f (/ (* r- t) r)]]
        (v/vec2 (+ (* r- (m/cos t))
@@ -820,7 +817,7 @@
 
 (let [wname "Sunspots - years"
       data (map (juxt (comp dt/local-date-time int :time-id) :x) sunspot-year)
-      domain (second (extent (map second data)))
+      domain (second (common/extent (map second data)))
       cnt (- (count data) 5)
       draw-fn (fn [c w _ last-mouse]
                 (let [window (c2d/get-state w)
@@ -870,10 +867,10 @@
 
 (let [data (->> gvhd-fsc-h
                 (group-by :patient)
-                (map-kv (fn [v] [:density-strip
-                                (map-kv (partial mapcat :data) (group-by :visit v))
-                                {:margins {:x [0.1 0.0]} :color (fn [_ {:keys [id]}]
-                                                                  (if (odd? id) blue lblue)) :scale 4 :area? true}])))]
+                (common/map-kv (fn [v] [:density-strip
+                                       (common/map-kv (partial mapcat :data) (group-by :visit v))
+                                       {:margins {:x [0.1 0.0]} :color (fn [_ {:keys [id]}]
+                                                                         (if (odd? id) blue lblue)) :scale 4 :area? true}])))]
   (-> (b/lattice :stack-horizontal data {:padding-out 0.7} {:label str})
       (b/preprocess-series)
       (b/update-scales :x :ticks 3)
@@ -889,7 +886,7 @@
 (let [data (->> hnanes
                 (filter #(and (:TIBC %) (:Hemoglobin %)))
                 (group-by :Sex)
-                (map-kv (fn [v] (map (juxt :TIBC :Hemoglobin) v))))]
+                (common/map-kv (fn [v] (map (juxt :TIBC :Hemoglobin) v))))]
   (-> (b/lattice :binned-heatmap data {:alpha-factor 0.1 :size 10} {:label str})
       (b/preprocess-series)
       (b/update-scales :x :ticks 5)

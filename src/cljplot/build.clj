@@ -1,5 +1,5 @@
 (ns cljplot.build
-  (:require [cljplot.common :refer :all]
+  (:require [cljplot.common :as common]
             [cljplot.config :as cfg]
             [cljplot.axis :as axis]
             [cljplot.scale :as s]
@@ -29,7 +29,7 @@
   ([series serie-name map-of-data] (add-multi series serie-name map-of-data {}))
   ([series serie-name map-of-data serie-config] (add-multi series serie-name map-of-data serie-config {}))
   ([series serie-name map-of-data serie-config multi-config]
-   (let [mconfig (map-kv cycle multi-config)]
+   (let [mconfig (common/map-kv cycle multi-config)]
      (reduce conj series
              (for [[idx [k d]] (map-indexed vector map-of-data)
                    :let [nconfig (reduce-kv (fn [m ky v]
@@ -104,13 +104,14 @@
   [f [t d c]] [t (f t d c) c])
 
 (defn- calculate-extent
-  [[t d c]] [t d (assoc c :extent (extend-domains (data-extent t d c) (:margins c)))])
+  [[t d c]]
+  [t d (assoc c :extent (common/extend-domains (common/data-extent t d c) (:margins c)))])
 
 (defn- preprocess-steps
   [s]
   (into [] (comp
             (map-indexed add-series-info) ;; add series-id
-            (map (partial chart-process-data prepare-data)) ;; precalculate data
+            (map (partial chart-process-data common/prepare-data)) ;; precalculate data
             (map calculate-extent)) ;; calculate extents
         s))
 
@@ -118,7 +119,7 @@
   "Insert additional information to config and merge with defaults.
   Calculate extents and preprocess data in one step."
   [srs]
-  (update srs :series #(map-kv preprocess-steps %)))
+  (update srs :series #(common/map-kv preprocess-steps %)))
 
 ;; awful part...
 
@@ -131,20 +132,20 @@
   "Merge extents by column/row"
   [exts cnt pos k]
   (into {} (->> (range cnt)
-              (map (fn [id]
-                     [id (->> exts
-                            (select-row-col-ids pos id)
-                            (mapcat exts)
-                            (map k)
-                            (find-min-max))]))
-              (remove (comp nil? second)))))
+                (map (fn [id]
+                       [id (->> exts
+                                (select-row-col-ids pos id)
+                                (mapcat exts)
+                                (map k)
+                                (common/find-min-max))]))
+                (remove (comp nil? second)))))
 
 ;; TODO: merge all other extents globally (like :inner)
 
 (defn- merge-extents
   "Find biggest extent for each grid position."
   [{:keys [rows cols] :as srs}]
-  (let [exts (map-kv (partial map (comp :extent last)) (:series srs))]
+  (let [exts (common/map-kv (partial map (comp :extent last)) (:series srs))]
     (assoc srs :extents {:x (merge-extents-by-ids exts cols 0 :x)
                          :y (merge-extents-by-ids exts rows 1 :y)})))
 
@@ -158,10 +159,10 @@
 (defn- auto-scale
   ([series x-or-y]
    (assoc-in series [:scales x-or-y] (->> (get-in series [:extents x-or-y])
-                                          (map-kv (fn [[t domain conf]]
-                                                    (let [t (get default-scale-defs t [:linear])]
-                                                      (s/scale-map (if conf (conj t conf) t)
-                                                                   {:domain domain}))))))))
+                                          (common/map-kv (fn [[t domain conf]]
+                                                           (let [t (get default-scale-defs t [:linear])]
+                                                             (s/scale-map (if conf (conj t conf) t)
+                                                                          {:domain domain}))))))))
 
 (defn- auto-scales
   [series]
@@ -188,12 +189,12 @@
 
 (defn tie-domains
   [series & axes]
-  (reduce #(update-scales %1 %2 :domain (second (find-min-max (-> %1 :extents %2 vals)))) series  axes))
+  (reduce #(update-scales %1 %2 :domain (second (common/find-min-max (-> %1 :extents %2 vals)))) series  axes))
 
 (defn- find-size
   [side-nseries]
   (let [s (remove nil? (map (comp :block-size second) side-nseries))]
-    (when (seq s) (reduce fast-max s))))
+    (when (seq s) (reduce m/fast-max s))))
 
 (defn- append-side
   [series side pos size side-nseries]
@@ -222,7 +223,7 @@
   ([series side label] (add-label series side label {}))
   ([series side label conf]
    (let [conf (cfg/merge-configuration :label conf)
-         data (prepare-data :label label conf)]
+         data (common/prepare-data :label label conf)]
      (assoc-in series [:labels side] data))))
 
 (defn add-legend
