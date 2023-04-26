@@ -52,8 +52,10 @@ See `sketches` folder for examples
   <span><img src="results/vega/trail-color.jpg" height="100"></span>
   <span><img src="results/vega/stacked-area-stream.jpg" height="100"></span>
   <span><img src="results/vega/color-with-shape.jpg" height="100"></span>
-  <span><img src="results/vega/connected-scatter-plot.jpg" height="100"></span>
+  <span><img src="results/vega/connected-scatterplot.jpg" height="100"></span>
   <span><img src="results/vega/stacked-bar-weather.jpg" height="100"></span>
+  <span><img src="results/vega/table-binned-heatmap.jpg" height="100"></span>
+  <span><img src="results/vega/circle-bubble-hi.jpg" height="100"></span>
 </p>
 
 
