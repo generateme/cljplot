@@ -45,6 +45,7 @@ See `sketches` folder for examples
   <span><img src="results/lattice/figure_2.7.jpg" height="100"></span>
   <span><img src="results/lattice/figure_2.9.jpg" height="100"></span>
   <span><img src="results/lattice/figure_4.3.jpg" height="100"></span>
+  <span><img src="results/lattice/figure_3.14.jpg" height="100"></span>
 </p>
 
 <p align="center">
@@ -56,6 +57,7 @@ See `sketches` folder for examples
   <span><img src="results/vega/stacked-bar-weather.jpg" height="100"></span>
   <span><img src="results/vega/table-binned-heatmap.jpg" height="100"></span>
   <span><img src="results/vega/circle-bubble-hi.jpg" height="100"></span>
+  <span><img src="results/vega/nulls.jpg" height="100"></span>
 </p>
 
 
