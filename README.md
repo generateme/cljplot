@@ -28,8 +28,8 @@ See `sketches` folder for examples
 ### Examples
 
 <p>
-  <span><img src="results/examples/gp-predict.jpg"/></span>
-  <span><img src="results/examples/vector-field.jpg"/></span>
+  <span><img src="results/examples/gp-predict.jpg" height="100"/></span>
+  <span><img src="results/examples/vector-field.jpg" height="100"></span>
 </p>
 
 
