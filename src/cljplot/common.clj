@@ -1,5 +1,5 @@
 (ns cljplot.common
-  (:require [clojure2d.core :refer :all]
+  (:require [clojure2d.core :as c2d]
             [clojure2d.color :as c]
             [fastmath.stats :as stats]
             [fastmath.grid :as grid]
@@ -11,15 +11,8 @@
             [java-time :as dt]
             [cljplot.scale :as s]))
 
-(set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
-
-(defn fast+ {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (+ a b))
-(defn fast- {:inline (fn [^double x ^double y] `(- ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (- a b))
-(defn fast* {:inline (fn [^double x ^double y] `(* ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (* a b))
-(defn fast-max {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (max a b))
-(defn fast-min {:inline (fn [^double x ^double y] `(+ ~x ~y)) :inline-arities #{2}} ^double [^double a ^double b] (min a b))
 
 (defn graph-canvas
   "Create canvas to draw a chart on"
@@ -28,9 +21,9 @@
    (let [[^int cw ^int ch] (if (#{:left :right} orientation) [h w] [w h])
          canvas-shift (/ oversize 2)
          canvas-shift- (- canvas-shift)
-         c (canvas (+ oversize cw) (+ oversize ch) (if rendering-hint
-                                                     rendering-hint
-                                                     (if highest? :highest :high)))]
+         c (c2d/canvas (+ oversize cw) (+ oversize ch) (if rendering-hint
+                                                         rendering-hint
+                                                         (if highest? :highest :high)))]
      {:canvas c
       :anchor [canvas-shift- canvas-shift-]
       :shift [canvas-shift canvas-shift]
@@ -42,6 +35,12 @@
   [orient]
   (get {:bottom :top-left- :top :bottom-left+ :left :bottom-right+ :right :bottom-left-} orient :bottom-left+))
 
+(defn apply-body
+  [canv orient f]
+  (c2d/with-oriented-canvas orient [c (:canvas canv)]
+    (c2d/translate c (:shift canv))
+    (f c)))
+
 (defmacro do-graph
   "Wrap canvas creation and orientation."
   {:style/indent 2}
@@ -49,9 +48,7 @@
    (let [c (symbol "c")]
      `(let [canv# (graph-canvas ~graph-conf ~highest-render?)
             orient# (canvas-orientation (:orientation ~graph-conf))]
-        (with-oriented-canvas orient# [~c (:canvas canv#)]
-          (translate ~c (:shift canv#))
-          ~@body)
+        (apply-body canv# orient# (fn [~c] ~@body))
         canv#))))
 
 ;;
@@ -91,7 +88,7 @@
                   (zero?)) "Types of series should have the same type: continuous or categorical")
       (let [[t _ sconf] (first s)
             res [t (if (#{:numerical :temporal} t)
-                     (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [fast-min fast-max])]
+                     (let [[fmin fmax] (if (= t :temporal) [dt/min dt/max] [m/fast-min m/fast-max])]
                        (reduce (fn [[ca cb] [a b]] [(fmin ca a) (fmax cb b)]) (map second s)))
                      (distinct (mapcat identity (map second s))))]]
         (if sconf (conj res sconf) res)))))
@@ -170,15 +167,15 @@
 
 ;;
 
-(defmulti data-extent (fn [t data config] t))
-(defmulti render-graph (fn [t data config chart-data] t))
-(defmulti prepare-data (fn [t data config] t))
-(defmulti postprocess-data (fn [t data config] t))
+(defmulti data-extent (fn [t _data _config] t))
+(defmulti render-graph (fn [t _data _config _chart-data] t))
+(defmulti prepare-data (fn [t _data _config] t))
+(defmulti postprocess-data (fn [t _data _config] t))
 
 (defmethod data-extent :default [_ data _] (common-extent data))
 (defmethod prepare-data :default [_ data _] data)
 (defmethod postprocess-data :default [_ data _] data)
-(defmethod render-graph :default [_ _ _ chart-data] (do-graph chart-data false))
+(defmethod render-graph :default [_ _ _ _chart-data] (do-graph _chart-data false))
 
 (defmethod data-extent :empty [_ _ _] {})
 
@@ -209,7 +206,7 @@
                        (let [cnt (or cnt 1)
                              cell (grid/coords->mid g (v/vec2 (scale-x x) (scale-y y)))]
                          (if (contains? m cell)
-                           (update m cell fast+ cnt)
+                           (update m cell m/fast+ cnt)
                            (assoc m cell cnt)))) {} vx)]
     (map (fn [[[x y] cnt]]
            (v/vec3 (iscale-x x) (iscale-y y) cnt)) cnts)))
@@ -217,75 +214,73 @@
 ;;
 
 (defn- triangle-shape 
-  ""
   [canv x y hsize size angle stroke?]
   (let [size (double size)
         hsize (double hsize)
         size3 (/ size 3.0)
         size6 (+ size3 size3)]
     (-> canv
-        (push-matrix)
-        (translate x y)
-        (rotate (m/radians angle))
-        (triangle (- hsize) (- size3)
-                  (+ hsize) (- size3)
-                  0 (+ size6) stroke?)
-        (pop-matrix))))
+        (c2d/push-matrix)
+        (c2d/translate x y)
+        (c2d/rotate (m/radians angle))
+        (c2d/triangle (- hsize) (- size3)
+                      (+ hsize) (- size3)
+                      0 (+ size6) stroke?)
+        (c2d/pop-matrix))))
 
 (defn draw-shape 
-  ""
   [canv x y type color stroke size]
   (-> canv
-      (set-stroke-custom stroke)
-      (set-color color))
+      (c2d/set-stroke-custom stroke)
+      (c2d/set-color color))
   (let [size (double size)
         x (double x)
         y (double y)
         hsize (/ size 2.0)]
     (case type
       \* (-> canv
-             (set-font-attributes (* 2 size))
-             (text (str type) x (+ (- (font-height canv) (* 0.6666 (font-ascent canv))) y) :center))
-      \} (filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size -90)
-      \{ (filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size 90)
-      \A (filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size 180)
-      \V (filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size 0)
+             (c2d/set-font-attributes (* 2 size))
+             (c2d/text (str type) x (+ (- (c2d/font-height canv) (* 0.6666 (c2d/font-ascent canv))) y) :center))
+      \} (c2d/filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size -90)
+      \{ (c2d/filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size 90)
+      \A (c2d/filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size 180)
+      \V (c2d/filled-with-stroke canv color (c/darken color) triangle-shape x y hsize size 0)
       \v (triangle-shape canv x y hsize size 0 true)
       \> (triangle-shape canv x y hsize size -90 true)
       \< (triangle-shape canv x y hsize size 90 true)
       \^ (triangle-shape canv x y hsize size 180 true)
       \x (-> canv
-             (line (- x hsize) (+ y hsize) (+ x hsize) (- y hsize))
-             (line (- x hsize) (- y hsize) (+ x hsize) (+ y hsize)))
-      \/ (line canv (- x hsize) (+ y hsize) (+ x hsize) (- y hsize))
-      \\ (line canv (- x hsize) (- y hsize) (+ x hsize) (+ y hsize))
+             (c2d/line (- x hsize) (+ y hsize) (+ x hsize) (- y hsize))
+             (c2d/line (- x hsize) (- y hsize) (+ x hsize) (+ y hsize)))
+      \/ (c2d/line canv (- x hsize) (+ y hsize) (+ x hsize) (- y hsize))
+      \\ (c2d/line canv (- x hsize) (- y hsize) (+ x hsize) (+ y hsize))
       \+ (-> canv
-             (line (- x hsize) y (+ x hsize) y)
-             (line x (- y hsize) x (+ y hsize)))
-      \- (line canv (- x hsize) y (+ x hsize) y)
-      \| (line canv x (- y hsize) x (+ y hsize))
-      \s (crect canv x y size size true)
-      \S (filled-with-stroke canv color (c/darken color) crect x y size size)
-      \o (ellipse canv x y size size true)
-      \O (filled-with-stroke canv color (c/darken color) ellipse x y size size)
-      \. (point canv x y)
-      (let [[^double sx ^double sy] (map #(m/ceil %) (text-bounding-box canv (str type)))]
+             (c2d/line (- x hsize) y (+ x hsize) y)
+             (c2d/line x (- y hsize) x (+ y hsize)))
+      \- (c2d/line canv (- x hsize) y (+ x hsize) y)
+      \| (c2d/line canv x (- y hsize) x (+ y hsize))
+      \s (c2d/crect canv x y size size true)
+      \S (c2d/filled-with-stroke canv color (c/darken color) c2d/crect x y size size)
+      \o (c2d/ellipse canv x y size size true)
+      \O (c2d/filled-with-stroke canv color (c/darken color) c2d/ellipse x y size size)
+      \. (c2d/point canv x y)
+      (let [[^double sx ^double sy] (map #(m/ceil %) (c2d/text-bounding-box canv (str type)))]
         (-> canv
-            (push-matrix)
-            (translate (+ x sx) (- y (/ sy 2)))
-            (set-font-attributes size)
-            (text (str type) 0 0 :center)
-            (pop-matrix))))))
+            (c2d/push-matrix)
+            (c2d/translate (+ x sx) (- y (/ sy 2)))
+            (c2d/set-font-attributes size)
+            (c2d/text (str type) 0 0 :center)
+            (c2d/pop-matrix))))))
 
 ;;
 
 (defn transformed-text
   [c s x y & r]
-  (push-matrix c)
-  (let [[nx ny] (transform c x y)]
-    (reset-matrix c)
-    (apply text c s nx ny r)
-    (pop-matrix c)))
+  (c2d/push-matrix c)
+  (let [[nx ny] (c2d/transform c x y)]
+    (c2d/reset-matrix c)
+    (apply c2d/text c s nx ny r)
+    (c2d/pop-matrix c)))
 
 (def line-dash-styles
   (cycle [[1 1] [2 2] [4 4] [5 1 3] [4 1] [10 2] [14 2 7 2] [14 2 2 7] [2 2 20 2 20 2]]))
@@ -293,78 +288,27 @@
 ;;
 
 (defn render-label
-  ""
   [label ^long w]
   (let [ww (int (* 0.95 w))
         sx (/ (- w ww) 2)]
-    (with-canvas-> (canvas w 12)
-      (set-stroke 0.5)
-      (filled-with-stroke (c/color :white 150) (c/color :black 100) rect sx 1 ww 10)
-      (set-font-attributes 10)
-      (text label (/ w 2) 10 :center))))
+    (c2d/with-canvas-> (c2d/canvas w 12)
+      (c2d/set-stroke 0.5)
+      (c2d/filled-with-stroke (c/color :white 150) (c/color :black 100) c2d/rect sx 1 ww 10)
+      (c2d/set-font-attributes 10)
+      (c2d/text label (/ w 2) 10 :center))))
 
 ;;
 
 (defn label-size
   ([s] (label-size s {}))
   ([s {:keys [font font-size ^double margin] :or {margin 8}}]
-   (with-canvas [c (canvas 1 1)]
-     (when font (set-font c font))
-     (when font-size (set-font-attributes c font-size))
-     (let [[x ^double y _ h] (text-bounding-box c s)]
+   (c2d/with-canvas [c (c2d/canvas 1 1)]
+     (when font (c2d/set-font c font))
+     (when font-size (c2d/set-font-attributes c font-size))
+     (let [[x ^double y _ h] (c2d/text-bounding-box c s)]
        {:shift-y (/ margin 2)
         :block-size (+ margin (m/ceil h))
         :pos [x (m/floor (- y))]}))))
-
-
-;;;
-
-#_(defn stats-map
-    "Calculate several statistics of `vs` and return as map.
-
-  Optional `estimation-strategy` argument can be set to change quantile calculations estimation type. See [[estimation-strategies]]."
-    {:metadoc/categories #{:stat}}
-    ([vs] (stats-map vs :legacy))
-    ([vs estimation-strategy]
-     (let [avs (m/seq->double-array vs)
-           sz (alength avs)
-           mn (smile.math.Math/min avs)
-           mx (smile.math.Math/max avs)
-           sm (smile.math.Math/sum avs)
-           u (/ sm sz)
-           mdn (stats/median avs)
-           q1 (stats/percentile avs 25.0 estimation-strategy)
-           q3 (stats/percentile avs 75.0 estimation-strategy)
-           iqr (- q3 q1)
-           sd (stats/stddev avs)
-           [lav uav] (stats/adjacent-values avs q1 q3)
-           mad (stats/median-absolute-deviation avs)]
-       {:Size sz
-        :Min mn
-        :Max mx
-        :Range (- mx mn)
-        :Mean u
-        :Median mdn
-        :Mode (stats/mode avs)
-        :Q1 q1
-        :Q3 q3
-        :Total sm
-        :SD sd
-        :Variance (* sd sd)
-        :MAD mad
-        :SEM (/ sd (m/sqrt sz))
-        :LAV lav
-        :UAV uav
-        :IQR iqr
-        :LOF (- q1 (* 3.0 iqr))
-        :UOF (+ q3 (* 3.0 iqr))
-        :LIF (- q1 (* 1.5 iqr))
-        :UIF (+ q3 (* 1.5 iqr))
-        :Outliers (stats/outliers avs q1 q3)
-        :Kurtosis (stats/kurtosis avs)
-        :Skewness (stats/skewness avs)
-        :SecMoment (stats/second-moment avs)})))
-
 
 ;; ;;;;;;;;;;
 
@@ -378,7 +322,7 @@
               conf)) {} inheritance))
 
 (defn register-configuration!
-  [chart {:keys [config doc fns] :as config-map} & inheritance]
+  [chart config-map & inheritance]
   (swap! configuration assoc chart (delay (deep-merge (inherite-configuration inheritance) config-map))))
 
 #_(register-configuration! :abc {:stroke {:size 3 :line 123}})

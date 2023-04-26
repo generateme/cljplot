@@ -1,24 +1,20 @@
 (ns cljplot.sketches.examples
   (:require [cljplot.render :as r]
             [cljplot.build :as b]
-            [cljplot.common :refer :all]
-            [fastmath.interpolation :as in]
+            [cljplot.common :as common]
             [fastmath.stats :as stats]
             [clojure2d.color :as c]
             [cljplot.scale :as s]
             [fastmath.core :as m]
             [fastmath.random :as rnd]
-            [cljplot.core :refer :all]
+            [cljplot.core :refer [save xy-chart show]]
             [java-time :as dt]
-            [clojure.string :as str]
             [clojure2d.core :as c2d]
             [clojure2d.pixels :as p]
             [fastmath.complex :as cx]
             [fastmath.fields :as f]
             [fastmath.vector :as v]
-            [fastmath.optimization :as opt]
             [fastmath.gp :as gp]
-            [fastmath.distance :as dist]
             [fastmath.kernel :as k]))
 
 ;; logo
@@ -50,7 +46,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "cljplot charting library")
       (r/render-lattice {:width 600 :height 300})
-      (save "results/examples/logo.jpg")
+      #_(save "results/examples/logo.jpg")
       (show)))
 
 ;; single line charts
@@ -196,7 +192,7 @@
       (save "results/examples/field-trace.jpg")
       (show)))
 
-(def faithful (read-json "data/faithful.json"))
+(def faithful (common/read-json "data/faithful.json"))
 
 (let [data (map (juxt :waiting :eruptions) faithful)]
   (-> (b/series [:grid nil {:position [0 0]}]
@@ -240,7 +236,7 @@
 (def ar3 (drop 9500 (map first (reductions (fn [[c1 c2 c3] r]
                                              [(+ r (* 0.8 c1) (/ c2 -3.0) (* 0.4672897196261683 c3)) c1 c2]) [(first ep) (second ep) (nth ep 2)] (drop 3 ep)))))
 (def ma2 (take 500 (map (fn [e1 e2 e3] (+ (- e1) (* 0.8 e2) (* -0.9 e3))) (drop 2 ep) (drop 1 ep) ep)))
-(def sunspots (map :x (read-json "data/sunspot_year.json")))
+(def sunspots (map :x (common/read-json "data/sunspot_year.json")))
 
 ;; (/ 0.8 1.712)
 ;; => 0.4672897196261683
@@ -299,8 +295,6 @@
 
 (let [data (concat (repeatedly 500 #(rnd/grand 4.5 0.1))
                    (take 10000 (remove #(== (m/round (* % 10.0)) 30.0) (repeatedly #(+ (rnd/grand 2.0 0.1) (* (rnd/drand) (rnd/drand 1.0 3.0)))))))
-      fu (k/kernel-density :uniform data)
-      fs (k/kernel-density :gaussian data)
       m (keys (methods k/kernel-density))
       kdes (zipmap m (map #(k/kernel-density % data) m))]
   (-> (xy-chart {:width 600 :height 600}
@@ -345,19 +339,19 @@
             (save "results/examples/gp-predict.jpg")
             (show))))
 
-(let [N 100
+(let [N 35
       xs [-4 1 2]
       ys [-5 1 2]
-      xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gp (gp/gaussian-process xs ys {:kernel (k/kernel :gaussian 0.8) :noise 0.0001})
+      xtest (sort (map #(m/norm % 0 (dec N) -5.0 5.0) (range N)))
+      gp (gp/gaussian-process xs ys {:kernel (k/kernel :gaussian 0.8) :noise 0.005})
       pairs (gp/posterior-samples gp xtest true)
       mu (map first pairs)
       stddev (map second pairs)
       s95 (map #(* 1.96 %) stddev)]
   (-> (xy-chart {:width 800 :height 600}
                 (b/series [:grid]
-                          [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]                          
-                          [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
+                          [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180) :smooth? true}]                          
+                          [:line (map vector xtest mu) {:color :black :stroke {:size 2} :smooth? true}]
                           [:scatter (map vector xs ys) {:size 10}])
                 (b/add-axes :bottom)
                 (b/add-axes :left)
@@ -365,14 +359,14 @@
       (save "results/examples/gp-posterior.jpg")
       (show)))
 
-(let [posterior-cnt 20
-      N 100
+(let [posterior-cnt 30
+      N 30
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
       gps (repeatedly posterior-cnt #(gp/gaussian-process xs ys {:kernel (k/kernel :periodic 0.5 8.0) :noise 0.0001}))
       pairs (map #(gp/posterior-samples % xtest true) gps)
-      lines (map #(vector :line (map vector xtest (map first %)) {:color (c/color :black 100)}) pairs)]
+      lines (map #(vector :line (map vector xtest (map first %)) {:color (c/color :black 100) :smooth? true}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
                 (-> (b/series [:grid])
                     (b/add-series lines)
@@ -385,13 +379,13 @@
       (show)))
 
 (let [prior-cnt 20
-      N 300
+      N 35
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
       gps (repeatedly prior-cnt #(gp/gaussian-process xs ys {:kernel (k/kernel :gaussian) :noise 0.0000001}))
       pairs (map #(gp/prior-samples % xtest) gps)
-      lines (map #(vector :line (map vector xtest %) {:color (c/color :black 100)}) pairs)]
+      lines (map #(vector :line (map vector xtest %) {:color (c/color :black 100) :smooth? true}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
                 (-> (b/series [:grid])
                     (b/add-series lines))
@@ -400,7 +394,6 @@
                 (b/add-label :bottom "Gaussian Process - prior samples (20)"))
       (save "results/examples/gp-priors-20.jpg")
       (show)))
-
 
 
 ;;;;;
@@ -433,10 +426,10 @@
   [defs line]
   (mapv #((or %1 read-line) %2) defs line))
 
-(def sweather (->> (read-csv "data/seattle-weather.csv")
-                   (map (partial parse-line [(partial dt/local-date "yyyy/MM/dd")
-                                             read-string read-string read-string read-string keyword]))
-                   (map rest)))
+(def sweather (->> (common/read-csv "data/seattle-weather.csv")
+                 (map (partial parse-line [(partial dt/local-date "yyyy/MM/dd")
+                                           read-string read-string read-string read-string keyword]))
+                 (map rest)))
 
 ;; Seattle weather dataset
 ;; t1 - minimal temperature. x-axis
@@ -512,11 +505,10 @@
                 (b/add-axes :right))
       (show)))
 
-(let [fk (fn [f] #(f [0] [%]))
-      r (range -1 1 0.025)
+(let [r (range -1 1 0.025)
       data (map (fn [k] [(str k)
-                         (let [kernel (k/kernel k)]
-                           (for [x r y r] [[x y] (kernel [x] [y])]))]) kernels)]
+                        (let [kernel (k/kernel k)]
+                          (for [x r y r] [[x y] (kernel [x] [y])]))]) kernels)]
   (-> (xy-chart {:width 700 :height 500}
                 (-> (b/lattice :heatmap data {} {:label name :grid true}))
                 (b/add-label :top "Covariance matrices"))
@@ -526,7 +518,6 @@
 (let [k1 (k/kernel :gaussian)
       k2 (k/kernel :periodic 1.0 2)
       k3 (k/kernel :thin-plate 2)
-      k4 (k/mult k1 k2)
       r (range -3 3 0.25)
       data #(for [x r
                   y r]

@@ -1,6 +1,7 @@
 (ns cljplot.config
   (:require [clojure2d.color :as c]
-            [cljplot.common :refer [deep-merge]]))
+            [cljplot.common :refer [deep-merge]]
+            [fastmath.core :as m]))
 
 (def ^:private blue (last (c/palette :rdylbu-9)))
 (def ^:private red (first (c/palette :rdylbu-9)))
@@ -59,168 +60,168 @@
 (def ^:private stroke-common {:color nil :size 1.0 :cap :butt})
 
 (def configuration (atom
-                    (merge axes-config 
-                           {:abline {:color (c/gray 175)}
-                            :legend {:color :black
-                                     :font "Liberation Mono"
-                                     :font-size 12
-                                     :gap 5
-                                     :marker-size 25}
-                            :label {:color :black
-                                    :font "Liberation Mono"
-                                    :font-size 12
-                                    :font-style :bold
-                                    :margin 8}
-                            :density-2d {:palette (c/palette :gnbu-9)
-                                         :kernel :gaussian
-                                         :kernel-params nil
-                                         :logarithmic? true
-                                         :blur-kernel-size 0.1
-                                         :contours 10
-                                         :fill? true}
-                            :contour-2d {:palette [:black :white]
-                                         :contours 10
-                                         :fill? true}
-                            :binned-heatmap {:grid :pointy-hex
-                                             :alpha-factor 0.0
-                                             :size 20
-                                             :gradient (comp (c/gradient (c/palette :k2)) #(- 1.0 %))}
-                            :heatmap {:gradient (comp (c/gradient (c/palette :k2)) #(- 1.0 %))
-                                      :annotate? false
-                                      :annotate-fmt str}
-                            :complex {:colorspace :HSB
-                                      :permutation 0
-                                      :wrap-method :log2}
-                            :scalar {:gradient (c/gradient [:black :white])
-                                     :wrap-method nil}
-                            :field {:color (c/color (c/darken dblue) 50)
-                                    :points 200000
-                                    :generator :r2
-                                    :jitter 0.1
-                                    :wrap? true}
-                            :vector {:color (c/set-alpha dblue 200)
-                                     :size 20
-                                     :grid :square
-                                     :scale 0.8}
-                            :trace {:color (c/set-alpha dblue 30)
-                                    :step 0.01
-                                    :length 200
-                                    :points 10000
-                                    :generator :r2
-                                    :jitter 0.1}
-                            :histogram {:color blue
-                                        :palette (cycle (c/palette :category20))
-                                        :stroke stroke-common
-                                        :percents? true
-                                        :stroke? true
-                                        :type :bars
-                                        :padding-in 0.1
-                                        :padding-out 0.2
-                                        :bins nil
-                                        :margins {:x [0.05 0.05] :y [0.0 0.01]}}
-                            :grid {:x {:color (c/color :gray 180)
-                                       :stroke {:size 0.5 :cap :butt :dash [4.0] :dash-phase 2.0}}
-                                   :y {:color (c/color :gray 180)
-                                       :stroke {:size 0.5 :cap :butt :dash [4.0] :dash-phase 2.0}}}
-                            :rug {:color (c/set-alpha blue 100)
-                                  :size 1.0
-                                  :cap :butt
-                                  :scale 1.0
+                  (merge axes-config 
+                         {:abline {:color (c/gray 175)}
+                          :legend {:color :black
+                                   :font "Liberation Mono"
+                                   :font-size 12
+                                   :gap 5
+                                   :marker-size 25}
+                          :label {:color :black
+                                  :font "Liberation Mono"
+                                  :font-size 12
+                                  :font-style :bold
+                                  :margin 8}
+                          :density-2d {:palette (c/palette :gnbu-9)
+                                       :kernel :gaussian
+                                       :kernel-params nil
+                                       :logarithmic? true
+                                       :blur-kernel-size 0.1
+                                       :contours 10
+                                       :fill? true}
+                          :contour-2d {:palette [:black :white]
+                                       :contours 10
+                                       :fill? true}
+                          :binned-heatmap {:grid :pointy-hex
+                                           :alpha-factor 0.0
+                                           :size 20
+                                           :gradient (comp (c/gradient (c/palette :k2)) #(- 1.0 ^double %))}
+                          :heatmap {:gradient (comp (c/gradient (c/palette :k2)) #(- 1.0 ^double %))
+                                    :annotate? false
+                                    :annotate-fmt str}
+                          :complex {:colorspace :HSB
+                                    :permutation 0
+                                    :wrap-method :log2}
+                          :scalar {:gradient (c/gradient [:black :white])
+                                   :wrap-method nil}
+                          :field {:color (c/color (c/darken dblue) 50)
+                                  :points 200000
+                                  :generator :r2
+                                  :jitter 0.1
+                                  :wrap? true}
+                          :vector {:color (c/set-alpha dblue 200)
+                                   :size 20
+                                   :grid :square
+                                   :scale 0.8}
+                          :trace {:color (c/set-alpha dblue 30)
+                                  :step 0.01
+                                  :length 200
+                                  :points 10000
+                                  :generator :r2
+                                  :jitter 0.1}
+                          :histogram {:color blue
+                                      :palette (cycle (c/palette :category20))
+                                      :stroke stroke-common
+                                      :percents? true
+                                      :stroke? true
+                                      :type :bars
+                                      :padding-in 0.1
+                                      :padding-out 0.2
+                                      :bins nil
+                                      :margins {:x [0.05 0.05] :y [0.0 0.01]}}
+                          :grid {:x {:color (c/color :gray 180)
+                                     :stroke {:size 0.5 :cap :butt :dash [4.0] :dash-phase 2.0}}
+                                 :y {:color (c/color :gray 180)
+                                     :stroke {:size 0.5 :cap :butt :dash [4.0] :dash-phase 2.0}}}
+                          :rug {:color (c/set-alpha blue 100)
+                                :size 1.0
+                                :cap :butt
+                                :scale 1.0
+                                :distort 0.0
+                                :margins {:x [0.05 0.05]}}
+                          :strip {:color (c/set-alpha blue 50)
+                                  :size 10.0
                                   :distort 0.0
-                                  :margins {:x [0.05 0.05]}}
-                            :strip {:color (c/set-alpha blue 50)
-                                    :size 10.0
-                                    :distort 0.0
-                                    :scale 1.0
-                                    :shape \O
-                                    :margins {:x [0.05 0.05]}}
-                            :extent-stat {:extent-type :min-max
-                                          :color blue
-                                          :shape \A
-                                          :size 10.0
-                                          :stroke {:size 3.0 :cap :butt}
-                                          :margins {:x [0.05 0.05]}}
-                            :box {:color blue
+                                  :scale 1.0
                                   :shape \O
-                                  :outliers? true
-                                  :size 1.0
                                   :margins {:x [0.05 0.05]}}
-                            :violin {:color blue
-                                     :color-bar (c/darken dblue)
-                                     :size-bar 5.0
-                                     :size 1.0
-                                     :normalize? true
-                                     :scale 0.85
-                                     :margins {:x [0.05 0.05]}
-                                     :kernel-bandwidth nil}
-                            :density-strip {:color blue
-                                            :size 1.0
-                                            :normalize? true
-                                            :kernel-bandwidth nil
-                                            :scale 0.9
-                                            :fill? false}
-                            :scatter {:color (c/set-alpha blue 180)
-                                      :shape \O
-                                      :stroke {:size 1.0}
-                                      :size 4.0
-                                      :margins {:x [0.05 0.05] :y [0.05 0.05]}}
-                            :bubble {:color (c/set-alpha blue 180)
-                                     :shape \O
+                          :extent-stat {:extent-type :min-max
+                                        :color blue
+                                        :shape \A
+                                        :size 10.0
+                                        :stroke {:size 3.0 :cap :butt}
+                                        :margins {:x [0.05 0.05]}}
+                          :box {:color blue
+                                :shape \O
+                                :outliers? true
+                                :size 1.0
+                                :margins {:x [0.05 0.05]}}
+                          :violin {:color blue
+                                   :color-bar (c/darken dblue)
+                                   :size-bar 5.0
+                                   :size 1.0
+                                   :normalize? true
+                                   :scale 0.85
+                                   :margins {:x [0.05 0.05]}
+                                   :kernel-bandwidth nil}
+                          :density-strip {:color blue
+                                          :size 1.0
+                                          :normalize? true
+                                          :kernel-bandwidth nil
+                                          :scale 0.9
+                                          :fill? false}
+                          :scatter {:color (c/set-alpha blue 180)
+                                    :shape \O
+                                    :stroke {:size 1.0}
+                                    :size 4.0
+                                    :margins {:x [0.05 0.05] :y [0.05 0.05]}}
+                          :bubble {:color (c/set-alpha blue 180)
+                                   :shape \O
+                                   :stroke {:size 1.0}
+                                   :size-range [2.0 10]
+                                   :scale-z [:pow 0.5]
+                                   :margins {:x [0.05 0.05] :y [0.05 0.05]}}
+                          :gbubble {:color (c/set-alpha blue 180)
+                                    :shape \O
+                                    :stroke {:size 1.0}
+                                    :size-range [2.0 10]
+                                    :scale-z [:pow 0.5]
+                                    :cells 10
+                                    :grid-type :square
+                                    :margins {:x [0.05 0.05] :y [0.05 0.05]}}
+                          :line {:color blue
+                                 :stroke {:size 1.0}
+                                 :interpolation nil
+                                 :smooth? false
+                                 :margins {:x [0.05 0.05] :y [0.05 0.05]}
+                                 :point {:type nil :size 6}}
+                          :sarea {:palette (cycle (c/palette :category20b))}
+                          :function {:domain [0 1]
+                                     :samples nil
+                                     :color blue
                                      :stroke {:size 1.0}
-                                     :size-range [2.0 10]
-                                     :scale-z [:pow 0.5]
-                                     :margins {:x [0.05 0.05] :y [0.05 0.05]}}
-                            :gbubble {:color (c/set-alpha blue 180)
-                                      :shape \O
-                                      :stroke {:size 1.0}
-                                      :size-range [2.0 10]
-                                      :scale-z [:pow 0.5]
-                                      :cells 10
-                                      :grid-type :square
-                                      :margins {:x [0.05 0.05] :y [0.05 0.05]}}
-                            :line {:color blue
-                                   :stroke {:size 1.0}
-                                   :interpolation nil
-                                   :smooth? false
-                                   :margins {:x [0.05 0.05] :y [0.05 0.05]}
-                                   :point {:type nil :size 6}}
-                            :sarea {:palette (cycle (c/palette :category20b))}
-                            :function {:domain [0 1]
-                                       :samples nil
-                                       :color blue
-                                       :stroke {:size 1.0}
-                                       :interpolation nil
-                                       :margins {:x [0.05 0.05] :y [0.05 0.05]}
-                                       :smooth? false}
-                            :density {:domain [0 1]
-                                      :samples nil
-                                      :color blue
-                                      :stroke {:size 1.0}
-                                      :interpolation nil
-                                      :smooth? false
-                                      :kernel-bandwidth nil
-                                      :margins {:x [0.1 0.1] :y [0.0 0.05]}
-                                      :area? false}
-                            :bar {:color (fn [v _] (if (neg? v) red blue))
-                                  :stroke? true
-                                  :stroke {:color (fn [v _] (if (neg? v) dred dblue))
-                                           :size 1.0}
-                                  :padding-in 0.1
-                                  :padding-out 0.2
-                                  :margin 0.0
-                                  :palette (c/palette :category20)}
-                            :rbar {:color blue
-                                   :stroke? true
-                                   :stroke {:size 1.0}
-                                   :padding 0.1}
-                            :sbar {:stroke? true
-                                   :stroke {:size 1.0}
-                                   :padding 0.1
-                                   :margin 0.0
-                                   :method :stacked
-                                   :palette (c/palette :category20)}
-                            :stack {:padding-in 0.0
-                                    :padding-out 0.0}})))
+                                     :interpolation nil
+                                     :margins {:x [0.05 0.05] :y [0.05 0.05]}
+                                     :smooth? false}
+                          :density {:domain [0 1]
+                                    :samples nil
+                                    :color blue
+                                    :stroke {:size 1.0}
+                                    :interpolation nil
+                                    :smooth? false
+                                    :kernel-bandwidth nil
+                                    :margins {:x [0.1 0.1] :y [0.0 0.05]}
+                                    :area? false}
+                          :bar {:color (fn [v _] (if (m/neg? v) red blue))
+                                :stroke? true
+                                :stroke {:color (fn [v _] (if (m/neg? v) dred dblue))
+                                         :size 1.0}
+                                :padding-in 0.1
+                                :padding-out 0.2
+                                :margin 0.0
+                                :palette (c/palette :category20)}
+                          :rbar {:color blue
+                                 :stroke? true
+                                 :stroke {:size 1.0}
+                                 :padding 0.1}
+                          :sbar {:stroke? true
+                                 :stroke {:size 1.0}
+                                 :padding 0.1
+                                 :margin 0.0
+                                 :method :stacked
+                                 :palette (c/palette :category20)}
+                          :stack {:padding-in 0.0
+                                  :padding-out 0.0}})))
 
 (def aliases {:lag :scatter
               :acf :scatter
