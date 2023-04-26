@@ -43,6 +43,8 @@ See `sketches` folder for examples
   <span><img src="results/lattice/figure_3.4.jpg" height="100"></span>
   <span><img src="results/lattice/figure_1.1.jpg" height="100"></span>
   <span><img src="results/lattice/figure_2.7.jpg" height="100"></span>
+  <span><img src="results/lattice/figure_2.9.jpg" height="100"></span>
+  <span><img src="results/lattice/figure_4.3.jpg" height="100"></span>
 </p>
 
 
