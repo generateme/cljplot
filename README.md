@@ -13,7 +13,7 @@ A "no web-based" pure JVM Clojure library for 2d charts, inspired by D3, Vega an
 
 ## Current version
 
-`[cljplot "0.0.2a-SNAPSHOT"]`
+`[cljplot "0.0.3"]`
 
 ## NOTE about API
 
@@ -24,10 +24,6 @@ Please note that current way of creating charts is very low level. All of this n
 Currently there are no easy to use functions nor data DSL (help needed here). Still everything is done manually.
 
 See `sketches` folder for examples
-
-## Internals
-
-[How does it work?](INTERNALS.md)
 
 ## Short term plan
 
@@ -62,13 +58,13 @@ See `sketches` folder for examples
 ## Known issues
 
 * ~~grid, axes sometimes don't match (1-2px shift). This is due to rounding errors and axes rotations~~
-* still ~~no labels~~, no legends
+* still ~~no labels~~, ~~no legends~~
 * overlapping ticks (add some heuristics to use smaller fonts and smaller number of ticks)
 * chart configuration needs to be reviewed, still not consistent
 * no higher level functions/macros
 * no DSL for data manipulation, and no plan to make it (task for others!)
 * deep nesting is really nasty to configure and for data preparation :/ (lattice of stacked horizontally stacked bars...)
-* merging nesting extents is not working correctly (in lattice)
+* merging nested extents is not working correctly (in lattice)
 * true is, there are some labels for lattice, quick and dirty
 * do not layer over histograms (bins mismatch)...
 * still something is wrong with time scale
@@ -92,7 +88,7 @@ Let's chat about this: https://clojurians.zulipchat.com/#narrow/stream/197967-cl
 
 ## License
 
-Copyright © 2019
+Copyright © 2019-2023
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

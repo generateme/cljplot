@@ -3,7 +3,6 @@
             [cljplot.common :as common]
             [cljplot.scale :as s]
             [fastmath.random :as r]
-            [fastmath.protocols :as pr]
             [fastmath.core :as m]
             [clojure2d.pixels :as p]
             [clojure2d.color :as c])
@@ -42,9 +41,9 @@
 ;;
 
 (defmethod common/prepare-data :qqplot [_ [d1 d2] {:keys [points] :or {points 100}}]
-  (let [d1 (if (satisfies? pr/DistributionProto d1) d1
+  (let [d1 (if (r/distribution? d1) d1
                (r/distribution :real-discrete-distribution {:data (common/extract-first d1)}))
-        d2 (if (satisfies? pr/DistributionProto d2) d2
+        d2 (if (r/distribution? d2) d2
                (r/distribution :real-discrete-distribution {:data (common/extract-first d2)}))]
     (map #(let [v (m/norm % 0 points)]
             (vector (r/icdf d1 v) (r/icdf d2 v))) (range 1 points))))
@@ -56,9 +55,9 @@
 
 (defmethod common/prepare-data :ppplot [_ [d1 d2] {:keys [^int points domain] :or {points 100}}]
   (let [[dx dy] (or domain [-1.0 1.0])
-        d1 (if (satisfies? pr/DistributionProto d1) d1
+        d1 (if (r/distribution? d1) d1
                (r/distribution :real-discrete-distribution {:data (common/extract-first d1)}))
-        d2 (if (satisfies? pr/DistributionProto d2) d2
+        d2 (if (r/distribution? d2) d2
                (r/distribution :real-discrete-distribution {:data (common/extract-first d2)}))]
     (map #(let [v (m/norm % 0 points dx dy)]
             (vector (r/cdf d1 v) (r/cdf d2 v))) (range 0 (inc points)))))

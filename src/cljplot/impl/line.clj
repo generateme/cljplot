@@ -6,8 +6,7 @@
             [fastmath.interpolation :as in]
             [fastmath.stats :as stats]
             [fastmath.kernel :as k]
-            [fastmath.random :as r]
-            [fastmath.protocols :as pr]))
+            [fastmath.random :as r]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -117,7 +116,7 @@
 ;;
 
 (defmethod common/prepare-data :cdf [_ data conf]
-  (if (satisfies? pr/DistributionProto data)
+  (if (r/distribution? data)
     [conf (common/prepare-data :function (partial r/cdf data) conf)]
     (let [data (common/extract-first data)
           domain (take 2 (stats/extent data))
