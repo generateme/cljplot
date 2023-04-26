@@ -27,9 +27,9 @@ See `sketches` folder for examples
 
 ### Examples
 
-<p align="center">
-  <img src="results/examples/gp-predict.jpg"/>
-  <img src="results/examples/vector-field.jpg"/>
+<p>
+  <span><img src="results/examples/gp-predict.jpg"/></span>
+  <span><img src="results/examples/vector-field.jpg"/></span>
 </p>
 
 
