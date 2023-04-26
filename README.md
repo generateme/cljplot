@@ -32,7 +32,17 @@ See `sketches` folder for examples
   <span><img src="results/examples/vector-field.jpg" height="100"></span>
   <span><img src="results/examples/heatmap-matrix-ann.jpg" height="100"></span>
   <span><img src="results/examples/complex.jpg" height="100"></span>
-  
+  <span><img src="results/examples/field.jpg" height="100"></span>
+  <span><img src="results/examples/lag.jpg" height="100"></span>
+</p>
+
+<p align="center">
+  <span><img src="results/lattice/figure_14.4.jpg" height="100"/></span>
+  <span><img src="results/lattice/figure_14.3.jpg" height="100"></span>
+  <span><img src="results/lattice/figure_3.6.jpg" height="100"></span>
+  <span><img src="results/lattice/figure_3.4.jpg" height="100"></span>
+  <span><img src="results/lattice/figure_1.1.jpg" height="100"></span>
+  <span><img src="results/lattice/figure_2.7.jpg" height="100"></span>
 </p>
 
 
