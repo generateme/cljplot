@@ -25,6 +25,14 @@ Currently there are no easy to use functions nor data DSL (help needed here). St
 
 See `sketches` folder for examples
 
+### Examples
+
+<p align="center">
+  <img src="results/examples/gp-predict.jpg"/>
+  <img src="results/examples/vector-field.jpg"/>
+</p>
+
+
 ## Short term plan
 
 * More chart types (`+` - easier; `-` - harder):
