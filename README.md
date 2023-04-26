@@ -47,6 +47,15 @@ See `sketches` folder for examples
   <span><img src="results/lattice/figure_4.3.jpg" height="100"></span>
 </p>
 
+<p align="center">
+  <span><img src="results/vega/circle-natural-disasters.jpg" height="100"/></span>
+  <span><img src="results/vega/trail-color.jpg" height="100"></span>
+  <span><img src="results/vega/stacked-area-stream.jpg" height="100"></span>
+  <span><img src="results/vega/color-with-shape.jpg" height="100"></span>
+  <span><img src="results/vega/connected-scatter-plot.jpg" height="100"></span>
+  <span><img src="results/vega/stacked-bar-weather.jpg" height="100"></span>
+</p>
+
 
 ## Short term plan
 
