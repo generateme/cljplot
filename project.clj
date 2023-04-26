@@ -1,4 +1,4 @@
-(defproject cljplot "0.0.3-SNAPSHOT"
+(defproject cljplot "0.0.3"
   :description "JVM chart library"
   :url "https://github.com/generateme/cljplot"
   :license {:name "Eclipse Public License"

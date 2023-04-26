@@ -86,6 +86,10 @@ YES! A lot of things to do:
 
 Let's chat about this: https://clojurians.zulipchat.com/#narrow/stream/197967-cljplot-dev
 
+## Marching squares algorithm
+
+Source: https://udel.edu/~mm/code/marchingSquares/
+
 ## License
 
 Copyright © 2019-2023
