@@ -90,7 +90,7 @@
     (b/add-label :bottom "gcsescore")
     (b/add-label :left "Percent of Total")
     (r/render-lattice {:width 800 :height 600})
-    (save "results/lattice/figure_1.1.jpg")
+    #_(save "results/lattice/figure_1.1.jpg")
     (show))
 
 ;; figure 1.2
@@ -118,7 +118,7 @@
     (b/add-label :bottom "gcsescore")
     (b/add-label :left "Density")
     (r/render-lattice {:width 800 :height 400})
-    (save "results/lattice/figure_1.3.jpg")
+    #_(save "results/lattice/figure_1.3.jpg")
     (show))
 
 
@@ -143,7 +143,7 @@
       (b/add-label :bottom "yield")
       (b/add-label :left "nitro")      
       (r/render-lattice {:width 600 :height 1000 :padding-in 0.1 :padding-out 0.05})
-      (save "results/lattice/figure_2.1.jpg")
+      #_ (save "results/lattice/figure_2.1.jpg")
       (show)))
 
 ;; figure 2.2
@@ -162,7 +162,7 @@
       (b/add-label :bottom "yield")
       (b/add-label :left "nitro")      
       (r/render-lattice {:width 600 :height 300})
-      (save "results/lattice/figure_2.2.jpg")
+      #_(save "results/lattice/figure_2.2.jpg")
       (show)))
 
 ;; figure 2.3
@@ -180,8 +180,8 @@
       (b/add-axes :left)
       (b/add-label :bottom "yield")
       (b/add-label :left "nitro")
-      (r/render-lattice {:width 200 :height 1000 :padding-in 0.1})
-      (save "results/lattice/figure_2.3.jpg")
+      (r/render-lattice {:width 300 :height 1000 :padding-in 0.1})
+      #_(save "results/lattice/figure_2.3.jpg")
       (show)))
 
 
@@ -201,7 +201,7 @@
       (b/add-label :bottom "yield")
       (b/add-label :left "nitro")
       (r/render-lattice {:width 600 :height 800 :padding-in 0.1 :padding-out 0.05})
-      (save "results/lattice/figure_2.4.jpg")
+      #_(save "results/lattice/figure_2.4.jpg")
       (show)))
 
 ;; figure 2.5 - no grouping
@@ -249,7 +249,7 @@
       (b/add-label :left "Yield (bushels/acre)")
       (b/add-label :top "Yield of three varieties of oats" {:font-size 20 :font-style :bold :color blue})
       (r/render-lattice {:width 800 :height 300 :padding-in 0.1})
-      (save "results/lattice/figure_2.7.jpg")
+      #_(save "results/lattice/figure_2.7.jpg")
       (show)))
 
 ;; figure 2.8
@@ -267,7 +267,7 @@
       (b/add-label :bottom "Freq")
       (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue}) 
       (r/render-lattice {:width 800 :height 300})
-      (save "results/lattice/figure_2.8.jpg")
+      #_ (save "results/lattice/figure_2.8.jpg")
       (show)))
 
 ;; figure 2.9
@@ -284,7 +284,7 @@
       (b/add-label :bottom "Freq")
       (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue})       
       (r/render-lattice {:width 800 :height 300})
-      (save "results/lattice/figure_2.9.jpg")
+      #_(save "results/lattice/figure_2.9.jpg")
       (show)))
 
 ;; figure 2.10
@@ -301,7 +301,7 @@
       (b/add-label :bottom "Freq")
       (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue})       
       (r/render-lattice {:width 800 :height 300})
-      (save "results/lattice/figure_2.10.jpg")
+      #_ (save "results/lattice/figure_2.10.jpg")
       (show)))
 
 ;; figure 2.11
@@ -318,7 +318,7 @@
       (b/add-label :bottom "Freq")
       (b/add-label :top "Survived" {:font-size 20 :font-style :bold :color blue})       
       (r/render-lattice {:width 800 :height 300})
-      (save "results/lattice/figure_2.10.jpg")
+      #_ (save "results/lattice/figure_2.10.jpg")
       (show)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -335,7 +335,7 @@
       (b/add-label :bottom "eruptions")
       (b/add-label :left "Density")
       (r/render-lattice {:width 600 :height 300})
-      (save "results/lattice/figure_3.1.jpg")
+      #_ (save "results/lattice/figure_3.1.jpg")
       (show)))
 
 ;; figure 3.2
@@ -349,7 +349,7 @@
       (b/add-label :bottom "eruptions")
       (b/add-label :left "Density")
       (r/render-lattice {:width 600 :height 200})
-      (save "results/lattice/figure_3.2.jpg")
+      #_  (save "results/lattice/figure_3.2.jpg")
       (show)))
 
 ;; v2
@@ -363,7 +363,7 @@
       (b/add-label :bottom "eruptions")
       (b/add-label :left "Density")
       (r/render-lattice {:width 600 :height 200})
-      (save "results/lattice/figure_3.2v2.jpg")
+      #_ (save "results/lattice/figure_3.2v2.jpg")
       (show)))
 
 
@@ -383,7 +383,7 @@
       (b/add-label :bottom "log(FSC.H)")
       (b/add-label :left "Density")      
       (r/render-lattice {:width 600 :height 500})
-      (save "results/lattice/figure_3.3.jpg")
+      #_  (save "results/lattice/figure_3.3.jpg")
       (show)))
 
 ;; figure 3.4
@@ -402,7 +402,7 @@
       (b/add-label :bottom "log Forward Scatter")
       (b/add-label :left "Density")
       (r/render-lattice {:width 800 :height 500})
-      (save "results/lattice/figure_3.4.jpg")
+      #_   (save "results/lattice/figure_3.4.jpg")
       (show)))
 
 ;; figure 3.5
@@ -420,7 +420,7 @@
       (b/add-label :bottom "qnorm")
       (b/add-label :left "gcsescore")
       (r/render-lattice {:height 400})
-      (save "results/lattice/figure_3.5.jpg")
+      #_    (save "results/lattice/figure_3.5.jpg")
       (show)))
 
 ;; figure 3.6
@@ -438,7 +438,7 @@
       (b/add-label :bottom "Standard Normal Quantiles")
       (b/add-label :left "Average GCSE Score")
       (r/render-lattice {:height 400 :width 500})
-      (save "results/lattice/figure_3.6.jpg")
+      #_ (save "results/lattice/figure_3.6.jpg")
       (show)))
 
 ;; figure 3.7
@@ -475,7 +475,7 @@
       (b/add-label :bottom "Average GCSE Score")
       (b/add-label :left "Empirical CDF")      
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_3.8.jpg")
+      #_  (save "results/lattice/figure_3.8.jpg")
       (show)))
 
 ;; figure 3.9
@@ -495,7 +495,7 @@
       (b/add-label :bottom "Standard Normal Quantiles")
       (b/add-label :left "Average GCSE Score")      
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_3.9.jpg")
+      #_   (save "results/lattice/figure_3.9.jpg")
       (show)))
 
 ;; figure 3.10
@@ -517,7 +517,7 @@
       (b/add-label :bottom "M")
       (b/add-label :left "F")
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_3.10.jpg")
+      #_ (save "results/lattice/figure_3.10.jpg")
       (show)))
 
 ;; figure 3.11
@@ -532,7 +532,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "Average GCSE Score")
       (r/render-lattice {:height 400 :width 800})
-      (save "results/lattice/figure_3.11.jpg")
+      #_  (save "results/lattice/figure_3.11.jpg")
       (show)))
 
 ;; figure 3.12
@@ -548,7 +548,7 @@
       (b/add-axes :left)
       (b/add-label :left "Transformed GCSE Score")
       (r/render-lattice {:height 400 :width 800})
-      (save "results/lattice/figure_3.12.jpg")
+      #_ (save "results/lattice/figure_3.12.jpg")
       (show)))
 
 ;; figure 3.13
@@ -564,7 +564,7 @@
       (b/add-label :bottom "log(Forward Scatter)")
       (b/add-label :left "Days Past Transplant")
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_3.13.jpg")
+      #_   (save "results/lattice/figure_3.13.jpg")
       (show)))
 
 ;; figure 3.14
@@ -580,7 +580,7 @@
       (b/add-label :bottom "log(Forward Scatter)")
       (b/add-label :left "Days Past Transplant")
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_3.14.jpg")
+      #_   (save "results/lattice/figure_3.14.jpg")
       (show)))
 
 
@@ -596,7 +596,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "depth")
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_3.15.jpg")
+      #_(save "results/lattice/figure_3.15.jpg")
       (show)))
 
 ;; figure 3.16
@@ -612,7 +612,7 @@
       (b/add-label :bottom "Magnitude (Richter)")
       (b/add-label :left "Depth (km)")
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_3.16.jpg")
+      #_(save "results/lattice/figure_3.16.jpg")
       (show)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -631,7 +631,7 @@
       (b/add-label :top "Death Rates in Virginia - 1940")
       (b/add-label :bottom "freq")
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_4.1.jpg")
+      #_ (save "results/lattice/figure_4.1.jpg")
       (show)))
 
 ;; figure 4.2
@@ -646,7 +646,7 @@
       (b/add-label :top "Death Rates in Virginia - 1940")
       (b/add-label :bottom "freq")
       (r/render-lattice {:height 800 :width 400})
-      (save "results/lattice/figure_4.2.jpg")
+      #_   (save "results/lattice/figure_4.2.jpg")
       (show)))
 
 ;; figure 4.3
@@ -667,7 +667,7 @@
       (b/add-label :bottom "Rage (per 1000)")
       (b/add-label :top "Death Rates in Virginia - 1940")
       (r/render-lattice {:height 500 :width 600})
-      (save "results/lattice/figure_4.3.jpg")
+      #_   (save "results/lattice/figure_4.3.jpg")
       (show)))
 
 
@@ -683,7 +683,7 @@
       (b/add-label :top "Death Rates in Virginia - 1940")
       (b/add-label :bottom "Rate (per 1000)")
       (r/render-lattice {:height 800 :width 400})
-      (save "results/lattice/figure_4.4.jpg")
+      #_ (save "results/lattice/figure_4.4.jpg")
       (show)))
 
 ;; figure 4.5
@@ -709,7 +709,7 @@
       (b/add-label :bottom "propotion")
       (b/add-legend "site" legend)
       (r/render-lattice {:width 1000 :height 300})
-      (save "results/lattice/figure_4.5.jpg")
+      #_  (save "results/lattice/figure_4.5.jpg")
       (show)))
 
 ;; figure 4.6
@@ -744,7 +744,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "Propotion")
       (r/render-lattice {:height 800 :width 500})
-      (save "results/lattice/figure_4.7.jpg")
+      #_ (save "results/lattice/figure_4.7.jpg")
       (show)))
 
 
@@ -794,7 +794,7 @@
       (b/add-label :bottom "q")
       (b/add-label :left "p")
       (r/render-lattice {:width 800 :height 1000 :rendering-hint :highest})
-      (save "results/lattice/figure_13.1.jpg")
+      #_(save "results/lattice/figure_13.1.jpg")
       (show)))
 
 ;; figure 13.2
@@ -804,7 +804,7 @@
   (-> (b/lattice :free free {} {:shape [7 6]})
       (b/preprocess-series)
       (r/render-lattice {:width 800 :height 1000 :rendering-hint :highest})
-      (save "results/lattice/figure_13.2.jpg")
+      #_ (save "results/lattice/figure_13.2.jpg")
       (show)))
 
 
@@ -860,7 +860,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "Time (Days)")
       (r/render-lattice {:height 400 :width 600 :padding-in 0.2})
-      (save "results/lattice/figure_14.2.jpg")
+      #_(save "results/lattice/figure_14.2.jpg")
       (show)))
 
 ;; figure 14.3
@@ -878,7 +878,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "FSC-H")
       (r/render-lattice {:height 400 :width 600})
-      (save "results/lattice/figure_14.3.jpg")
+      #_(save "results/lattice/figure_14.3.jpg")
       (show)))
 
 ;; figure 14.4
@@ -896,5 +896,5 @@
       (b/add-label :bottom "TIBC")
       (b/add-label :left "Hemoglobin")
       (r/render-lattice {:height 300 :width 600})
-      (save "results/lattice/figure_14.4.jpg")
+      #_ (save "results/lattice/figure_14.4.jpg")
       (show)))

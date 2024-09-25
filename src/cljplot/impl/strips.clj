@@ -13,7 +13,6 @@
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
 
-
 (defn- pack-into-seq [data]
   (if (sequential? (first data)) data (map vector data)))
 
@@ -104,7 +103,8 @@
 
 ;;
 
-(defmethod common/prepare-data :violin [_ data {:keys [kernel-bandwidth samples margins kernel-type]}]
+(defmethod common/prepare-data :violin [_ data {:keys [kernel-bandwidth samples margins kernel-type]
+                                                :or {kernel-type :gaussian}}]
   (let [dens-data (common/extract-first data)
         stats (stats/stats-map dens-data)
         [mn mx] (common/extend-domain-numerical [(:Min stats) (:Max stats)] (or (:x margins) [0.0 0.0]))
@@ -138,7 +138,8 @@
 
 ;;
 
-(defmethod common/prepare-data :density-strip [_ data {:keys [kernel-bandwidth samples margins kernel-type]}]
+(defmethod common/prepare-data :density-strip [_ data {:keys [kernel-bandwidth samples margins kernel-type]
+                                                       :or {kernel-type :gaussian}}]
   (let [dens-data (common/extract-first data)
         all (stats/extent dens-data)
         [mn mx] (common/extend-domain-numerical all (or (:x margins) [0.0 0.0]))
@@ -291,11 +292,11 @@
 (defmethod common/prepare-data :sbar [_ data {:keys [method]}]
   (let [data (if (sequential? data) data [data])]
     (case method
-      :layered {:sum (reduce m/fast-max data)
+      :layered {:sum (reduce m/max data)
                 :data data}
       :normalized {:sum 1.0
-                   :data (mapv #(/ ^double % ^double (reduce m/fast+ data)) data)} 
-      {:sum (reduce m/fast+ data)
+                   :data (mapv #(/ ^double % ^double (reduce m/+ data)) data)} 
+      {:sum (reduce m/+ data)
        :data data})))
 
 (defmethod common/data-extent :sbar [_ {:keys [sum]} _]
@@ -368,3 +369,5 @@
 (defmethod common/prepare-data :stack-vertical [_ [t data c] conf] (common/prepare-data :stack [false t data c] conf))
 (defmethod common/data-extent :stack-vertical [_ d conf] (common/data-extent :stack d conf))
 (defmethod common/render-graph :stack-vertical [_ d conf chart-data] (common/render-graph :stack d conf chart-data))
+
+(m/unuse-primitive-operators)

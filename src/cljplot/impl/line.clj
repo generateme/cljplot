@@ -3,7 +3,7 @@
             [fastmath.core :as m]
             [clojure2d.color :as c]
             [cljplot.common :as common]
-            [fastmath.interpolation :as in]
+            [fastmath.interpolation.linear :as li]
             [fastmath.stats :as stats]
             [fastmath.kernel :as k]
             [fastmath.random :as r]))
@@ -11,7 +11,6 @@
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
-
 
 (defn- process-interpolation
   [data interpolation x w]
@@ -101,7 +100,7 @@
 ;;
 
 (defmethod common/prepare-data :density [_ data {:keys [kernel-bandwidth kernel-type margins]
-                                                 :or {kernel-type :smile}
+                                                 :or {kernel-type :gaussian}
                                                  :as conf}]
   (let [dens-data (common/extract-first data)
         f (if kernel-bandwidth
@@ -145,13 +144,13 @@
                 (sort))
         ks (mapv first data)
         domain [(first xs) (last xs)]
-        interp (or interpolation in/linear-smile)
+        interp (or interpolation li/linear)
         data-as-map (if (map? data) data (into {} data))
         interpolators (apply juxt
                              (constantly 0)
                              (map (common/map-kv #(common/wrap-interpolator-for-dt interp domain (map first %) (map second %)) data-as-map) ks))
-        vs (mapv #(vector % (reductions m/fast+ (interpolators %))) xs)
-        ^double maxv (reduce m/fast-max (mapv (comp last second) vs))]
+        vs (mapv #(vector % (reductions m/+ (interpolators %))) xs)
+        ^double maxv (reduce m/max (mapv (comp last second) vs))]
     (case method
       :normalized [domain [0.0 1.0] ks (sarea-normalized vs)]
       :stream [domain [(- (/ maxv 2)) (/ maxv 2)] ks (sarea-stream vs)]
@@ -204,6 +203,8 @@
 (defmethod common/render-graph :hline [_ yy {:keys [color] :as conf} {:keys [^int w h y] :as chart-data}]
   (let [yy ((:scale y) 0 h (or yy 0.0))]
     (common/do-graph (assoc chart-data :oversize 0) false
-                     (-> (c2d/set-color c color)
-                         (c2d/set-stroke-custom conf)
-                         (c2d/line 0 yy (dec w) yy)))))
+      (-> (c2d/set-color c color)
+          (c2d/set-stroke-custom conf)
+          (c2d/line 0 yy (dec w) yy)))))
+
+(m/unuse-primitive-operators)

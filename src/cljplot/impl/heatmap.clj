@@ -92,3 +92,5 @@
           (-> c
               (c2d/set-color (if (< (c/contrast-ratio col :black) 6.0) :white :black))
               (common/transformed-text (fmt v) px py :center)))))))
+
+(m/unuse-primitive-operators)

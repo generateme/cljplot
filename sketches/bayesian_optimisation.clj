@@ -6,7 +6,7 @@
             [cljplot.core :refer [xy-chart show]]
             [fastmath.optimization :as opt]
             [fastmath.kernel :as k]
-            [fastmath.gp :as gp]
+            [fastmath.interpolation.gp :as gp]
             ;; [fastmath.regression :as reg]
             ;; [fastmath.classification :as cl]
             [clojure2d.color :as c]
@@ -40,7 +40,7 @@
                   (b/add-label :top title)))))
 
 (def kernels [:gaussian :cauchy :anova :linear :inverse-multiquadratic
-              :mattern-12 :mattern-52 :periodic :exponential])
+            :matern-12 :matern-52 :periodic :exponential])
 
 (show (draw-gp xs ys "GP regression with different kernel"
                "Kernel" kernels 
@@ -73,7 +73,7 @@
   [lambdas kernels kernel-params]
   (map (fn [l k p]
          (let [n (str "Kernel: " k "(" p "), noise=" l)
-               kernel (k/kernel k p)]
+               kernel (k/kernel k {:sigma p})]
            [n (gp/gaussian-process xs ys {:kernel kernel :noise l})])) (cycle lambdas) (cycle kernels) kernel-params))
 
 (gen-gps [0.1 0.2] [:gaussian] [0.1 0.9])
@@ -233,7 +233,7 @@
               (b/add-axes :left))
     (show))
 ;; => 
-(def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :mattern-52)
+(def optimizer (opt/bayesian-optimization target {:kernel (k/kernel :matern-52)
                                                 :bounds [bounds]
                                                 :optimizer :gradient
                                                 :utility-function-type :ei
@@ -252,22 +252,22 @@
          ms-pairs (gp/predict-all gp xtest true)
          mu (map first ms-pairs)
          stddev (map second ms-pairs)
-         s95 (map (partial m/fast* 1.96) stddev)
-         s50 (map (partial m/fast* 0.67) stddev)]
+         s95 (map (partial m/* 1.96) stddev)
+         s50 (map (partial m/* 0.67) stddev)]
      (-> (xy-chart {:width 700 :height 400}
-                   (b/series [:grid]
-                             [:ci [(map vector xtest (map m/fast- mu s95)) (map vector xtest (map m/fast+ mu s95))] {:color (c/color :lightblue 120)}]
-                             [:ci [(map vector xtest (map m/fast- mu s50)) (map vector xtest (map m/fast+ mu s50))] {:color (c/color :lightblue)}]
-                             [:function target {:stroke {:size 2} :domain bounds :samples 600}]
-                             [:line (map vector xtest mu) {:color :darkblue :stroke {:dash [20 3]}}]
-                             [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]
-                             [:scatter pairs {:size 8 :color :darkcyan}]
-                             [:scatter [[(first x) y]] {:color :maroon :size 10}])
-                   (b/add-side :top 100 (b/series [:grid nil {:y nil}]
-                                                  [:function util-fn {:domain bounds :samples 600}]
-                                                  [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]))
-                   (b/add-axes :bottom)
-                   (b/add-axes :left))
+             (b/series [:grid]
+                       [:ci [(map vector xtest (map m/- mu s95)) (map vector xtest (map m/+ mu s95))] {:color (c/color :lightblue 120)}]
+                       [:ci [(map vector xtest (map m/- mu s50)) (map vector xtest (map m/+ mu s50))] {:color (c/color :lightblue)}]
+                       [:function target {:stroke {:size 2} :domain bounds :samples 600}]
+                       [:line (map vector xtest mu) {:color :darkblue :stroke {:dash [20 3]}}]
+                       [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]
+                       [:scatter pairs {:size 8 :color :darkcyan}]
+                       [:scatter [[(first x) y]] {:color :maroon :size 10}])
+           (b/add-side :top 100 (b/series [:grid nil {:y nil}]
+                                          [:function util-fn {:domain bounds :samples 600}]
+                                          [:vline (first util-best) {:color :black :size 2 :dash [10 5]}]))
+           (b/add-axes :bottom)
+           (b/add-axes :left))
          (show)))))
 
 (draw-bo optimizer 5)

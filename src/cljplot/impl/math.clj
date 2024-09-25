@@ -60,7 +60,7 @@
                                sy (iscale-y yy)
                                fv (f (v/vec2 sx sy))
                                angle (m/norm (cx/arg fv) m/-PI m/PI 0.0 255.0)
-                               ^double mag (cx/abs fv)
+                               mag (cx/abs fv)
                                mag (* 255.0 (wrap wrap-method mag))
                                col (from-cs (permutation->color permutation angle (- 255.0 (/ (- 255.0 mag) 4.0)) mag))]
                            (c2d/set-color c col)
@@ -214,12 +214,14 @@
         scale-y (:scale y)]
 
     (common/do-graph (assoc chart-data :oversize 0) true
-                     (c2d/set-color c color)
-                     
-                     (doseq [v coords
-                             :let [p (take length
-                                           (iterate (fn [v]
-                                                      (let [nv (f v)]
-                                                        (v/add v (v/mult nv (* (wrap :exp (v/mag nv)) step))))) v))]]
-                       (doseq [[x y] p]
-                         (c2d/point c (* w ^double (scale-x x)) (* h ^double (scale-y y))))))))
+      (c2d/set-color c color)
+      
+      (doseq [v coords
+              :let [p (take length
+                            (iterate (fn [v]
+                                       (let [nv (f v)]
+                                         (v/add v (v/mult nv (* (wrap :exp (v/mag nv)) step))))) v))]]
+        (doseq [[x y] p]
+          (c2d/point c (* w ^double (scale-x x)) (* h ^double (scale-y y))))))))
+
+(m/unuse-primitive-operators)

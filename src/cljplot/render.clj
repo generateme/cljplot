@@ -156,3 +156,5 @@
          (place-label c right (+ tl ww legend-width) (+ it tt) conf :right ih r)) 
 
        c))))
+
+(m/unuse-primitive-operators)

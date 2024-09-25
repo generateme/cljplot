@@ -28,7 +28,7 @@
         freqs (mapv frequencies data)]
     (if-not pmf?
       freqs
-      (let [sums (mapv #(reduce m/fast+ 0.0 (vals %)) freqs)]
+      (let [sums (mapv #(reduce m/+ 0.0 (vals %)) freqs)]
         (map (fn [freq ^double s]
                (common/map-kv #(/ ^double % s) freq)) freqs sums)))))
 
@@ -39,12 +39,12 @@
                 (distinct))
         n? (every? integer? ks)]
     {:x [:categorical (if (and n? range?)
-                        (map int (range (reduce m/fast-min ks) (inc ^int (reduce m/fast-max ks))))
+                        (map int (range (reduce m/min ks) (inc ^int (reduce m/max ks))))
                         (if sort? (sort ks) ks))]
      :y [:numerical [0 (->> data
                             (map vals)
                             (flatten)
-                            (reduce m/fast-max))]]}))
+                            (reduce m/max))]]}))
 
 (defn- histogram-density
   [{:keys [^long samples ^double step] :as h} density?]
@@ -56,7 +56,7 @@
 
 (defn- cumulate
   [{:keys [bins ^double step] :as h} density?]
-  (let [b (reductions m/fast+ (map second bins))
+  (let [b (reductions m/+ (map second bins))
         step (if (or (not density?) (= :pmf density?)) 1.0 step)]
     (update h :bins (partial map (fn [^double c [x _]] [x (* step c)]) b))))
 
@@ -74,7 +74,7 @@
 
 (defmethod common/data-extent :histogram [_ data _]
   (let [d (map (partial map second) (:bins data))        
-        max-bin (reduce m/fast-max (flatten d))
+        max-bin (reduce m/max (flatten d))
         ^double mn (:min data)
         ^double mx (:max data)
         diff (- mx mn)]
@@ -129,3 +129,4 @@
     (common/do-graph chart-data false
       (draw-series c d (assoc conf :zero (scale-y 0.0))))))
 
+(m/unuse-primitive-operators)

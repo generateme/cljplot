@@ -194,7 +194,7 @@
 (defn- find-size
   [side-nseries]
   (let [s (remove nil? (map (comp :block-size second) side-nseries))]
-    (when (seq s) (reduce m/fast-max s))))
+    (when (seq s) (reduce m/max s))))
 
 (defn- append-side
   [series side pos size side-nseries]
@@ -231,3 +231,5 @@
   (if (seq defs)
     (update series :legend update name (fn [v] (vec (if (seq v) (concat v defs) defs))))
     series))
+
+(m/unuse-primitive-operators)

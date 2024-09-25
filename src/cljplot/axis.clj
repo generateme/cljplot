@@ -20,7 +20,7 @@
 
 (defn- axis-line
   "Draw line according to config. Canvas should be aligned to mid position."
-  [canvas ^long length {:keys [color stroke angle]}]
+  [canvas ^long length {:keys [color stroke ^double angle]}]
   (-> canvas
       (c2d/rotate (m/radians angle))
       (c2d/translate (- (/ length 2)) 0)
@@ -207,9 +207,9 @@
    (let [{:keys [^int gap ^int marker-size font font-size color]} (cfg/merge-configuration :legend conf)
          sizes (map (fn [[k ls]] (legends-sizes k ls gap font font-size)) data)
          
-         ^int h (reduce m/fast+ (map last sizes))
-         w (+ marker-size (* 3 gap) ^int (reduce m/fast-max (map second sizes)))
-         ^int grouph (reduce m/fast-max (map first sizes))
+         ^int h (reduce m/+ (map last sizes))
+         w (+ marker-size (* 3 gap) ^int (reduce m/max (map second sizes)))
+         ^int grouph (reduce m/max (map first sizes))
          c (c2d/canvas (+ 50 w) (+ 50 h))]
 
      (c2d/with-canvas [c c]
@@ -289,6 +289,9 @@
     
     {:canvas c
      :anchor [-25 -25]}))
+
+(m/unuse-primitive-operators)
+
 
 #_(cc/show-image (:canvas (gradient (c/gradient :red-blue) 130 200 "ABBA babba" -10 20 (cfg/get-configuration :gradient))))
 

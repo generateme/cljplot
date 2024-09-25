@@ -3,6 +3,8 @@
             [cljplot.build :as b]
             [cljplot.common :as common]
             [fastmath.interpolation :as in]
+            [fastmath.interpolation.step :as sin]
+            [fastmath.interpolation.monotone :as min]
             [fastmath.stats :as stats]
             [clojure2d.color :as c]
             [cljplot.scale :as s]
@@ -93,7 +95,7 @@
       (b/add-label :bottom "a")
       (b/add-label :left "b")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/bar.jpg")
+      #_      (save "results/vega/bar.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/histogram.html
@@ -110,7 +112,7 @@
       (b/add-label :bottom "IMDB_Rating (binned)")
       (b/add-label :left "Count of Records")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/histogram.jpg")
+      #_(save "results/vega/histogram.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/bar_aggregate.html
@@ -132,7 +134,7 @@
       (b/add-label :bottom "population")
       (b/add-label :left "age")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/bar-aggregate.jpg")
+      #_(save "results/vega/bar-aggregate.jpg")
       (show)))
 
 ;; ;; https://vega.github.io/vega-lite/examples/bar_grouped.html
@@ -149,7 +151,7 @@
                   [[:rect "Female" {:color "#EA98D2"}]
                    [:rect "Male" {:color "#659CCA"}]])
     (r/render-lattice {:width 800 :height 400})
-    (save "results/vega/bar-grouped.jpg")
+    #_(save "results/vega/bar-grouped.jpg")
     (show))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_bar_weather.html
@@ -180,7 +182,7 @@
       (b/add-label :left "Count of Records")
       (b/add-legend "Weather type" legend)
       (r/render-lattice {:width 500 :height 300}) 
-      (save "results/vega/stacked-bar-weather.jpg")
+      #_(save "results/vega/stacked-bar-weather.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_bar_h.html
@@ -208,7 +210,7 @@
       (b/add-label :bottom "Sum of yield")
       (b/add-legend "site" legend)
       (r/render-lattice {:width 600 :height 300})
-      (save "results/vega/stacked-bar-h.jpg")
+      #_(save "results/vega/stacked-bar-h.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_bar_normalize.html
@@ -224,7 +226,7 @@
                     [[:rect "Female" {:color "#EA98D2"}]
                      [:rect "Male" {:color "#659CCA"}]])
       (r/render-lattice {:width 600 :height 300})     
-      (save "results/vega/stacked-bar-normalize.jpg")
+      #_(save "results/vega/stacked-bar-normalize.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/bar_gantt.html
@@ -240,7 +242,7 @@
       (b/add-label :bottom "start, end")
       (b/add-label :left "task")
       (r/render-lattice {:width 400 :height 200 :border 20})
-      (save "results/vega/bar-gantt.jpg")
+      #_(save "results/vega/bar-gantt.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/bar_color_disabled_scale.html
@@ -254,7 +256,7 @@
       (b/add-label :bottom "color")
       (b/add-label :left "b")
       (r/render-lattice {:width 200 :height 400})
-      (save "results/vega/bar-color.jpg")
+      #_ (save "results/vega/bar-color.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/bar_layered_transparent.html
@@ -273,7 +275,7 @@
                     [[:rect "Female" {:color "#EA98D2"}]
                      [:rect "Male" {:color "#659CCA"}]])
       (r/render-lattice {:width 600 :height 300})
-      (save "results/vega/stacked-bar-layer.jpg")
+      #_(save "results/vega/stacked-bar-layer.jpg")
       (show)))
 
 ;; not done
@@ -295,7 +297,7 @@
       (b/add-label :bottom "Horsepower")
       (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/point2d.jpg")
+      #_(save "results/vega/point2d.jpg")
       (show)))
 
 
@@ -307,7 +309,7 @@
       (b/add-axes :bottom)
       (b/add-side :bottom (b/series [:label "precipitation"]))
       (r/render-lattice {:width 400 :height 90})
-      (save "results/vega/tick-dot.jpg")
+      #_(save "results/vega/tick-dot.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/tick_strip.html
@@ -326,7 +328,7 @@
       (b/add-label :bottom "Horsepower")
       (b/add-label :left "Cylinders")
       (r/render-lattice {:width 300 :height 200})
-      (save "results/vega/tick-strip.jpg")
+      #_(save "results/vega/tick-strip.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/point_color_with_shape.html
@@ -348,7 +350,7 @@
       (b/add-label :left "Miles_per_Gallon")
       (b/add-legend "Origin" legend)
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/color-with-shape.jpg")
+      #_(save "results/vega/color-with-shape.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/circle_binned.html
@@ -361,7 +363,7 @@
       (b/add-label :bottom "IMDB_Rating (binned)")
       (b/add-label :left "Rotten_Tomatoes_Rating (binned)")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/circle-binned.jpg")
+      #_(save "results/vega/circle-binned.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/point_bubble.html
@@ -374,7 +376,7 @@
       (b/add-label :bottom "Horsepower")
       (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/point-bubble.jpg")
+      #_(save "results/vega/point-bubble.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/point_invalid_color.html
@@ -394,7 +396,7 @@
       (b/add-label :bottom "IMDB_Rating")
       (b/add-label :left "Rotten_Tomatoes_Rating")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/nulls.jpg")
+      #_(save "results/vega/nulls.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/circle.html
@@ -407,7 +409,7 @@
       (b/add-label :bottom "Horsepower")
       (b/add-label :left "Miles_per_Gallon")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/circles.jpg")
+      #_(save "results/vega/circles.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/circle_bubble_health_income.html
@@ -424,7 +426,7 @@
       (b/add-label :bottom "income")
       (b/add-label :left "health")
       (r/render-lattice {:width 500 :height 300})
-      (save "results/vega/circle-bubble-hi.jpg")
+      #_(save "results/vega/circle-bubble-hi.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/circle_natural_disasters.html
@@ -448,7 +450,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "year")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/circle-natural-disasters.jpg")
+      #_(save "results/vega/circle-natural-disasters.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/text_scatterplot_colored.html
@@ -470,7 +472,7 @@
       (b/add-label :left "Miles_per_Gallon")
       (b/add-legend "Origin" legend)
       (r/render-lattice {:width 450 :height 400})
-      (save "results/vega/text-scatterplot-colored.jpg")
+      #_(save "results/vega/text-scatterplot-colored.jpg")
       (show)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
@@ -488,7 +490,7 @@
       (b/add-label :bottom "date")
       (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/line.jpg")
+      #_ (save "results/vega/line.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/line_overlay.html
@@ -514,7 +516,7 @@
       (b/add-label :left "Mean of price")
       (b/add-legend "symbol" legend)
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/line-overlay.jpg")
+      #_(save "results/vega/line-overlay.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/line_color.html
@@ -533,35 +535,35 @@
       (b/add-label :left "price")
       (b/add-legend "symbol" legend)
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/line-color.jpg")
+      #_(save "results/vega/line-color.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/line_step.html
 
 (let [data (->> (filter #(= :GOOG (first %)) stocks)
                 (map rest))]
-  (-> (b/series [:grid] [:line data {:stroke {:size 2} :interpolation in/step}])
+  (-> (b/series [:grid] [:line data {:stroke {:size 2} :interpolation sin/step}])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
       (b/add-label :bottom "date")
       (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/line-step.jpg")
+      #_(save "results/vega/line-step.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/line_monotone.html
 
 (let [data (->> (filter #(= :GOOG (first %)) stocks)
                 (map rest))]
-  (-> (b/series [:grid] [:line data {:stroke {:size 2} :interpolation in/monotone}])
+  (-> (b/series [:grid] [:line data {:stroke {:size 2} :interpolation min/monotone}])
       (b/preprocess-series)
       (b/add-axes :bottom)
       (b/add-axes :left)
       (b/add-label :bottom "date")
       (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/line-spline.jpg")
+      #_ (save "results/vega/line-spline.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/connected_scatterplot.html
@@ -575,7 +577,7 @@
       (b/add-label :bottom "miles")
       (b/add-label :left "gas")
       (r/render-lattice {:width 400 :height 400 :border 20})
-      (save "results/vega/connected-scatterplot.jpg")
+      #_(save "results/vega/connected-scatterplot.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/trail_color.html
@@ -595,7 +597,7 @@
       (b/add-label :left "price")
       (b/add-legend "symbol" legend)
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/trail-color.jpg")
+      #_(save "results/vega/trail-color.jpg")
       (show)))
 
 
@@ -619,7 +621,7 @@
       (b/add-label :bottom "Year into Decade")
       (b/add-label :left "CO2 concentration in ppm")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/layer-line-co2-concentration.jpg")
+      #_(save "results/vega/layer-line-co2-concentration.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/area.html
@@ -637,7 +639,7 @@
       (b/add-label :bottom "date (year-month)")
       (b/add-label :left "count")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/area.jpg")
+      #_(save "results/vega/area.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/area_overlay.html
@@ -651,7 +653,7 @@
       (b/add-label :bottom "date")
       (b/add-label :left "price")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/area-overlay.jpg")
+      #_(save "results/vega/area-overlay.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area.html
@@ -667,7 +669,7 @@
       (b/add-label :left "Sum of count")
       (b/add-legend "series" legend)
       (r/render-lattice {:width 800 :height 400})
-      (save "results/vega/stacked-area.jpg")
+      #_(save "results/vega/stacked-area.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area_normalize.html
@@ -680,7 +682,7 @@
       (b/add-label :bottom "date (year-month)")
       (b/add-legend "series" legend)
       (r/render-lattice {:width 800 :height 400})
-      (save "results/vega/stacked-area-normalize.jpg")
+      #_(save "results/vega/stacked-area-normalize.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/stacked_area_stream.html
@@ -693,7 +695,7 @@
       (b/add-label :bottom "date (year-month)")
       (b/add-legend "series" legend)
       (r/render-lattice {:width 800 :height 400})
-      (save "results/vega/stacked-area-stream.jpg")
+      #_(save "results/vega/stacked-area-stream.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/layer_point_errorbar_ci.html
@@ -707,7 +709,7 @@
     (b/add-label :bottom "Barley Yield")
     (b/add-label :left "variety")
     (r/render-lattice {:width 400 :height 400})
-    (save "results/vega/point-errorbar-ci.jpg")
+    #_(save "results/vega/point-errorbar-ci.jpg")
     (show))
 
 
@@ -722,7 +724,7 @@
     (b/add-label :bottom "Barley Yield")
     (b/add-label :left "variety")
     (r/render-lattice {:width 400 :height 400})
-    (save "results/vega/point-errorbar-stddev.jpg")
+    #_(save "results/vega/point-errorbar-stddev.jpg")
     (show))
 
 
@@ -741,7 +743,7 @@
       (b/add-label :bottom "age")
       (b/add-label :left "population")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/box-plot.jpg")
+      #_(save "results/vega/box-plot.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/rect_binned_heatmap.html
@@ -754,7 +756,7 @@
       (b/add-label :bottom "IMDB_Rating (binned)")
       (b/add-label :left "Rotten_Tomatoes_Rating (binned)")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/vega/table-binned-heatmap.jpg")
+      #_(save "results/vega/table-binned-heatmap.jpg")
       (show)))
 
 ;; https://vega.github.io/vega-lite/examples/concat_marginal_histograms.html
@@ -769,5 +771,5 @@
       (b/add-label :bottom "IMDB_Rating (binned)")
       (b/add-label :left "Rotten_Tomatoes_Rating (binned)")
       (r/render-lattice {:width 400 :height 400})
-      (save "results/vega/table-binned-heatmap-marginal.jpg")
+      #_(save "results/vega/table-binned-heatmap-marginal.jpg")
       (show)))

@@ -14,7 +14,7 @@
             [fastmath.complex :as cx]
             [fastmath.fields :as f]
             [fastmath.vector :as v]
-            [fastmath.gp :as gp]
+            [fastmath.interpolation.gp :as gp]
             [fastmath.kernel :as k]))
 
 ;; logo
@@ -83,7 +83,7 @@
       (b/add-label :top "Stacked 1d/2d charts" {:color (c/darken :steelblue) :font-size 20})
       
       (r/render-lattice {:width 800 :height 500 :padding-in 0.0})
-      (save "results/examples/strips.jpg")
+      #_(save "results/examples/strips.jpg")
       (show)))
 
 ;;
@@ -95,7 +95,7 @@
       (b/add-axes :bottom)
       (b/add-axes :left)
       (r/render-lattice {:width 800 :height 555})
-      (save "results/examples/point-cloud.jpg")
+      #_(save "results/examples/point-cloud.jpg")
       (show)))
 
 (let [data (repeatedly 10000 #(rnd/randval [(rnd/grand) (rnd/grand)]
@@ -105,7 +105,7 @@
       (b/add-axes :bottom)
       (b/add-axes :left)
       (r/render-lattice {:width 600 :height 600})
-      (save "results/examples/heatmap.jpg")
+      #_(save "results/examples/heatmap.jpg")
       (show)))
 
 ;;
@@ -116,7 +116,7 @@
     (b/add-axes :left)
     (b/add-label :bottom "log(z)/sin(z)")
     (r/render-lattice {:width 600 :height 600})
-    (save "results/examples/complex.jpg")
+    #_(save "results/examples/complex.jpg")
     (show)) 
 
 (-> (b/series [:scalar #(apply rnd/vnoise %)  {:x [-6 6] :y [-6 6]}])
@@ -125,7 +125,7 @@
     (b/add-axes :left)
     (b/add-label :bottom "value noise")
     (r/render-lattice {:width 600 :height 600})
-    (save "results/examples/vnoise.jpg")
+    #_(save "results/examples/vnoise.jpg")
     (show)) 
 
 (defn fn2d
@@ -142,7 +142,7 @@
     (b/add-axes :left)
     (b/add-label :bottom "2d function")
     (r/render-lattice {:width 600 :height 600})
-    (save "results/examples/function2d.jpg")
+    #_(save "results/examples/function2d.jpg")
     (show)) 
 
 (-> (b/series [:contour-2d fn2d {:x [m/-PI m/PI] :y [m/-PI m/PI]}])
@@ -151,7 +151,7 @@
     (b/add-axes :left)
     (b/add-label :bottom "2d function")
     (r/render-lattice {:width 600 :height 600})
-    (save "results/examples/contour2d.jpg")
+    #_(save "results/examples/contour2d.jpg")
     (show)) 
 
 
@@ -162,7 +162,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "vector field")
       (r/render-lattice {:width 600 :height 600})
-      (save "results/examples/field.jpg")
+      #_(save "results/examples/field.jpg")
       (show))) 
 
 ;;
@@ -177,7 +177,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "hyperbolic")
       (r/render-lattice {:width 600 :height 600})
-      (save "results/examples/vector-field.jpg")
+      #_(save "results/examples/vector-field.jpg")
       (show)))
 
 
@@ -189,7 +189,7 @@
       (b/add-axes :left)
       (b/add-label :bottom "exponential")
       (r/render-lattice {:width 600 :height 600})
-      (save "results/examples/field-trace.jpg")
+      #_(save "results/examples/field-trace.jpg")
       (show)))
 
 (def faithful (common/read-json "data/faithful.json"))
@@ -207,7 +207,7 @@
       (b/add-label :bottom "Waiting time (minutes)" {:font "Liberation Mono"})
       (b/add-label :left "Eruption time (minutes)" {:font "Liberation Mono"})
       (r/render-lattice {:width 900 :height 500})
-      (save "results/examples/contour.jpg")
+      #_(save "results/examples/contour.jpg")
       (show)))
 
 ;; lag
@@ -221,7 +221,7 @@
     (b/add-label :bottom "y(t)")
     (b/add-label :left "y(t+7)")
     (r/render-lattice {:width 600 :height 600})
-    (save "results/examples/lag.jpg")
+    #_(save "results/examples/lag.jpg")
     (show))
 
 ;; ACF/PACF
@@ -249,7 +249,7 @@
       (b/add-axes :left)
       ;; (b/add-side :right (b/series [:grid nil {:y nil}] [:histogram data {:bins 20}]))
       (r/render-lattice {:width 600 :height 200})
-      (save "results/examples/ma2.jpg")
+      #_      (save "results/examples/ma2.jpg")
       (show))
 
   (-> (b/series [:grid nil {:position [0 1]}] [:acf data {:lags 50 :position [0 1] :label "ACF MA(2)"}]
@@ -261,7 +261,7 @@
       (b/add-label :bottom "lag")
       (b/add-label :left "autocorrelation")
       (r/render-lattice {:width 600 :height 400})
-      (save "results/examples/acf.jpg")
+      #_ (save "results/examples/acf.jpg")
       (show)))
 
 ;;
@@ -269,25 +269,25 @@
 ;; qqplot/ppplot
 
 (-> (xy-chart {:width 600 :height 600}
-              (b/series [:grid]
-                        [:abline]
-                        [:ppplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)] {:domain [-3 3]}])
-              (b/add-axes :bottom)
-              (b/add-axes :left)
-              (b/add-label :bottom "ppplot t-student vs normal"))
-    (save "results/examples/ppplot.jpg")
+        (b/series [:grid]
+                  [:abline]
+                  [:ppplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)] {:domain [-3 3]}])
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "ppplot t-student vs normal"))
+    #_(save "results/examples/ppplot.jpg")
     (show))
 
 (-> (xy-chart {:width 600 :height 600}
-              (b/series [:grid]
-                        [:abline]
-                        [:vline]
-                        [:hline]
-                        [:qqplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)]])
-              (b/add-axes :bottom)
-              (b/add-axes :left)
-              (b/add-label :bottom "qqplot t-student vs normal"))
-    (save "results/examples/qqplot.jpg")
+        (b/series [:grid]
+                  [:abline]
+                  [:vline]
+                  [:hline]
+                  [:qqplot [(rnd/distribution :t) (repeatedly 40000 rnd/grand)]])
+      (b/add-axes :bottom)
+      (b/add-axes :left)
+      (b/add-label :bottom "qqplot t-student vs normal"))
+    #_(save "results/examples/qqplot.jpg")
     (show))
 
 
@@ -295,16 +295,16 @@
 
 (let [data (concat (repeatedly 500 #(rnd/grand 4.5 0.1))
                    (take 10000 (remove #(== (m/round (* % 10.0)) 30.0) (repeatedly #(+ (rnd/grand 2.0 0.1) (* (rnd/drand) (rnd/drand 1.0 3.0)))))))
-      m (keys (methods k/kernel-density))
+      m (:kde k/kernel-list)
       kdes (zipmap m (map #(k/kernel-density % data) m))]
   (-> (xy-chart {:width 600 :height 600}
-                (-> (b/series [:grid] )
-                    (b/add-multi :function kdes
-                                 {:points 600 :domain [1.0 6.0] :stroke {:size 1.5}} {:color (cycle (map #(c/set-alpha % 200) (c/palette :category10)))}))
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-label :bottom "Various kernel densities"))
-      (save "results/examples/kernel-densities.jpg")
+          (-> (b/series [:grid] )
+              (b/add-multi :function kdes
+                           {:points 600 :domain [1.0 6.0] :stroke {:size 1.5}} {:color (cycle (map #(c/set-alpha % 200) (c/palette :category10)))}))
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-label :bottom "Various kernel densities"))
+      #_ (save "results/examples/kernel-densities.jpg")
       (show)))
 
 ;;
@@ -326,17 +326,17 @@
             s95 (map (partial * 1.96) stddev)
             s50 (map (partial * 0.67) stddev)]
         (-> (xy-chart {:width 800 :height 600}
-                      (b/series [:grid]
-                                [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]
-                                [:ci [(map vector xtest (map - mu s50)) (map vector xtest (map + mu s50))] {:color (c/color :lightblue)}]
-                                [:function sinf {:domain [-5 5] :color :red :samples N :stroke {:size 1.5}}]
-                                [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
+                (b/series [:grid]
+                          [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180)}]
+                          [:ci [(map vector xtest (map - mu s50)) (map vector xtest (map + mu s50))] {:color (c/color :lightblue)}]
+                          [:function sinf {:domain [-5 5] :color :red :samples N :stroke {:size 1.5}}]
+                          [:line (map vector xtest mu) {:color :black :stroke {:size 2}}]
 
-                                [:scatter (map vector xs ys) {:size 10}])
-                      (b/add-axes :bottom)
-                      (b/add-axes :left)
-                      (b/add-label :bottom "Gaussian Process - prediction sampled"))
-            (save "results/examples/gp-predict.jpg")
+                          [:scatter (map vector xs ys) {:size 10}])
+              (b/add-axes :bottom)
+              (b/add-axes :left)
+              (b/add-label :bottom "Gaussian Process - prediction sampled"))
+            #_(save "results/examples/gp-predict.jpg")
             (show))))
 
 (let [N 35
@@ -349,14 +349,14 @@
       stddev (map second pairs)
       s95 (map #(* 1.96 %) stddev)]
   (-> (xy-chart {:width 800 :height 600}
-                (b/series [:grid]
-                          [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180) :smooth? true}]                          
-                          [:line (map vector xtest mu) {:color :black :stroke {:size 2} :smooth? true}]
-                          [:scatter (map vector xs ys) {:size 10}])
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-label :bottom "Gaussian Process - posterior sample"))
-      (save "results/examples/gp-posterior.jpg")
+          (b/series [:grid]
+                    [:ci [(map vector xtest (map - mu s95)) (map vector xtest (map + mu s95))] {:color (c/color :lightblue 180) :smooth? true}]                          
+                    [:line (map vector xtest mu) {:color :black :stroke {:size 2} :smooth? true}]
+                    [:scatter (map vector xs ys) {:size 10}])
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-label :bottom "Gaussian Process - posterior sample"))
+      #_(save "results/examples/gp-posterior.jpg")
       (show)))
 
 (let [posterior-cnt 30
@@ -364,18 +364,18 @@
       xs [-4 1 2]
       ys [-5 1 2]
       xtest (map #(m/norm % 0 (dec N) -5.0 5.0) (range N))
-      gps (repeatedly posterior-cnt #(gp/gaussian-process xs ys {:kernel (k/kernel :periodic 0.5 8.0) :noise 0.0001}))
+      gps (repeatedly posterior-cnt #(gp/gaussian-process xs ys {:kernel (k/kernel :periodic {:sigma 0.5 :periodicity 8.0}) :noise 0.0001}))
       pairs (map #(gp/posterior-samples % xtest true) gps)
       lines (map #(vector :line (map vector xtest (map first %)) {:color (c/color :black 100) :smooth? true}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
-                (-> (b/series [:grid])
-                    (b/add-series lines)
-                    (b/add-serie [:scatter (map vector xs ys) {:size 10}]))
-                
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-label :bottom "Gaussian Process - posterior samples (20)"))
-      (save "results/examples/gp-posteriors-20.jpg")
+          (-> (b/series [:grid])
+              (b/add-series lines)
+              (b/add-serie [:scatter (map vector xs ys) {:size 10}]))
+        
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-label :bottom "Gaussian Process - posterior samples (20)"))
+      #_(save "results/examples/gp-posteriors-20.jpg")
       (show)))
 
 (let [prior-cnt 20
@@ -387,12 +387,12 @@
       pairs (map #(gp/prior-samples % xtest) gps)
       lines (map #(vector :line (map vector xtest %) {:color (c/color :black 100) :smooth? true}) pairs)]
   (-> (xy-chart {:width 800 :height 600}
-                (-> (b/series [:grid])
-                    (b/add-series lines))
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-label :bottom "Gaussian Process - prior samples (20)"))
-      (save "results/examples/gp-priors-20.jpg")
+          (-> (b/series [:grid])
+              (b/add-series lines))
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-label :bottom "Gaussian Process - prior samples (20)"))
+      #_(save "results/examples/gp-priors-20.jpg")
       (show)))
 
 
@@ -446,17 +446,17 @@
                  (c/gradient (c/palette :gnbu-9))
                  wind-map)] ;; create gradient from green-blue palette, darkened
   (-> (xy-chart {:width 600 :height 600}
-                (b/series
-                 [:grid]
-                 [:scatter data {:color (fn [[_ _ w] _] (grad w)) ;; callback function which returns color from gradient based on wind
-                                 :size (fn [[_ _ _ p] _] (m/norm p min-prec max-prec 2 50)) ;; callback for size based on precipitation
-                                 }])
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-label :bottom "Minimal temperature")
-                (b/add-label :left "Maximal temperature")
-                (b/add-label :top "Seattle weather"))
-      (save "results/bubble.jpg")
+          (b/series
+           [:grid]
+           [:scatter data {:color (fn [[_ _ w] _] (grad w)) ;; callback function which returns color from gradient based on wind
+                           :size (fn [[_ _ _ p] _] (m/norm p min-prec max-prec 2 50)) ;; callback for size based on precipitation
+                           }])
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-label :bottom "Minimal temperature")
+        (b/add-label :left "Maximal temperature")
+        (b/add-label :top "Seattle weather"))
+      #_(save "results/bubble.jpg")
       (show)))
 
 ;; heatmap matrix
@@ -465,44 +465,44 @@
                  y (range 40)]
              [[x y] (rnd/drand x y)])]
   (-> (xy-chart {:width 600 :height 600}
-                (b/series [:heatmap data ])
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-label :left "Y")
-                (b/add-label :bottom "X"))
-      (save "results/examples/heatmap-matrix.jpg")
+          (b/series [:heatmap data ])
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-label :left "Y")
+        (b/add-label :bottom "X"))
+      #_(save "results/examples/heatmap-matrix.jpg")
       (show)))
 
 (let [data (for [x (range 15)
                  y (range 15)]
              [[x y] (rnd/drand x y)])]
   (-> (xy-chart {:width 600 :height 600}
-                (b/series [:heatmap data {:gradient (c/gradient :yellow-red)
-                                          :annotate? true
-                                          :annotate-fmt "%.1f"}])
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-label :left "Y")
-                (b/add-label :bottom "X"))
-      (save "results/examples/heatmap-matrix-ann.jpg")
+          (b/series [:heatmap data {:gradient (c/gradient :yellow-red)
+                                    :annotate? true
+                                    :annotate-fmt "%.1f"}])
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-label :left "Y")
+        (b/add-label :bottom "X"))
+      #_ (save "results/examples/heatmap-matrix-ann.jpg")
       (show)))
 
 ;; kernels
 
 (def kernels [:gaussian :periodic :cauchy :linear
-              :mattern-12 :mattern-52])
+            :matern-12 :matern-52])
 
-(let [fk (fn [f] #(f [0] [%]))
+(let [fk (fn [f scale] #(* scale (f [0] [%])))
       make-data #(map (fn [k] [(str k)
-                               (fk (k/kernel k %))]) kernels)
+                              (fk (k/kernel k) %)]) kernels)
       cfg {:domain [-3 3] :samples 200 :stroke {:size 2}}]
   (-> (xy-chart {:width 700 :height 500}
-                (-> (b/lattice :function (make-data 1) cfg {:label name :grid true})
-                    (b/add-series (b/lattice :function (make-data 0.5) (assoc cfg :color (c/color 215 50 40)) {:label name :grid true})))
-                (b/add-label :top "Various kernels around 0")
-                (b/add-axes :bottom)
-                (b/add-axes :left)
-                (b/add-axes :right))
+          (-> (b/lattice :function (make-data 1) cfg {:label name :grid true})
+              (b/add-series (b/lattice :function (make-data 0.5) (assoc cfg :color (c/color 215 50 40)) {:label name :grid true})))
+        (b/add-label :top "Various kernels around 0")
+        (b/add-axes :bottom)
+        (b/add-axes :left)
+        (b/add-axes :right))
       (show)))
 
 (let [r (range -1 1 0.025)
@@ -516,41 +516,41 @@
 
 
 (let [k1 (k/kernel :gaussian)
-      k2 (k/kernel :periodic 1.0 2)
-      k3 (k/kernel :thin-plate 2)
+      k2 (k/kernel :periodic {:sigma 1.0 :periodicity 2})
+      k3 (k/kernel :inverse-multiquadratic {:c 2})
       r (range -3 3 0.25)
       data #(for [x r
                   y r]
               [[x y] (% [x] [y])])]
   (-> (xy-chart {:width 900 :height 325}
-                (b/series [:heatmap (data k1) {:position [0 0] :label "gaussian"}]
-                          [:heatmap (data k2) {:position [1 0] :label "periodic"}]
-                          [:heatmap (data k3) {:position [2 0] :label "thin-plate"}])
-                (b/add-label :top "Covariance matrices for different kernels")
-                (b/update-scales :x :ticks 8)
-                (b/update-scales :y :ticks 8)
-                (b/add-axes :bottom)
-                (b/add-axes :left))
+          (b/series [:heatmap (data k1) {:position [0 0] :label "gaussian"}]
+                    [:heatmap (data k2) {:position [1 0] :label "periodic"}]
+                    [:heatmap (data k3) {:position [2 0] :label "inverse-multiquadratic"}])
+        (b/add-label :top "Covariance matrices for different kernels")
+        (b/update-scales :x :ticks 8)
+        (b/update-scales :y :ticks 8)
+        (b/add-axes :bottom)
+        (b/add-axes :left))
       (show)))
 
 ;; hline, vline, abline
 
 (-> (xy-chart {:width 900 :height 300}
-              (b/series [:hline 0 {:color :black}]
-                        [:hline 1]
-                        [:hline -1]
-                        [:vline m/HALF_PI {:dash [10 10] :size 5 :cap :round}]
-                        [:vline (* 0.75 m/TWO_PI) {:dash [10 10]
-                                                   :dash-phase 5
-                                                   :size 5
-                                                   :cap :round
-                                                   :color (c/set-alpha :maroon 100)}]
-                        [:abline [(/ (* 0.75 m/TWO_PI)) -1] {:dash [1 2 5 2]
-                                                             :size 3}]
-                        [:function #(m/sin %) {:samples 800 :domain [0 m/TWO_PI]}]) 
-              (b/add-axes :bottom)
-              (b/add-axes :left))
-    (save "results/examples/lines.jpg")
+        (b/series [:hline 0 {:color :black}]
+                  [:hline 1]
+                  [:hline -1]
+                  [:vline m/HALF_PI {:dash [10 10] :size 5 :cap :round}]
+                  [:vline (* 0.75 m/TWO_PI) {:dash [10 10]
+                                             :dash-phase 5
+                                             :size 5
+                                             :cap :round
+                                             :color (c/set-alpha :maroon 100)}]
+                  [:abline [(/ (* 0.75 m/TWO_PI)) -1] {:dash [1 2 5 2]
+                                                       :size 3}]
+                  [:function #(m/sin %) {:samples 800 :domain [0 m/TWO_PI]}]) 
+      (b/add-axes :bottom)
+      (b/add-axes :left))
+    #_(save "results/examples/lines.jpg")
     (show))
 
 ;;=> (:round :butt :square) cap
@@ -601,5 +601,5 @@
     (b/add-axes :bottom)
     (b/add-axes :left)
     (r/render-lattice {:width 800 :height 800})
-    (save "results/examples/random-walk-wrapped.jpg")
+    #_(save "results/examples/random-walk-wrapped.jpg")
     (show))

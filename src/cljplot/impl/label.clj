@@ -33,3 +33,5 @@
           (c2d/translate pos)
           (c2d/set-color color)
           (c2d/text s 0 0 :center)))))
+
+(m/unuse-primitive-operators)

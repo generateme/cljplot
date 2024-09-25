@@ -202,9 +202,9 @@
                                     :kernel-bandwidth nil
                                     :margins {:x [0.1 0.1] :y [0.0 0.05]}
                                     :area? false}
-                          :bar {:color (fn [v _] (if (m/neg? v) red blue))
+                          :bar {:color (fn [^double v _] (if (m/neg? v) red blue))
                                 :stroke? true
-                                :stroke {:color (fn [v _] (if (m/neg? v) dred dblue))
+                                :stroke {:color (fn [^double v _] (if (m/neg? v) dred dblue))
                                          :size 1.0}
                                 :padding-in 0.1
                                 :padding-out 0.2

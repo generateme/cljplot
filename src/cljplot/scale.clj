@@ -1,6 +1,8 @@
 (ns cljplot.scale
   (:require [fastmath.core :as m]
             [fastmath.interpolation :as i]
+            [fastmath.interpolation.linear :as il]
+            [fastmath.interpolation.cubic :as cl]
             [fastmath.stats :as s]
             [java-time :as dt])
   (:import [clojure.lang IFn]
@@ -50,7 +52,7 @@
             2 (let [[start end] xs]
                 (->ContinuousRange start end :linear
                                    (m/make-norm start end 0.0 1.0) (partial m/lerp start end) nil))
-            (interpolated-range i/linear-smile :linear xs)))))
+            (interpolated-range il/linear :linear xs)))))
 
 (defn spline
   "Spline mapping function"
@@ -59,7 +61,7 @@
           (linear [0.0 xs])
           (if (<= (count xs) 2)
             (linear xs)
-            (interpolated-range i/cubic-spline :spline xs)))))
+            (interpolated-range cl/cubic :spline xs)))))
 
 ;;
 
@@ -270,7 +272,7 @@
 (defn- interval-steps-before
   "Maps `steps` values into ordinal values (0,1,2...)."
   [steps]
-  (comp int (i/step-before steps (range (count steps)))))
+  (comp int (i/interpolation :step-before steps (range (count steps)))))
 
 (defn quantile
   ([xs] (quantile 10 xs))
@@ -518,8 +520,10 @@
   [sc field value]
   (case field
     :domain (-> (scale-map (:scale-def sc) {:domain value})
-               (assoc :fmt (:fmt sc))) ;; recalculate everything, keep format
+                (assoc :fmt (:fmt sc))) ;; recalculate everything, keep format
     :fmt (assoc sc :fmt (coerce-format-fn (scale-type-from-map sc) value))
     :scale (scale-map value (dissoc sc :ticks)) ;; recalculate ticks
     :ticks (merge sc (make-ticks (:scale sc) value))
     sc))
+
+(m/unuse-primitive-operators)

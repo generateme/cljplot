@@ -206,7 +206,7 @@
                        (let [cnt (or cnt 1)
                              cell (grid/coords->mid g (v/vec2 (scale-x x) (scale-y y)))]
                          (if (contains? m cell)
-                           (update m cell m/fast+ cnt)
+                           (update m cell m/+ cnt)
                            (assoc m cell cnt)))) {} vx)]
     (map (fn [[[x y] cnt]]
            (v/vec3 (iscale-x x) (iscale-y y) cnt)) cnts)))
@@ -222,7 +222,7 @@
     (-> canv
         (c2d/push-matrix)
         (c2d/translate x y)
-        (c2d/rotate (m/radians angle))
+        (c2d/rotate (m/radians (double angle)))
         (c2d/triangle (- hsize) (- size3)
                       (+ hsize) (- size3)
                       0 (+ size6) stroke?)
@@ -338,5 +338,6 @@
 
 
 (defn read-csv [f] (rest (with-open [reader (io/reader f)]
-                           (doall (csv/read-csv reader)))))
+                        (doall (csv/read-csv reader)))))
 
+(m/unuse-primitive-operators)

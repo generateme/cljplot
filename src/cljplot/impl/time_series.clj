@@ -9,7 +9,6 @@
 (set! *unchecked-math* :warn-on-boxed)
 (m/use-primitive-operators)
 
-
 (defmethod common/prepare-data :lag [_ data {:keys [lag]}] (map vector data (drop (or lag 1) data)))
 (defmethod common/render-graph :lag [_ data conf chart-data] (common/render-graph :scatter data conf chart-data))
 
@@ -33,8 +32,8 @@
   [data ^long lags]
   (let [acf (acf data lags)
         phis (reductions (fn [curr ^long id]
-                           (let [phi (/ (- ^double (acf id) ^double (reduce m/fast+ (map-indexed #(* ^double (acf (dec (- id ^int %1))) ^double %2) curr)))
-                                        (- 1.0 ^double (reduce m/fast+ (map-indexed #(* ^double (acf (inc ^int %1)) ^double %2) curr))))]
+                           (let [phi (/ (- ^double (acf id) ^double (reduce m/+ (map-indexed #(* ^double (acf (dec (- id ^int %1))) ^double %2) curr)))
+                                        (- 1.0 ^double (reduce m/+ (map-indexed #(* ^double (acf (inc ^int %1)) ^double %2) curr))))]
                              (conj (mapv #(- ^double %1 (* phi ^double %2)) curr (reverse curr)) phi))) [(acf 1)] (range 2 (inc lags)))]
     (vec (conj (map last phis) 0.0))))
 
@@ -114,7 +113,7 @@
       (-> c
           (c2d/set-color :black)
           (c2d/line 0 zero w- zero)) 
-      (doseq [[id [x y]] (map-indexed vector data)
+      (doseq [[id [^double x ^double y]] (map-indexed vector data)
               :let [xx (scale-x x)
                     yy (scale-y y)]]
         (c2d/set-color c :black)
@@ -129,3 +128,5 @@
 (defmethod common/prepare-data :pacf [_ data {:keys [lags]}] (p-acf-data :pacf data lags))
 (defmethod common/data-extent :pacf [_ data conf] (common/data-extent :acf data conf))
 (defmethod common/render-graph :pacf [_ data conf chart-data] (common/render-graph :acf data conf chart-data))
+
+(m/unuse-primitive-operators)
